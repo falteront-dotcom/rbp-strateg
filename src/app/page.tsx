@@ -238,7 +238,7 @@ export default function Home() {
   const [countries, setCountries] = useState<CountryData[]>([]);
   const [selectedISO, setSelectedISO] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState("");
-  const [clock, setClock] = useState(new Date());
+  const [clock, setClock] = useState<Date | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
   // ─── New integration state ─────────────────────────────────────────────
@@ -247,8 +247,9 @@ export default function Home() {
   const [compareInitialIsos, setCompareInitialIsos] = useState<string[]>([]);
   const [activeLayer, setActiveLayer] = useState<AnalyticsLayerKey>("bp");
 
-  // ─── Clock tick ─────────────────────────────────────────────────────────
+  // ─── Clock tick — mount-only to avoid hydration mismatch ───────────────
   useEffect(() => {
+    setClock(new Date()); // set on mount (client-only)
     const timer = setInterval(() => setClock(new Date()), 1000);
     return () => clearInterval(timer);
   }, []);
@@ -475,10 +476,10 @@ export default function Home() {
           {/* Clock */}
           <div className="text-right font-mono">
             <div className="text-[9px] text-slate-500">
-              {clock.toLocaleDateString("ru-RU")}
+              {clock ? clock.toLocaleDateString("ru-RU") : "\u2014"}
             </div>
             <div className="text-sm font-black text-white tabular-nums tracking-tight">
-              {clock.toLocaleTimeString("ru-RU", { hour12: false })}
+              {clock ? clock.toLocaleTimeString("ru-RU", { hour12: false }) : "--:--:--"}
             </div>
           </div>
         </div>

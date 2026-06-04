@@ -483,10 +483,35 @@ export function StrategicMap({
   const mapRef = useRef<MapRef>(null);
   const tokenValid = isTokenValid(MAPBOX_TOKEN);
 
+  // ─── Monkey-patch mapbox-gl LngLat to suppress NaN errors ──────────
+  // react-map-gl calls setMaxBounds in useIsomorphicLayoutEffect, which
+  // triggers Mapbox's _constrain → unproject → new LngLat(NaN, 50).
+  // This is a known bug: the error is recoverable (map works after),
+  // but the console error is alarming. We patch LngLat to clamp NaN → 0.
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    const maplibre = require('mapbox-gl');
+    const OrigLngLat = maplibre.LngLat;
+    if (!OrigLngLat || OrigLngLat._patched) return;
+    class SafeLngLat extends OrigLngLat {
+      static _patched = true;
+      constructor(lng: number, lat: number) {
+        super(
+          typeof lng === 'number' && isFinite(lng) ? lng : 0,
+          typeof lat === 'number' && isFinite(lat) ? lat : 0
+        );
+      }
+    }
+    maplibre.LngLat = SafeLngLat;
+  }, []);
+
   // ─── Container size guard ─────────────────────────────────
   // MapGL crashes with NaN LngLat if initialized with 0x0 container.
   // We must wait until the parent div has real dimensions,
-  // AND give the browser an extra frame to lay out the DeckGL canvas.
+  // AND give the browser TWO extra frames to fully lay out before MapGL
+  // initializes. One rAF is not enough — useIsomorphicLayoutEffect in
+  // react-map-gl fires before the browser has computed the map container's
+  // actual pixel dimensions, causing setMaxBounds → unproject → NaN.
   const containerRef = useRef<HTMLDivElement>(null);
   const [containerReady, setContainerReady] = useState(false);
 
@@ -497,9 +522,11 @@ export function StrategicMap({
       for (const entry of entries) {
         const { width, height } = entry.contentRect;
         if (width > 0 && height > 0) {
-          // Give browser an extra frame to lay out DeckGL before MapGL initializes
+          // Double rAF: wait for 2 browser paint frames so layout is fully settled
           requestAnimationFrame(() => {
-            setContainerReady(true);
+            requestAnimationFrame(() => {
+              setContainerReady(true);
+            });
           });
           observer.disconnect();
         }

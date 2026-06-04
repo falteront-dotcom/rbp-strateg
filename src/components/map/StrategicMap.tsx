@@ -7,6 +7,7 @@ import { DeckGL } from "@deck.gl/react";
 import type { Layer, PickingInfo } from "@deck.gl/core";
 import type { Feature, FeatureCollection, Polygon, MultiPolygon } from "geojson";
 import { scaleSequential } from "d3-scale";
+import { MapErrorBoundary } from './MapErrorBoundary';
 import { GeoJsonLayer, ScatterplotLayer } from "@deck.gl/layers";
 
 import "mapbox-gl/dist/mapbox-gl.css";
@@ -499,6 +500,41 @@ export function StrategicMap({
   //
   const containerRef = useRef<HTMLDivElement>(null);
   const [pixelSize, setPixelSize] = useState<{ w: number; h: number } | null>(null);
+  const [mapPatched, setMapPatched] = useState(false);
+
+  // ─── Patch mapbox-gl LngLat dynamically before rendering MapGL ──
+  // We use dynamic import() instead of static import because Turbopack
+  // crashes on static `import mapbox-gl` in client components.
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      try {
+        const mod = await import('mapbox-gl');
+        const mgl = mod.default || mod;
+        const OrigLngLat = mgl.LngLat;
+        if (!OrigLngLat || (OrigLngLat as any)._safePatched) return;
+        class SafeLngLat extends OrigLngLat {
+          static _safePatched = true;
+          constructor(lng: number, lat: number) {
+            super(
+              typeof lng === 'number' && isFinite(lng) ? lng : 0,
+              typeof lat === 'number' && isFinite(lat) ? lat : 0
+            );
+          }
+        }
+        Object.setPrototypeOf(SafeLngLat, OrigLngLat);
+        Object.keys(OrigLngLat).forEach((key) => {
+          try { (SafeLngLat as any)[key] = (OrigLngLat as any)[key]; } catch (_) {}
+        });
+        mgl.LngLat = SafeLngLat as any;
+        if (!cancelled) setMapPatched(true);
+      } catch (e) {
+        console.warn('[StrategicMap] Failed to patch mapbox-gl:', e);
+        if (!cancelled) setMapPatched(true); // render anyway
+      }
+    })();
+    return () => { cancelled = true; };
+  }, []);
 
   useEffect(() => {
     const el = containerRef.current;
@@ -778,14 +814,25 @@ export function StrategicMap({
 
   return (
     <div ref={containerRef} className={`relative w-full h-full overflow-hidden ${className ?? ""}`}>
-      {/* Only render map when we have exact pixel dimensions */}
-      {pixelSize && tokenValid ? (
+      {/* Only render map when we have exact pixel dimensions AND mapbox is patched */}
+      {pixelSize && mapPatched && tokenValid ? (
         <>
           {/* Mapbox base map — sibling below DeckGL */}
+          <MapErrorBoundary
+            fallback={
+              <div style={{ position: "absolute", zIndex: 0, width: pixelSize!.w, height: pixelSize!.h, top: 0, left: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', background: '#0a0e17' }}>
+                <div className="text-tactical-primary font-mono text-xs opacity-60">Карта инициализируется...</div>
+              </div>
+            }
+          >
           <div style={{ position: "absolute", zIndex: 0, width: `${pixelSize.w}px`, height: `${pixelSize.h}px`, top: 0, left: 0 }}>
             <MapGL
               ref={mapRef}
-              {...viewState}
+              initialViewState={{
+                longitude: INITIAL_VIEW.longitude,
+                latitude: INITIAL_VIEW.latitude,
+                zoom: INITIAL_VIEW.zoom,
+              }}
               mapStyle={styleUrl}
               mapboxAccessToken={MAPBOX_TOKEN}
               style={{ width: `${pixelSize.w}px`, height: `${pixelSize.h}px` }}
@@ -804,6 +851,7 @@ export function StrategicMap({
               )}
             </MapGL>
           </div>
+          </MapErrorBoundary>
 
           {/* DeckGL overlay — sibling above MapGL */}
           <DeckGL

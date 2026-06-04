@@ -1,0 +1,17 @@
+
+> rbp-app@0.1.0 dev
+> next dev
+
+⚠ turbopack.root should be absolute, using: C:\Users\Semyon\Documents\ANTI\Работа\rbp-app
+▲ Next.js 16.1.6 (Turbopack)
+- Local:         http://localhost:3000
+- Network:       http://172.18.0.1:3000
+
+✓ Starting...
+✓ Ready in 2.2s
+ GET / 200 in 3.0s (compile: 1836ms, render: 1195ms)
+ GET / 200 in 313ms (compile: 47ms, render: 266ms)
+ GET / 200 in 209ms (compile: 24ms, render: 186ms)
+ GET / 200 in 207ms (compile: 16ms, render: 191ms)
+ GET / 200 in 339ms (compile: 36ms, render: 302ms)
+ GET / 200 in 184ms (compile: 13ms, render: 171ms)

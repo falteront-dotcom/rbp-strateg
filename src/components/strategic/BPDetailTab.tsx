@@ -151,18 +151,23 @@ function getEconomySubFactors(c: CountryData): { label: string; value: number; f
 
 // ─── Component ───────────────────────────────────────────────────────────────
 export function BPDetailTab({ country }: BPDetailTabProps) {
-  const tier = getTier(country.bpTotal);
+  const rawBp = country.bpTotal;
+  const safeBp = typeof rawBp === "number" && isFinite(rawBp) ? rawBp : 0;
+  const tier = getTier(safeBp);
   const tierInfo = TIER_MAP[tier];
 
   // Radar chart data
   const radarData = useMemo(
     () =>
-      COMPONENTS.map((comp) => ({
-        component: comp.letter,
-        fullName: comp.name,
-        score: country[comp.key] as number,
-        fullMark: 100,
-      })),
+      COMPONENTS.map((comp) => {
+        const raw = country[comp.key] as number | null | undefined;
+        return {
+          component: comp.letter,
+          fullName: comp.name,
+          score: typeof raw === "number" && isFinite(raw) ? raw : 0,
+          fullMark: 100,
+        };
+      }),
     [country]
   );
 
@@ -179,10 +184,10 @@ export function BPDetailTab({ country }: BPDetailTabProps) {
 
   // Strengths & Weaknesses
   const analysis = useMemo(() => {
-    const scored = COMPONENTS.map((comp) => ({
-      ...comp,
-      score: country[comp.key] as number,
-    }));
+    const scored = COMPONENTS.map((comp) => {
+      const raw = country[comp.key] as number | null | undefined;
+      return { ...comp, score: typeof raw === "number" && isFinite(raw) ? raw : 0 };
+    });
     const sorted = [...scored].sort((a, b) => b.score - a.score);
     const strengths = sorted.slice(0, 3);
     const weaknesses = sorted.slice(-3).reverse();
@@ -200,7 +205,7 @@ export function BPDetailTab({ country }: BPDetailTabProps) {
         <div className="flex items-center justify-between mb-3">
           <div className="flex items-center gap-3">
             <span className="text-3xl font-bold text-tactical-primary tracking-tighter">
-              {country.bpTotal.toFixed(1)}
+              {safeBp.toFixed(1)}
             </span>
             <div className="flex flex-col">
               <span className="text-xs text-slate-400 tracking-wider uppercase">
@@ -230,13 +235,14 @@ export function BPDetailTab({ country }: BPDetailTabProps) {
           </div>
         </div>
         {/* BP Score bar */}
-        <div className="h-2 rounded-full overflow-hidden" style={{ background: scoreBarGradient(country.bpTotal) }} />
+        <div className="h-2 rounded-full overflow-hidden" style={{ background: scoreBarGradient(safeBp) }} />
       </motion.div>
 
       {/* ─── 8 Component Cards Grid ────────────────────────────────────────── */}
       <div className="grid grid-cols-2 gap-2">
         {COMPONENTS.map((comp, idx) => {
-          const score = country[comp.key] as number;
+          const rawScore = country[comp.key] as number | null | undefined;
+          const score = typeof rawScore === "number" && isFinite(rawScore) ? rawScore : 0;
           return (
             <motion.div
               key={comp.key}

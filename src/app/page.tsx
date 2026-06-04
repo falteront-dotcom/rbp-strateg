@@ -26,6 +26,7 @@ import CountryCard from "@/components/CountryCard";
 import { CoalitionBuilder } from "@/components/CoalitionBuilder";
 import CountryComparison from "@/components/CountryComparison";
 import type { CountryCompareData } from "@/lib/comparison";
+import { pickScoreFields } from "@/lib/country-detail-mapper";
 import {
   BPDetailTab,
   EconomicsTab,
@@ -359,10 +360,11 @@ export default function Home() {
   );
 
   // ─── Selected country ──────────────────────────────────────────────────
-  const selectedCountry = useMemo<CountryData | null>(
-    () => countries.find((c) => c.isoCode === selectedISO) ?? null,
-    [countries, selectedISO],
-  );
+  const selectedCountry = useMemo<CountryData | null>(() => {
+    const raw = countries.find((c) => c.isoCode === selectedISO);
+    if (!raw) return null;
+    return { ...raw, ...pickScoreFields(raw as unknown as Record<string, unknown>) } as CountryData;
+  }, [countries, selectedISO]);
 
   // ─── Filtered country list for sidebar ─────────────────────────────────
   const filteredCountries = useMemo(() => {

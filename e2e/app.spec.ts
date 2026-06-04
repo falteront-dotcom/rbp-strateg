@@ -81,8 +81,37 @@ test.describe('RBP-Strateg 2.0 — App Shell', () => {
 
     // The layer selector is always visible in the map controls
     // Just verify the map area rendered
-    const mapArea = page.locator('.relative.w-full.h-full, [class*="overflow-hidden"]');
+    const mapArea = page.locator('.relative.w.full.h.full, [class*="overflow-hidden"]');
     await expect(mapArea.first()).toBeAttached({ timeout: 10000 });
+  });
+
+  test('selecting a country shows detail panel without crashing', async ({ page }) => {
+    const pageErrors: string[] = [];
+    page.on('pageerror', (err) => pageErrors.push(err.message));
+
+    await page.goto('/');
+    await page.waitForLoadState('domcontentloaded');
+
+    // Wait for countries to load
+    await page.waitForFunction(
+      () => document.querySelectorAll('nav button').length >= 50,
+      { timeout: 30000 }
+    );
+
+    // Click first country
+    await page.locator('nav button').first().click();
+    await page.waitForTimeout(1000);
+
+    // Click BP detail tab (uses ".toFixed()" on score fields)
+    const bpTab = page.locator('button').filter({ hasText: /Боевой потенциал|Детально|Components|BP/ }).first();
+    if (await bpTab.count() > 0) {
+      await bpTab.click();
+      await page.waitForTimeout(500);
+    }
+
+    // No JS errors should have occurred
+    const fatal = pageErrors.filter(e => !/NaN|LngLat|mapbox/.test(e));
+    expect(fatal.length).toBe(0);
   });
 });
 

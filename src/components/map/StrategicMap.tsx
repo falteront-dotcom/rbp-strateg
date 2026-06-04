@@ -483,38 +483,26 @@ export function StrategicMap({
   const mapRef = useRef<MapRef>(null);
   const tokenValid = isTokenValid(MAPBOX_TOKEN);
 
-  // ─── Monkey-patch mapbox-gl LngLat to suppress NaN errors ──────────
-  // react-map-gl calls setMaxBounds in useIsomorphicLayoutEffect, which
-  // triggers Mapbox's _constrain → unproject → new LngLat(NaN, 50).
-  // This is a known bug: the error is recoverable (map works after),
-  // but the console error is alarming. We patch LngLat to clamp NaN → 0.
-  useEffect(() => {
-    if (typeof window === 'undefined') return;
-    const maplibre = require('mapbox-gl');
-    const OrigLngLat = maplibre.LngLat;
-    if (!OrigLngLat || OrigLngLat._patched) return;
-    class SafeLngLat extends OrigLngLat {
-      static _patched = true;
-      constructor(lng: number, lat: number) {
-        super(
-          typeof lng === 'number' && isFinite(lng) ? lng : 0,
-          typeof lat === 'number' && isFinite(lat) ? lat : 0
-        );
-      }
-    }
-    maplibre.LngLat = SafeLngLat;
-  }, []);
-
-  // ─── Container size guard ─────────────────────────────────
-  // MapGL crashes with NaN LngLat if initialized with 0x0 container.
-  // We must wait until the parent div has real dimensions,
-  // AND give the browser TWO extra frames to fully lay out before MapGL
-  // initializes. One rAF is not enough — useIsomorphicLayoutEffect in
-  // react-map-gl fires before the browser has computed the map container's
-  // actual pixel dimensions, causing setMaxBounds → unproject → NaN.
+  // ─── Two-phase map initialization ────────────────────────────
+  // Mapbox GL throws "Invalid LngLat (NaN, 50)" when react-map-gl calls
+  // setMaxBounds inside useIsomorphicLayoutEffect — which fires BEFORE
+  // the browser has computed the actual pixel dimensions of the map's
+  // internal canvas. No amount of ResizeObserver or rAF on the outer
+  // container can prevent this because the error occurs during MapGL's
+  // own first layout effect.
+  //
+  // Solution: Three-phase rendering:
+  //   Phase 1: Outer container div renders (gets real dimensions via CSS)
+  //   Phase 2: Placeholder div fills the container → browser paints it →
+  //            useEffect fires, confirming the browser has committed layout
+  //   Phase 3: MapGL + DeckGL mount — now the browser has real dimensions
+  //            for the map's internal canvas, preventing NaN in unproject()
+  //
   const containerRef = useRef<HTMLDivElement>(null);
-  const [containerReady, setContainerReady] = useState(false);
+  const [containerSized, setContainerSized] = useState(false); // Phase 2
+  const [mapReady, setMapReady] = useState(false);             // Phase 3
 
+  // Phase 1→2: Detect when container has real CSS dimensions
   useEffect(() => {
     const el = containerRef.current;
     if (!el) return;
@@ -522,12 +510,7 @@ export function StrategicMap({
       for (const entry of entries) {
         const { width, height } = entry.contentRect;
         if (width > 0 && height > 0) {
-          // Double rAF: wait for 2 browser paint frames so layout is fully settled
-          requestAnimationFrame(() => {
-            requestAnimationFrame(() => {
-              setContainerReady(true);
-            });
-          });
+          setContainerSized(true);
           observer.disconnect();
         }
       }
@@ -535,6 +518,18 @@ export function StrategicMap({
     observer.observe(el);
     return () => observer.disconnect();
   }, []);
+
+  // Phase 2→3: After containerSized, wait for useEffect (not layout effect!)
+  // to confirm the browser has painted the placeholder div with real
+  // pixel dimensions. useEffect fires AFTER the browser paint, so by the
+  // time MapGL mounts in phase 3, its internal canvas will have non-zero
+  // dimensions and unproject() won't return NaN.
+  useEffect(() => {
+    if (!containerSized) return;
+    // One additional rAF as safety margin for complex layouts
+    const id = requestAnimationFrame(() => setMapReady(true));
+    return () => cancelAnimationFrame(id);
+  }, [containerSized]);
 
   // ─── State ──────────────────────────────────────────────
   const [viewState, setViewState] = useState<ViewState>({ ...INITIAL_VIEW });
@@ -793,8 +788,8 @@ export function StrategicMap({
 
   return (
     <div ref={containerRef} className={`relative w-full h-full overflow-hidden ${className ?? ""}`}>
-      {/* Only render map when container has dimensions and token is valid */}
-      {containerReady && tokenValid ? (
+      {/* Phase 3: Only render map when browser has fully painted the container */}
+      {mapReady && tokenValid ? (
         <>
           {/* Mapbox base map — sibling below DeckGL */}
           <div style={{ position: "absolute", inset: "0", zIndex: 0 }}>

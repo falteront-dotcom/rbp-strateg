@@ -483,53 +483,43 @@ export function StrategicMap({
   const mapRef = useRef<MapRef>(null);
   const tokenValid = isTokenValid(MAPBOX_TOKEN);
 
-  // ─── Two-phase map initialization ────────────────────────────
+  // ─── Pixel-dimension guard for Mapbox GL ────────────────────────
   // Mapbox GL throws "Invalid LngLat (NaN, 50)" when react-map-gl calls
-  // setMaxBounds inside useIsomorphicLayoutEffect — which fires BEFORE
-  // the browser has computed the actual pixel dimensions of the map's
-  // internal canvas. No amount of ResizeObserver or rAF on the outer
-  // container can prevent this because the error occurs during MapGL's
-  // own first layout effect.
+  // setMaxBounds inside useIsomorphicLayoutEffect. This fires DURING the
+  // React commit phase, BEFORE the browser paints. If MapGL's container
+  // has CSS "width: 100%; height: 100%" but no computed pixel dimensions
+  // yet (because the browser hasn't painted), Mapbox's unproject() gets
+  // NaN for longitude.
   //
-  // Solution: Three-phase rendering:
-  //   Phase 1: Outer container div renders (gets real dimensions via CSS)
-  //   Phase 2: Placeholder div fills the container → browser paints it →
-  //            useEffect fires, confirming the browser has committed layout
-  //   Phase 3: MapGL + DeckGL mount — now the browser has real dimensions
-  //            for the map's internal canvas, preventing NaN in unproject()
+  // Fix: Measure the container's real pixel dimensions with
+  // getBoundingClientRect, store them in state, and pass EXACT pixel
+  // values as inline style to the MapGL wrapper. This way, when MapGL
+  // mounts and its useIsomorphicLayoutEffect fires, the canvas has
+  // concrete pixel dimensions and unproject() returns valid coords.
   //
   const containerRef = useRef<HTMLDivElement>(null);
-  const [containerSized, setContainerSized] = useState(false); // Phase 2
-  const [mapReady, setMapReady] = useState(false);             // Phase 3
+  const [pixelSize, setPixelSize] = useState<{ w: number; h: number } | null>(null);
 
-  // Phase 1→2: Detect when container has real CSS dimensions
   useEffect(() => {
     const el = containerRef.current;
     if (!el) return;
-    const observer = new ResizeObserver((entries) => {
-      for (const entry of entries) {
-        const { width, height } = entry.contentRect;
-        if (width > 0 && height > 0) {
-          setContainerSized(true);
-          observer.disconnect();
-        }
+    // Measure immediately — even before paint, getBoundingClientRect
+    // returns the layout-computed dimensions from CSS
+    const measure = () => {
+      const { width, height } = el.getBoundingClientRect();
+      if (width > 0 && height > 0) {
+        setPixelSize({ w: width, h: height });
+        return true;
       }
-    });
+      return false;
+    };
+    // Try immediate measurement
+    if (measure()) return;
+    // If 0 (e.g. CSS not yet applied), observe until sized
+    const observer = new ResizeObserver(() => measure());
     observer.observe(el);
     return () => observer.disconnect();
   }, []);
-
-  // Phase 2→3: After containerSized, wait for useEffect (not layout effect!)
-  // to confirm the browser has painted the placeholder div with real
-  // pixel dimensions. useEffect fires AFTER the browser paint, so by the
-  // time MapGL mounts in phase 3, its internal canvas will have non-zero
-  // dimensions and unproject() won't return NaN.
-  useEffect(() => {
-    if (!containerSized) return;
-    // One additional rAF as safety margin for complex layouts
-    const id = requestAnimationFrame(() => setMapReady(true));
-    return () => cancelAnimationFrame(id);
-  }, [containerSized]);
 
   // ─── State ──────────────────────────────────────────────
   const [viewState, setViewState] = useState<ViewState>({ ...INITIAL_VIEW });
@@ -788,17 +778,17 @@ export function StrategicMap({
 
   return (
     <div ref={containerRef} className={`relative w-full h-full overflow-hidden ${className ?? ""}`}>
-      {/* Phase 3: Only render map when browser has fully painted the container */}
-      {mapReady && tokenValid ? (
+      {/* Only render map when we have exact pixel dimensions */}
+      {pixelSize && tokenValid ? (
         <>
           {/* Mapbox base map — sibling below DeckGL */}
-          <div style={{ position: "absolute", inset: "0", zIndex: 0 }}>
+          <div style={{ position: "absolute", zIndex: 0, width: `${pixelSize.w}px`, height: `${pixelSize.h}px`, top: 0, left: 0 }}>
             <MapGL
               ref={mapRef}
               {...viewState}
               mapStyle={styleUrl}
               mapboxAccessToken={MAPBOX_TOKEN}
-              style={{ width: "100%", height: "100%" }}
+              style={{ width: `${pixelSize.w}px`, height: `${pixelSize.h}px` }}
               projection="mercator"
               antialias
             >
@@ -832,7 +822,7 @@ export function StrategicMap({
             }}
             layers={deckLayers}
             controller={true}
-            style={{ position: "absolute", inset: "0", zIndex: "1", pointerEvents: "auto" }}
+            style={{ position: "absolute", width: `${pixelSize.w}px`, height: `${pixelSize.h}px`, top: "0", left: "0", zIndex: "1", pointerEvents: "auto" }}
             getCursor={({ isHovering }: { isHovering: boolean }) =>
               isHovering ? "pointer" : "default"
             }

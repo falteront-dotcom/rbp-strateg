@@ -9,7 +9,17 @@ export type AnalyticsLayerKey =
   | "fleet"
   | "aviation"
   | "tanks"
-  | "nukes";
+  | "nukes"
+  | "readiness"
+  | "logistics"
+  | "economy"
+  | "manpower"
+  | "c2"
+  | "artillery"
+  | "projection"
+  | "alliances"
+  | "density"
+  | "risk";
 
 /** Layer metadata for the selector */
 interface LayerOption {
@@ -26,6 +36,16 @@ const LAYER_OPTIONS: LayerOption[] = [
   { key: "aviation", label: "Air Force",         shortLabel: "AIR",  icon: "✈" },
   { key: "tanks",    label: "Armor Corps",       shortLabel: "TNK",  icon: "▣" },
   { key: "nukes",    label: "Nuclear Arsenal",   shortLabel: "NUKE", icon: "☢" },
+  { key: "readiness", label: "Readiness / Tempo", shortLabel: "RDY", icon: "▰" },
+  { key: "logistics", label: "Logistics Reach", shortLabel: "LOG", icon: "⇄" },
+  { key: "economy", label: "War Economy", shortLabel: "ECO", icon: "◇" },
+  { key: "manpower", label: "Mobilization Depth", shortLabel: "MOB", icon: "◉" },
+  { key: "c2", label: "C4ISR / EW", shortLabel: "C2", icon: "⌁" },
+  { key: "artillery", label: "Artillery Mass", shortLabel: "ART", icon: "✦" },
+  { key: "projection", label: "Power Projection", shortLabel: "PROJ", icon: "↗" },
+  { key: "alliances", label: "Alliance Network", shortLabel: "ALLY", icon: "⌬" },
+  { key: "density", label: "BP Density", shortLabel: "DENS", icon: "▥" },
+  { key: "risk", label: "Escalation Risk", shortLabel: "RISK", icon: "⚠" },
 ];
 
 interface LayerSelectorProps {

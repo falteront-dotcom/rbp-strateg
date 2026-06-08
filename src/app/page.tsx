@@ -199,6 +199,14 @@ interface CountryData {
   bpDoctrine: number;
   bpReadiness: number;
   bpTerrain: number;
+  bpAdvanced?: number;
+  bpAdvancedConfidence?: number;
+  bpAdvancedSummary?: string;
+  bpAdvancedDomains?: Array<{ key: string; name: string; score: number; weight: number; confidence: number }>;
+  bpAdvancedModifiers?: Array<{ key: string; label: string; kind: string; value: number; explanation: string }>;
+  bpAdvancedRisks?: Array<{ key: string; label: string; severity: string; explanation: string }>;
+  bpAdvancedStrengths?: string[];
+  bpAdvancedWeaknesses?: string[];
   bpRank: number;
 }
 
@@ -317,12 +325,47 @@ export default function Home() {
         isoCode: c.isoCode,
         name: c.name,
         nameRu: c.nameRu,
+        side: c.side,
+        coalition: c.coalition,
+        region: c.region,
+        areaKm2: c.areaKm2,
+        coastlineKm: c.coastlineKm,
+        gdpPppBn: c.gdpPppBn,
         militaryBudgetBn: c.militaryBudgetBn,
+        defensePctGdp: c.defensePctGdp,
+        populationM: c.populationM,
+        activePersonnel: c.activePersonnel,
+        reservePersonnel: c.reservePersonnel,
+        fitForServiceM: c.fitForServiceM ?? 0,
         totalTanks: c.totalTanks,
+        totalAfv: c.totalAfv,
+        totalArtillery: c.totalArtillery,
+        totalMlrs: c.totalMlrs ?? 0,
         totalAircraft: c.totalAircraft,
+        totalHelicopters: c.totalHelicopters,
         totalNavy: c.totalNavy,
+        submarines: c.submarines,
+        aircraftCarriers: c.aircraftCarriers ?? 0,
         nuclearWarheads: c.nuclearWarheads,
+        ports: c.ports,
+        airfields: c.airfields,
+        oilProductionKbd: c.oilProductionKbd,
+        merchantFleet: c.merchantFleet,
+        techLevel: c.techLevel,
+        moraleIndex: c.moraleIndex,
+        combatExperience: c.combatExperience,
+        c2Capability: c.c2Capability,
+        ewCapability: c.ewCapability,
         bpTotal: c.bpTotal,
+        bpWeapon: c.bpWeapon,
+        bpManpower: c.bpManpower,
+        bpLogistics: c.bpLogistics,
+        bpC2: c.bpC2,
+        bpEconomy: c.bpEconomy,
+        bpDoctrine: c.bpDoctrine,
+        bpReadiness: c.bpReadiness,
+        bpTerrain: c.bpTerrain,
+        bpAdvanced: c.bpAdvanced ?? c.bpTotal,
       })),
     [countries],
   );

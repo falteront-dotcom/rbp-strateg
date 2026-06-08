@@ -22,6 +22,14 @@ interface CountryData {
   side: string;
   bpTotal: number;
   bpRank: number;
+  bpAdvanced?: number;
+  bpAdvancedConfidence?: number;
+  bpAdvancedSummary?: string;
+  bpAdvancedDomains?: Array<{ key: string; name: string; score: number; weight: number; confidence: number }>;
+  bpAdvancedModifiers?: Array<{ key: string; label: string; kind: string; value: number; explanation: string }>;
+  bpAdvancedRisks?: Array<{ key: string; label: string; severity: string; explanation: string }>;
+  bpAdvancedStrengths?: string[];
+  bpAdvancedWeaknesses?: string[];
   weaponScore: number;
   manpowerScore: number;
   logisticsScore: number;
@@ -153,7 +161,11 @@ function getEconomySubFactors(c: CountryData): { label: string; value: number; f
 export function BPDetailTab({ country }: BPDetailTabProps) {
   const rawBp = country.bpTotal;
   const safeBp = typeof rawBp === "number" && isFinite(rawBp) ? rawBp : 0;
-  const tier = getTier(safeBp);
+  const advancedBp = typeof country.bpAdvanced === "number" && isFinite(country.bpAdvanced) ? country.bpAdvanced : safeBp;
+  const advancedDomains = Array.isArray(country.bpAdvancedDomains) ? country.bpAdvancedDomains : [];
+  const advancedModifiers = Array.isArray(country.bpAdvancedModifiers) ? country.bpAdvancedModifiers : [];
+  const advancedRisks = Array.isArray(country.bpAdvancedRisks) ? country.bpAdvancedRisks : [];
+  const tier = getTier(advancedBp);
   const tierInfo = TIER_MAP[tier];
 
   // Radar chart data
@@ -237,6 +249,84 @@ export function BPDetailTab({ country }: BPDetailTabProps) {
         {/* BP Score bar */}
         <div className="h-2 rounded-full overflow-hidden" style={{ background: scoreBarGradient(safeBp) }} />
       </motion.div>
+
+      {/* ─── Advanced BP Model ─────────────────────────────────────────────── */}
+      {advancedDomains.length > 0 && (
+        <motion.div
+          initial={{ opacity: 0, y: 10 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.1 }}
+          className="glass-panel rounded-lg p-4 space-y-3"
+        >
+          <div className="flex items-start justify-between gap-3">
+            <div>
+              <h3 className="text-xs font-bold text-tactical-primary tracking-widest uppercase">
+                ◈ Расширенная модель БП
+              </h3>
+              <p className="text-[10px] text-slate-500 mt-1 leading-relaxed">
+                10 доменов: суша, воздух, море, сдерживание, мобилизация, экономика, логистика, C4ISR, география и баланс.
+              </p>
+            </div>
+            <div className="text-right shrink-0">
+              <div className="text-2xl font-bold text-tactical-accent">{advancedBp.toFixed(1)}</div>
+              <div className="text-[9px] text-slate-500 uppercase">confidence {(country.bpAdvancedConfidence ?? 0).toFixed(0)}%</div>
+            </div>
+          </div>
+
+          {country.bpAdvancedSummary && (
+            <div className="rounded-md border border-white/5 bg-white/[0.03] p-3 text-[11px] text-slate-300 leading-relaxed">
+              {country.bpAdvancedSummary}
+            </div>
+          )}
+
+          <div className="grid grid-cols-2 gap-2">
+            {advancedDomains.slice(0, 10).map((domain) => (
+              <div key={domain.key} className="rounded-md bg-slate-950/60 border border-white/5 p-2">
+                <div className="flex items-center justify-between gap-2 mb-1">
+                  <span className="text-[10px] text-slate-300 truncate">{domain.name}</span>
+                  <span className="text-[10px] font-bold" style={{ color: scoreToColor(domain.score) }}>
+                    {domain.score.toFixed(1)}
+                  </span>
+                </div>
+                <div className="h-1 rounded-full bg-slate-800 overflow-hidden">
+                  <div className="h-full" style={{ width: `${Math.min(100, Math.max(0, domain.score))}%`, backgroundColor: scoreToColor(domain.score) }} />
+                </div>
+                <div className="mt-1 flex justify-between text-[8px] text-slate-600 uppercase">
+                  <span>вес {(domain.weight * 100).toFixed(0)}%</span>
+                  <span>conf {domain.confidence.toFixed(0)}%</span>
+                </div>
+              </div>
+            ))}
+          </div>
+
+          {(advancedModifiers.length > 0 || advancedRisks.length > 0) && (
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <div className="text-[9px] text-emerald-400 uppercase tracking-widest mb-1">Модификаторы</div>
+                <div className="space-y-1">
+                  {advancedModifiers.slice(0, 4).map((mod) => (
+                    <div key={mod.key} className="flex items-center justify-between gap-2 text-[10px] rounded bg-white/[0.03] px-2 py-1">
+                      <span className="text-slate-300 truncate" title={mod.explanation}>{mod.label}</span>
+                      <span className={mod.value >= 0 ? "text-emerald-300" : "text-red-300"}>{mod.value >= 0 ? "+" : ""}{mod.value.toFixed(1)}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+              <div>
+                <div className="text-[9px] text-amber-400 uppercase tracking-widest mb-1">Ограничители</div>
+                <div className="space-y-1">
+                  {advancedRisks.slice(0, 4).map((risk) => (
+                    <div key={risk.key} className="text-[10px] rounded bg-white/[0.03] px-2 py-1" title={risk.explanation}>
+                      <span className={risk.severity === "high" ? "text-red-300" : risk.severity === "medium" ? "text-amber-300" : "text-slate-400"}>●</span>
+                      <span className="ml-1 text-slate-300">{risk.label}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
+          )}
+        </motion.div>
+      )}
 
       {/* ─── 8 Component Cards Grid ────────────────────────────────────────── */}
       <div className="grid grid-cols-2 gap-2">

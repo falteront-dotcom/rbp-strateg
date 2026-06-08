@@ -26,6 +26,15 @@ import {
 } from "@/lib/geo/country-boundaries";
 import type { CountryCollection, CountryBPRecord } from "@/lib/geo/country-boundaries";
 import { getPosition } from "@/lib/geo/country-centroids";
+import {
+  createAllianceArcLayer,
+  createCountryOutlineLayer,
+  createMetricBubbleLayer,
+  createRiskHaloLayer,
+  createSelectedRingsLayer,
+  createTopCountryLabelsLayer,
+  getMapObjectTooltip,
+} from "@/lib/map/strategic-map-intelligence";
 
 // ─── OKLCH → sRGB conversion (shared with AnalyticsLayers) ─────────────
 
@@ -180,12 +189,47 @@ export interface CountryMapData {
   isoCode: string;
   name: string;
   nameRu: string;
+  side?: string;
+  coalition?: string | null;
+  region?: string;
+  areaKm2?: number;
+  coastlineKm?: number;
+  gdpPppBn?: number;
   militaryBudgetBn: number;
+  defensePctGdp?: number;
+  populationM?: number;
+  activePersonnel?: number;
+  reservePersonnel?: number;
+  fitForServiceM?: number;
   totalTanks: number;
+  totalAfv?: number;
+  totalArtillery?: number;
+  totalMlrs?: number;
   totalAircraft: number;
+  totalHelicopters?: number;
   totalNavy: number;
+  submarines?: number;
+  aircraftCarriers?: number;
   nuclearWarheads: number;
+  ports?: number;
+  airfields?: number;
+  oilProductionKbd?: number;
+  merchantFleet?: number;
+  techLevel?: number;
+  moraleIndex?: number;
+  combatExperience?: number;
+  c2Capability?: number;
+  ewCapability?: number;
   bpTotal: number;
+  bpWeapon?: number;
+  bpManpower?: number;
+  bpLogistics?: number;
+  bpC2?: number;
+  bpEconomy?: number;
+  bpDoctrine?: number;
+  bpReadiness?: number;
+  bpTerrain?: number;
+  bpAdvanced?: number;
 }
 
 /** Default initial view state: centered on Eastern Europe */
@@ -654,11 +698,14 @@ export function StrategicMap({
         minBP,
         maxBP,
       });
-      return [layer];
+      const selectedRings = createSelectedRingsLayer(countriesRaw, selectedISO);
+      return selectedRings ? [layer, selectedRings] : [layer];
     }
 
     // ─── Analytics Layers ──────────────────────────────────
     const layers: Layer[] = [];
+    const outlineLayer = createCountryOutlineLayer(geoJson, countriesRaw, selectedISO, handleCountryClick);
+    if (outlineLayer) layers.push(outlineLayer);
 
     switch (activeLayer) {
       case "budget": {
@@ -722,7 +769,52 @@ export function StrategicMap({
         );
         break;
       }
+      case "readiness": {
+        layers.push(createMetricBubbleLayer("analytics-readiness", countriesRaw, "readiness", "Боеготовность / темп", "green"));
+        break;
+      }
+      case "logistics": {
+        layers.push(createMetricBubbleLayer("analytics-logistics", countriesRaw, "logistics", "Логистический радиус", "blue"));
+        break;
+      }
+      case "economy": {
+        layers.push(createMetricBubbleLayer("analytics-economy", countriesRaw, "economy", "Военная экономика", "amber"));
+        break;
+      }
+      case "manpower": {
+        layers.push(createMetricBubbleLayer("analytics-manpower", countriesRaw, "manpower", "Мобилизационная глубина", "heat"));
+        break;
+      }
+      case "c2": {
+        layers.push(createMetricBubbleLayer("analytics-c2", countriesRaw, "c2", "C4ISR / РЭБ", "purple"));
+        break;
+      }
+      case "artillery": {
+        layers.push(createMetricBubbleLayer("analytics-artillery", countriesRaw, "artillery", "Артиллерийская масса", "amber"));
+        break;
+      }
+      case "projection": {
+        layers.push(createMetricBubbleLayer("analytics-projection", countriesRaw, "projection", "Проекция силы", "blue", { min: 28000, max: 310000 }));
+        break;
+      }
+      case "alliances": {
+        layers.push(createAllianceArcLayer(countriesRaw));
+        break;
+      }
+      case "density": {
+        layers.push(createMetricBubbleLayer("analytics-density", countriesRaw, "density", "Плотность БП / территория", "purple"));
+        break;
+      }
+      case "risk": {
+        layers.push(createRiskHaloLayer(countriesRaw));
+        layers.push(createMetricBubbleLayer("analytics-risk", countriesRaw, "risk", "Эскалационный риск", "heat", { min: 18000, max: 260000 }));
+        break;
+      }
     }
+
+    const selectedRings = createSelectedRingsLayer(countriesRaw, selectedISO);
+    if (selectedRings) layers.push(selectedRings);
+    if (countriesRaw.length > 0) layers.push(createTopCountryLabelsLayer(countriesRaw));
 
     return layers;
   }, [
@@ -739,6 +831,16 @@ export function StrategicMap({
     handleCountryClick,
     countriesRaw,
   ]);
+
+  const selectedCountryRaw = useMemo(
+    () => countriesRaw.find((country) => country.isoCode === selectedISO) ?? null,
+    [countriesRaw, selectedISO],
+  );
+
+  const renderDeckTooltip = useCallback((info: PickingInfo) => {
+    if (activeLayer === "bp") return null;
+    return getMapObjectTooltip(info.object);
+  }, [activeLayer]);
 
   // ─── Map control handlers ────────────────────────────────
   const handleZoomIn = useCallback(() => {
@@ -885,6 +987,7 @@ export function StrategicMap({
             getCursor={({ isHovering }: { isHovering: boolean }) =>
               isHovering ? "pointer" : "default"
             }
+            getTooltip={renderDeckTooltip}
           />
         </>
       ) : !tokenValid && pixelSize ? (
@@ -920,6 +1023,7 @@ export function StrategicMap({
             getCursor={({ isHovering }: { isHovering: boolean }) =>
               isHovering ? "pointer" : "default"
             }
+            getTooltip={renderDeckTooltip}
           />
         </>
       ) : (
@@ -945,6 +1049,36 @@ export function StrategicMap({
       {/* Legend — only in BP mode */}
       {activeLayer === "bp" && (
         <MapLegend minBP={minBP} maxBP={maxBP} visible={choroplethVisible} />
+      )}
+
+      {selectedCountryRaw && (
+        <div className="absolute left-4 bottom-4 z-20 w-72 rounded-md border border-tactical-primary/20 bg-slate-950/82 backdrop-blur-md p-3 font-mono shadow-[0_0_30px_rgba(34,211,238,0.10)] pointer-events-none">
+          <div className="flex items-center justify-between gap-3 mb-2">
+            <div className="text-[10px] tracking-[0.22em] uppercase text-tactical-primary/70">Selected AO</div>
+            <div className="text-[10px] text-slate-400">{selectedCountryRaw.isoCode}</div>
+          </div>
+          <div className="text-sm font-bold text-slate-100 truncate">{selectedCountryRaw.nameRu || selectedCountryRaw.name}</div>
+          <div className="mt-2 grid grid-cols-3 gap-2 text-[10px]">
+            <div className="rounded bg-white/[0.04] p-2">
+              <div className="text-slate-500 uppercase">BP</div>
+              <div className="text-tactical-primary font-bold">{((selectedCountryRaw.bpAdvanced ?? selectedCountryRaw.bpTotal) || 0).toFixed(1)}</div>
+            </div>
+            <div className="rounded bg-white/[0.04] p-2">
+              <div className="text-slate-500 uppercase">Бюджет</div>
+              <div className="text-emerald-300 font-bold">${(selectedCountryRaw.militaryBudgetBn || 0).toFixed(0)}B</div>
+            </div>
+            <div className="rounded bg-white/[0.04] p-2">
+              <div className="text-slate-500 uppercase">Сторона</div>
+              <div className="text-amber-300 font-bold truncate">{selectedCountryRaw.coalition || selectedCountryRaw.side || "—"}</div>
+            </div>
+          </div>
+          <div className="mt-2 grid grid-cols-4 gap-1 text-[9px] text-slate-400">
+            <span>✈ {selectedCountryRaw.totalAircraft ?? 0}</span>
+            <span>▣ {selectedCountryRaw.totalTanks ?? 0}</span>
+            <span>⚓ {selectedCountryRaw.totalNavy ?? 0}</span>
+            <span>☢ {selectedCountryRaw.nuclearWarheads ?? 0}</span>
+          </div>
+        </div>
       )}
 
       {/* Loading overlay */}

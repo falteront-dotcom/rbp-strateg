@@ -197,6 +197,7 @@ function ChartTooltip({ active, payload, label }: ChartTooltipProps) {
 
 /** SVG Gauge Arc — military budget per soldier vs global average */
 function EfficiencyGauge({ budget, personnel }: { budget: number; personnel: number }) {
+  const svgId = React.useId().replace(/:/g, '');
   const perSoldier = personnel > 0 ? (budget * 1e9) / personnel : 0;
   const ratio = perSoldier / GLOBAL_AVG_BUDGET_PER_SOLDIER;
   // Clamp 0–2 for display
@@ -230,9 +231,29 @@ function EfficiencyGauge({ budget, personnel }: { budget: number; personnel: num
 
   return (
     <div className="flex flex-col items-center gap-3">
-      <svg width={cx * 2} height={cy + 16} viewBox={`0 0 ${cx * 2} ${cy + 16}`}>
+      <svg width={cx * 2} height={cy + 16} viewBox={`0 0 ${cx * 2} ${cy + 16}`} aria-hidden="true">
+        <defs>
+          <linearGradient id={`${svgId}-efficiency`} x1="18" y1="28" x2="122" y2="100" gradientUnits="userSpaceOnUse">
+            <stop stopColor={gaugeColor} stopOpacity="0.35" />
+            <stop offset="0.55" stopColor={gaugeColor} stopOpacity="1" />
+            <stop offset="1" stopColor={gaugeColor} stopOpacity="0.65" />
+          </linearGradient>
+          <radialGradient id={`${svgId}-efficiency-core`} cx="0" cy="0" r="1" gradientUnits="userSpaceOnUse" gradientTransform={`translate(${cx} ${cy}) rotate(90) scale(64 36)`}>
+            <stop stopColor={gaugeColor} stopOpacity="0.2" />
+            <stop offset="1" stopColor={gaugeColor} stopOpacity="0" />
+          </radialGradient>
+          <filter id={`${svgId}-efficiency-glow`} x="-30%" y="-60%" width="160%" height="200%">
+            <feGaussianBlur stdDeviation="2.4" result="blur" />
+            <feMerge>
+              <feMergeNode in="blur" />
+              <feMergeNode in="SourceGraphic" />
+            </feMerge>
+          </filter>
+        </defs>
+        <ellipse cx={cx} cy={cy - 3} rx="64" ry="31" fill={`url(#${svgId}-efficiency-core)`} />
         {/* Background arc */}
-        <path d={arcPath(startAngle, endAngle)} fill="none" stroke="rgba(255,255,255,0.08)" strokeWidth={stroke} strokeLinecap="round" />
+        <path d={arcPath(startAngle, endAngle)} fill="none" stroke="rgba(255,255,255,0.08)" strokeWidth={stroke + 2} strokeLinecap="round" />
+        <path d={arcPath(startAngle, endAngle)} fill="none" stroke="rgba(148,163,184,0.18)" strokeWidth="1" strokeLinecap="round" strokeDasharray="3 6" />
         {/* Filled arc */}
         {pct > 0 && (
           <motion.path
@@ -241,17 +262,26 @@ function EfficiencyGauge({ budget, personnel }: { budget: number; personnel: num
             transition={{ duration: 1.2, ease: 'easeOut' }}
             d={arcPath(startAngle, fillAngle)}
             fill="none"
-            stroke={gaugeColor}
-            strokeWidth={stroke}
+            stroke={`url(#${svgId}-efficiency)`}
+            strokeWidth={stroke + 1}
             strokeLinecap="round"
-            style={{ filter: `drop-shadow(0 0 6px ${gaugeColor}60)` }}
+            filter={`url(#${svgId}-efficiency-glow)`}
           />
         )}
+        {[0, 0.25, 0.5, 0.75, 1].map((tick) => {
+          const angle = startAngle - tick * totalAngle;
+          const rad = (angle * Math.PI) / 180;
+          const x1 = cx + (radius - 4) * Math.cos(rad);
+          const y1 = cy - (radius - 4) * Math.sin(rad);
+          const x2 = cx + (radius + 5) * Math.cos(rad);
+          const y2 = cy - (radius + 5) * Math.sin(rad);
+          return <line key={tick} x1={x1} y1={y1} x2={x2} y2={y2} stroke="rgba(148,163,184,0.34)" strokeWidth="1" />;
+        })}
         {/* Center text */}
-        <text x={cx} y={cy - 8} textAnchor="middle" fill={gaugeColor} fontSize="18" fontWeight="900" fontFamily="monospace">
+        <text x={cx} y={cy - 8} textAnchor="middle" fill={gaugeColor} fontSize="18" fontWeight="900" fontFamily="monospace" style={{ filter: `drop-shadow(0 0 6px ${gaugeColor}80)` }}>
           ${perSoldier >= 1000 ? `${(perSoldier / 1000).toFixed(0)}K` : perSoldier.toFixed(0)}
         </text>
-        <text x={cx} y={cy + 10} textAnchor="middle" fill="#94a3b8" fontSize="8" fontFamily="monospace">
+        <text x={cx} y={cy + 10} textAnchor="middle" fill="#94a3b8" fontSize="8" fontFamily="monospace" letterSpacing="0.12em">
           на военнослужащего
         </text>
       </svg>

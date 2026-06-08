@@ -7,7 +7,7 @@ import {
     CloudIcon as WeatherCloud, Activity,
     Crosshair, Radio, Settings,
     Navigation, Trash2, AlertTriangle,
-    MoveUpRight, Swords, Radar, Target
+    MoveUpRight, Swords, Radar
 } from 'lucide-react';
 import { ARSENAL, MODIFIERS, UnitInfo, Country, IconType, Side } from '@/lib/unit-database';
 import { RBPEngine, ActiveUnit, FormationType } from '@/lib/rbp-engine';
@@ -15,83 +15,13 @@ import { cn } from '@/lib/utils';
 import { TRANSLATIONS } from '@/lib/i18n';
 import HolographicMap from './HolographicMap';
 import CustomUnitBuilder from './CustomUnitBuilder';
+import { MilitaryUnitIcon } from './icons/StrategicIcons';
 import ComparisonMatrix from './ComparisonMatrix';
 
-// Custom Tactical Icon Component
-// Custom Tactical Icon Component
-export const TacticalUnitIcon = ({ type, side, size = 32 }: { type: IconType, side: string, size?: number }) => {
-    const color = side === 'NATO' ? 'var(--color-tactical-nato)' : side === 'RUS' ? 'var(--color-tactical-rus)' : 'var(--color-tactical-china)';
-
-    switch (type) {
-        case 'Fighter':
-            return (
-                <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
-                    <path d="M12 2L4.5 20.29l.71.71L12 18l6.79 3 .71-.71z" />
-                    <path d="M12 18V9" opacity="0.3" />
-                </svg>
-            );
-        case 'Bomber':
-            return (
-                <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                    <path d="M12 2L3 20h18L12 2z" />
-                    <path d="M12 20v-4" opacity="0.5" />
-                    <path d="M7 16l10 0" opacity="0.5" />
-                </svg>
-            );
-        case 'AWACS':
-            return (
-                <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
-                    <circle cx="12" cy="12" r="10" strokeDasharray="2 2" />
-                    <path d="M12 2L4.5 20.29l.71.71L12 18l6.79 3 .71-.71z" transform="scale(0.6) translate(8, 8)" />
-                    <path d="M12 12L12 5" className="animate-spin-slow origin-center" />
-                </svg>
-            );
-        case 'UAV':
-            return (
-                <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="1.2" strokeLinecap="round" strokeLinejoin="round">
-                    <path d="M2 12h20" />
-                    <path d="M12 4v16" />
-                    <path d="M8 8l4 4-4 4" />
-                    <path d="M16 8l-4 4 4 4" />
-                </svg>
-            );
-        case 'SAM':
-            return (
-                <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
-                    <rect x="4" y="14" width="16" height="6" rx="1" />
-                    <path d="M8 14L8 6" />
-                    <path d="M16 14L16 6" />
-                    <path d="M8 6L12 2L16 6" />
-                </svg>
-            );
-        case 'MBT':
-            return (
-                <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
-                    <rect x="4" y="10" width="16" height="8" rx="2" />
-                    <path d="M8 10L9 6H15L16 10" />
-                    <path d="M12 2V10" strokeWidth="2" />
-                </svg>
-            );
-        case 'IFV':
-            return (
-                <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
-                    <rect x="4" y="12" width="16" height="6" rx="1" />
-                    <path d="M10 12L11 8H13L14 12" />
-                    <path d="M12 6V12" />
-                </svg>
-            );
-        case 'SPG':
-            return (
-                <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
-                    <rect x="4" y="12" width="16" height="6" rx="2" />
-                    <path d="M12 12l0-10" strokeWidth="2" strokeLinecap="square" />
-                    <path d="M10 12l4 0" />
-                </svg>
-            );
-        default:
-            return <Target size={size} color={color} />;
-    }
-};
+// Premium tactical unit icon wrapper used across the tactical HUD.
+export const TacticalUnitIcon = ({ type, side, size = 32 }: { type: IconType, side: string, size?: number }) => (
+    <MilitaryUnitIcon type={type} side={side} size={size} />
+);
 
 const UnitMarker = React.memo(({ u, removeUnit, isSelected, onSelect, onDoubleClick, registerNode }: { u: ActiveUnit, removeUnit: (id: string) => void, isSelected: boolean, onSelect: () => void, onDoubleClick?: () => void, registerNode: (id: string, node: HTMLDivElement | null) => void }) => {
     // Initial static values (will be immediately taken over by 60FPS DOM manipulation loop)

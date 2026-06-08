@@ -22,6 +22,7 @@ const StrategicMap = dynamic(
 import type { CountryBPData } from "@/components/map/ChoroplethLayer";
 import type { AnalyticsLayerKey, CountryMapData } from "@/components/map";
 import { LayerSelector } from "@/components/map/LayerSelector";
+import { StrategicTabIcon, type StrategicTabIconName } from "@/components/icons/StrategicIcons";
 import CountryCard from "@/components/CountryCard";
 import { CoalitionBuilder } from "@/components/CoalitionBuilder";
 import CountryComparison from "@/components/CountryComparison";
@@ -46,17 +47,17 @@ import {
 type AppMode = "strategic" | "tactical";
 type StrategicTab = "summary" | "bp" | "economics" | "military" | "coalition" | "comparison" | "analytics" | "whatif" | "doctrine" | "geography";
 
-const STRATEGIC_TABS: { key: StrategicTab; label: string; icon: string }[] = [
-  { key: "summary", label: "Сводка", icon: "◉" },
-  { key: "bp", label: "БП Модель", icon: "◈" },
-  { key: "economics", label: "Экономика", icon: "$" },
-  { key: "military", label: "Вооружение", icon: "⚔" },
-  { key: "coalition", label: "Коалиции", icon: "⊞" },
-  { key: "comparison", label: "Сравнение", icon: "⟺" },
-  { key: "analytics", label: "Аналитика", icon: "◈" },
-  { key: "whatif", label: "Что-Если", icon: "?" },
-  { key: "doctrine", label: "Доктрина", icon: "☆" },
-  { key: "geography", label: "География", icon: "◙" },
+const STRATEGIC_TABS: { key: StrategicTab; label: string; icon: StrategicTabIconName }[] = [
+  { key: "summary", label: "Сводка", icon: "summary" },
+  { key: "bp", label: "БП Модель", icon: "bp" },
+  { key: "economics", label: "Экономика", icon: "economics" },
+  { key: "military", label: "Вооружение", icon: "military" },
+  { key: "coalition", label: "Коалиции", icon: "coalition" },
+  { key: "comparison", label: "Сравнение", icon: "comparison" },
+  { key: "analytics", label: "Аналитика", icon: "analytics" },
+  { key: "whatif", label: "Что-Если", icon: "whatif" },
+  { key: "doctrine", label: "Доктрина", icon: "doctrine" },
+  { key: "geography", label: "География", icon: "geography" },
 ];
 
 function StrategicDetailPanel({
@@ -101,7 +102,10 @@ function StrategicDetailPanel({
                 : "border-transparent text-slate-500 hover:text-slate-300"
             }`}
           >
-            {tab.icon} {tab.label}
+            <span className="inline-flex items-center gap-1.5">
+              <StrategicTabIcon name={tab.icon} size={13} />
+              {tab.label}
+            </span>
           </button>
         ))}
       </div>

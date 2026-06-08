@@ -156,7 +156,7 @@ export function AnalyticsTab({ countries, selectedISO }: AnalyticsTabProps) {
         <h3 className="text-xs font-bold text-tactical-primary tracking-widest uppercase mb-3">
           ◈ Распределение БП
         </h3>
-        <ResponsiveContainer width="100%" height={160}>
+        <ResponsiveContainer width="100%" height={160} minWidth={0} minHeight={1}>
           <BarChart data={distribution}>
             <CartesianGrid strokeDasharray="3 3" stroke="#1e293b" />
             <XAxis dataKey="range" tick={{ fill: "#94a3b8", fontSize: 10 }} />
@@ -185,7 +185,7 @@ export function AnalyticsTab({ countries, selectedISO }: AnalyticsTabProps) {
           <h3 className="text-xs font-bold text-tactical-primary tracking-widest uppercase mb-3">
             ◈ Тренд: {selected.nameRu}
           </h3>
-          <ResponsiveContainer width="100%" height={180}>
+          <ResponsiveContainer width="100%" height={180} minWidth={0} minHeight={1}>
             <AreaChart data={trendData}>
               <CartesianGrid strokeDasharray="3 3" stroke="#1e293b" />
               <XAxis dataKey="year" tick={{ fill: "#94a3b8", fontSize: 10 }} />

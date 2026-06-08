@@ -297,7 +297,7 @@ export function BPDetailTab({ country }: BPDetailTabProps) {
         <h3 className="text-xs font-bold text-tactical-primary tracking-widest uppercase mb-3">
           ◈ Профиль БП
         </h3>
-        <ResponsiveContainer width="100%" height={260}>
+        <ResponsiveContainer width="100%" height={260} minWidth={0} minHeight={1}>
           <RadarChart data={radarData} cx="50%" cy="50%" outerRadius="75%">
             <PolarGrid stroke="#1e293b" />
             <PolarAngleAxis
@@ -347,7 +347,7 @@ export function BPDetailTab({ country }: BPDetailTabProps) {
           ◈ Распределение весов
         </h3>
         <div className="flex items-center gap-4">
-          <ResponsiveContainer width="50%" height={180}>
+          <ResponsiveContainer width="50%" height={180} minWidth={0} minHeight={1}>
             <PieChart>
               <Pie
                 data={weightData}

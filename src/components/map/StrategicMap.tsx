@@ -189,15 +189,21 @@ export interface CountryMapData {
 }
 
 /** Default initial view state: centered on Eastern Europe */
-const INITIAL_VIEW = {
+type ViewState = {
+  longitude: number;
+  latitude: number;
+  zoom: number;
+  pitch: number;
+  bearing: number;
+};
+
+const INITIAL_VIEW: ViewState = {
   longitude: 30,
   latitude: 50,
   zoom: 3,
   pitch: 45,
   bearing: 0,
-} as const;
-
-type ViewState = typeof INITIAL_VIEW;
+};
 
 // ─── Props ────────────────────────────────────────────────────────────
 
@@ -740,7 +746,9 @@ export function StrategicMap({
     if (map) {
       const currentZoom = map.getZoom();
       map.easeTo({ zoom: currentZoom + 1, duration: 300 });
+      return;
     }
+    setViewState((prev) => ({ ...prev, zoom: Math.min(12, prev.zoom + 1) }));
   }, []);
 
   const handleZoomOut = useCallback(() => {
@@ -748,7 +756,9 @@ export function StrategicMap({
     if (map) {
       const currentZoom = map.getZoom();
       map.easeTo({ zoom: Math.max(1, currentZoom - 1), duration: 300 });
+      return;
     }
+    setViewState((prev) => ({ ...prev, zoom: Math.max(1, prev.zoom - 1) }));
   }, []);
 
   const handleReset = useCallback(() => {
@@ -769,7 +779,9 @@ export function StrategicMap({
     const map = mapRef.current?.getMap();
     if (map) {
       map.easeTo({ bearing: 0, duration: 600 });
+      return;
     }
+    setViewState((prev) => ({ ...prev, bearing: 0 }));
   }, []);
 
   const handleStyleChange = useCallback((style: MapStyle) => {
@@ -807,10 +819,9 @@ export function StrategicMap({
 
   const styleUrl = MAP_STYLE_URLS[mapStyle];
 
-  // ─── Token check — render fallback if Mapbox token is missing/invalid ──
-  if (!tokenValid) {
-    return <MapTokenFallback className={className} />;
-  }
+  // Mapbox base layer requires a token, but the operational deck.gl layer
+  // below also works without it. In no-token mode we render a functional
+  // tactical map with country polygons instead of blocking the user.
 
   return (
     <div ref={containerRef} className={`relative w-full h-full overflow-hidden ${className ?? ""}`}>
@@ -876,8 +887,41 @@ export function StrategicMap({
             }
           />
         </>
-      ) : !tokenValid ? (
-        <MapTokenFallback className={className} />
+      ) : !tokenValid && pixelSize ? (
+        <>
+          <div
+            className="absolute inset-0 bg-slate-950"
+            style={{
+              backgroundImage:
+                "radial-gradient(circle at center, rgba(0,212,255,0.10) 0%, transparent 35%), linear-gradient(rgba(0,212,255,0.06) 1px, transparent 1px), linear-gradient(90deg, rgba(0,212,255,0.06) 1px, transparent 1px)",
+              backgroundSize: "100% 100%, 40px 40px, 40px 40px",
+            }}
+          />
+          <div className="absolute top-3 left-1/2 -translate-x-1/2 z-10 rounded-sm border border-amber-400/25 bg-slate-950/75 px-3 py-1 font-mono text-[9px] uppercase tracking-widest text-amber-300/80">
+            Mapbox token не задан — включена автономная карта
+          </div>
+          <DeckGL
+            viewState={viewState}
+            onViewStateChange={({ viewState: vs }) => {
+              const lng = (vs as Record<string, unknown>).longitude;
+              const lat = (vs as Record<string, unknown>).latitude;
+              const zm = (vs as Record<string, unknown>).zoom;
+              if (
+                typeof lng === 'number' && isFinite(lng) &&
+                typeof lat === 'number' && isFinite(lat) &&
+                typeof zm === 'number' && isFinite(zm)
+              ) {
+                setViewState(vs as ViewState);
+              }
+            }}
+            layers={deckLayers}
+            controller={true}
+            style={{ position: "absolute", width: `${pixelSize.w}px`, height: `${pixelSize.h}px`, top: "0", left: "0", zIndex: "1", pointerEvents: "auto" }}
+            getCursor={({ isHovering }: { isHovering: boolean }) =>
+              isHovering ? "pointer" : "default"
+            }
+          />
+        </>
       ) : (
         <div className="w-full h-full bg-tactical-bg flex items-center justify-center text-tactical-primary font-mono text-sm">
           Загрузка карты...

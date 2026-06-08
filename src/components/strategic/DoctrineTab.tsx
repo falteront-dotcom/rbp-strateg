@@ -698,7 +698,7 @@ export function DoctrineTab({ country }: DoctrineTabProps) {
         </div>
 
         <div className="h-28 w-full">
-          <ResponsiveContainer width="100%" height="100%">
+          <ResponsiveContainer width="100%" height="100%" minWidth={0} minHeight={1}>
             <BarChart data={breakdownData} layout="vertical" barCategoryGap={4}>
               <XAxis type="number" hide domain={[0, 40]} />
               <YAxis

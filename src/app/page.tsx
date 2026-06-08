@@ -213,6 +213,24 @@ const SIDE_COLORS: Record<string, string> = {
   NEUTRAL: "text-slate-400",
 };
 
+const ISO3_TO_ISO2: Record<string, string> = {
+  USA: "US", RUS: "RU", CHN: "CN", IND: "IN", GBR: "GB", FRA: "FR", JPN: "JP", KOR: "KR",
+  ITA: "IT", DEU: "DE", TUR: "TR", BRA: "BR", PAK: "PK", EGY: "EG", ISR: "IL", IDN: "ID",
+  AUS: "AU", CAN: "CA", UKR: "UA", SAU: "SA", IRN: "IR", PRK: "KP", POL: "PL", ESP: "ES",
+  NLD: "NL", THA: "TH", VNM: "VN", TWN: "TW", SGP: "SG", MYS: "MY", PHI: "PH", NZL: "NZ",
+  NOR: "NO", SWE: "SE", FIN: "FI", GRC: "GR", CHE: "CH", AUT: "AT", BEL: "BE", CZE: "CZ",
+  PRT: "PT", ROU: "RO", HUN: "HU", BGR: "BG", SRB: "RS", HRV: "HR", SVK: "SK", SVN: "SI",
+  LTU: "LT", LVA: "LV", EST: "EE", BLR: "BY", ARM: "AM", KAZ: "KZ", KGZ: "KG", TJK: "TJ",
+  ZAF: "ZA", ETH: "ET", ARE: "AE",
+};
+
+function isoToFlag(iso3: string): string {
+  const iso2 = ISO3_TO_ISO2[iso3.toUpperCase()];
+  if (!iso2) return "🏳️";
+  const base = 0x1f1e6;
+  return String.fromCodePoint(...iso2.split("").map((ch) => base + ch.charCodeAt(0) - 65));
+}
+
 const SIDE_DOT_COLORS: Record<string, string> = {
   NATO: "bg-tactical-nato",
   RUS: "bg-tactical-rus",
@@ -557,6 +575,11 @@ export default function Home() {
                           SIDE_DOT_COLORS[country.side] ?? SIDE_DOT_COLORS.NEUTRAL
                         }`}
                       />
+
+                      {/* Country flag */}
+                      <span className="text-base leading-none shrink-0" title={country.nameRu}>
+                        {isoToFlag(country.isoCode)}
+                      </span>
 
                       {/* Country name */}
                       <div className="flex-1 min-w-0">

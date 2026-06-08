@@ -378,7 +378,7 @@ export default function CountryComparison({
                         {/* Overlaid Radar Chart */}
                         <div className="w-full h-72 bg-slate-900/40 rounded-xl border border-tactical-accent/20 p-2 relative overflow-hidden">
                           <div className="absolute inset-0 bg-blue-500/5 blur-3xl rounded-full" />
-                          <ResponsiveContainer width="100%" height="100%">
+                          <ResponsiveContainer width="100%" height="100%" minWidth={0} minHeight={1}>
                             <RadarChart
                               cx="50%"
                               cy="50%"
@@ -436,7 +436,7 @@ export default function CountryComparison({
 
                         {/* BP Bar Chart */}
                         <div className="w-full h-56 bg-slate-900/40 rounded-xl border border-tactical-accent/20 p-2 relative overflow-hidden">
-                          <ResponsiveContainer width="100%" height="100%">
+                          <ResponsiveContainer width="100%" height="100%" minWidth={0} minHeight={1}>
                             <BarChart data={barData} barCategoryGap="20%">
                               <CartesianGrid
                                 strokeDasharray="3 3"

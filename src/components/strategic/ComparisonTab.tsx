@@ -223,7 +223,7 @@ export function ComparisonTab({ countries, onRemoveCountry, onAddCountry }: Comp
           <h3 className="text-xs font-bold text-tactical-primary tracking-widest uppercase mb-3">
             ◈ Радар сравнения
           </h3>
-          <ResponsiveContainer width="100%" height={260}>
+          <ResponsiveContainer width="100%" height={260} minWidth={0} minHeight={1}>
             <RadarChart data={radarData} cx="50%" cy="50%" outerRadius="70%">
               <PolarGrid stroke="#1e293b" />
               <PolarAngleAxis dataKey="component" tick={{ fill: "#94a3b8", fontSize: 9 }} />
@@ -259,7 +259,7 @@ export function ComparisonTab({ countries, onRemoveCountry, onAddCountry }: Comp
         <h3 className="text-xs font-bold text-tactical-primary tracking-widest uppercase mb-3">
           ◈ Сравнение вооружений
         </h3>
-        <ResponsiveContainer width="100%" height={200}>
+        <ResponsiveContainer width="100%" height={200} minWidth={0} minHeight={1}>
           <BarChart data={hardwareData}>
             <CartesianGrid strokeDasharray="3 3" stroke="#1e293b" />
             <XAxis dataKey="metric" tick={{ fill: "#94a3b8", fontSize: 10 }} />

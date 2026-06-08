@@ -6,6 +6,55 @@
 
 import { NextRequest, NextResponse } from "next/server";
 
+function rowToExportRow(row: Record<string, unknown>) {
+  return {
+    isoCode: row.iso_code,
+    name: row.name,
+    nameRu: row.name_ru,
+    side: row.side,
+    coalition: row.coalition,
+    areaKm2: row.area_km2,
+    coastlineKm: row.coastline_km,
+    climateZone: row.climate_zone,
+    gdpPppBn: row.gdp_ppp_bn,
+    militaryBudgetBn: row.military_budget_bn,
+    defensePctGdp: row.defense_pct_gdp,
+    populationM: row.population_m,
+    activePersonnel: row.active_personnel,
+    reservePersonnel: row.reserve_personnel,
+    fitForServiceM: row.fit_for_service_m,
+    totalTanks: row.total_tanks,
+    totalAfv: row.total_afv,
+    totalArtillery: row.total_artillery,
+    totalMlrs: row.total_mlrs,
+    totalAircraft: row.total_aircraft,
+    totalHelicopters: row.total_helicopters,
+    totalNavy: row.total_navy,
+    submarines: row.submarines,
+    aircraftCarriers: row.aircraft_carriers,
+    nuclearWarheads: row.nuclear_warheads ?? 0,
+    ports: row.ports,
+    airfields: row.airfields,
+    oilProductionKbd: row.oil_production_kbd,
+    merchantFleet: row.merchant_fleet,
+    techLevel: row.tech_level,
+    moraleIndex: row.morale_index,
+    combatExperience: row.combat_experience,
+    c2Capability: row.c2_capability,
+    ewCapability: row.ew_capability,
+    bpTotal: row.bp_total ?? 0,
+    bpWeapon: row.bp_weapon ?? 0,
+    bpManpower: row.bp_manpower ?? 0,
+    bpLogistics: row.bp_logistics ?? 0,
+    bpC2: row.bp_c2 ?? 0,
+    bpEconomy: row.bp_economy ?? 0,
+    bpDoctrine: row.bp_doctrine ?? 0,
+    bpReadiness: row.bp_readiness ?? 0,
+    bpTerrain: row.bp_terrain ?? 0,
+    updatedAt: row.updated_at,
+  };
+}
+
 export async function GET(request: NextRequest) {
   try {
     const { searchParams } = new URL(request.url);
@@ -18,9 +67,9 @@ export async function GET(request: NextRequest) {
 
     let rows: Record<string, unknown>[];
     if (iso) {
-      rows = db.prepare("SELECT * FROM countries WHERE isoCode = ?").all(iso) as Record<string, unknown>[];
+      rows = db.prepare("SELECT * FROM countries WHERE iso_code = ?").all(iso) as Record<string, unknown>[];
     } else {
-      rows = db.prepare("SELECT * FROM countries ORDER BY bpTotal DESC").all() as Record<string, unknown>[];
+      rows = db.prepare("SELECT * FROM countries ORDER BY bp_total DESC").all() as Record<string, unknown>[];
     }
     db.close();
 
@@ -28,14 +77,15 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: "No data found" }, { status: 404 });
     }
 
+    const mappedRows = rows.map(rowToExportRow);
+
     // Filter columns if not requesting full component details
-    const exportRows = components ? rows : rows.map((row) => ({
+    const exportRows = components ? mappedRows : mappedRows.map((row) => ({
       isoCode: row.isoCode,
       name: row.name,
       nameRu: row.nameRu,
       side: row.side,
       coalition: row.coalition,
-      region: row.region,
       bpTotal: row.bpTotal,
       bpWeapon: row.bpWeapon,
       bpManpower: row.bpManpower,

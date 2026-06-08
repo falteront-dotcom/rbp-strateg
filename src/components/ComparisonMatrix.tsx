@@ -289,7 +289,7 @@ export default function ComparisonMatrix({ isOpen, onClose }: ComparisonMatrixPr
                                 <div className="px-6 pb-2 shrink-0">
                                     <div className="w-full h-64 bg-slate-900/40 rounded-xl border border-tactical-accent/20 p-2 relative overflow-hidden">
                                         <div className="absolute inset-0 bg-blue-500/5 blur-3xl rounded-full" />
-                                        <ResponsiveContainer width="100%" height="100%">
+                                        <ResponsiveContainer width="100%" height="100%" minWidth={0} minHeight={1}>
                                             <RadarChart cx="50%" cy="50%" outerRadius="70%" data={radarData}>
                                                 <PolarGrid stroke="rgba(255,255,255,0.1)" />
                                                 <PolarAngleAxis dataKey="subject" tick={{ fill: 'rgba(255,255,255,0.6)', fontSize: 10, fontFamily: 'monospace', fontWeight: 'bold' }} />

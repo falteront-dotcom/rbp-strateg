@@ -194,7 +194,7 @@ export function CoalitionCard({ coalition, comparison, side }: CoalitionCardProp
           Профиль Компонентов
         </div>
         <div className="w-full h-52">
-          <ResponsiveContainer width="100%" height="100%">
+          <ResponsiveContainer width="100%" height="100%" minWidth={0} minHeight={1}>
             <RadarChart data={radarData} cx="50%" cy="50%" outerRadius="68%">
               <PolarGrid stroke="oklch(100% 0 0 / 8%)" strokeDasharray="2 4" />
               <PolarAngleAxis
@@ -273,7 +273,7 @@ export function CoalitionCard({ coalition, comparison, side }: CoalitionCardProp
             Сравнение Компонентов
           </div>
           <div className="w-full h-48">
-            <ResponsiveContainer width="100%" height="100%">
+            <ResponsiveContainer width="100%" height="100%" minWidth={0} minHeight={1}>
               <BarChart data={comparisonBarData} layout="vertical" margin={{ left: 4, right: 4, top: 0, bottom: 0 }}>
                 <XAxis type="number" domain={[0, 100]} tick={false} axisLine={false} />
                 <YAxis

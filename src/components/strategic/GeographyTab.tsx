@@ -252,7 +252,7 @@ export function GeographyTab({ country, allCountries = [] }: GeographyTabProps) 
           ◈ Состав местности
         </h3>
         <div className="flex items-center gap-4">
-          <ResponsiveContainer width="45%" height={160}>
+          <ResponsiveContainer width="45%" height={160} minWidth={0} minHeight={1}>
             <PieChart>
               <Pie data={terrain} cx="50%" cy="50%" innerRadius={35} outerRadius={60} paddingAngle={2} dataKey="value">
                 {terrain.map((entry, idx) => (

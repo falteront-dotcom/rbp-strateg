@@ -978,7 +978,7 @@ export default function WhatIfTab({
                           <div className="text-[9px] font-mono text-slate-500 uppercase tracking-widest text-center">
                             Базовый Профиль
                           </div>
-                          <ResponsiveContainer width="100%" height={220}>
+                          <ResponsiveContainer width="100%" height={220} minWidth={0} minHeight={1}>
                             <RadarChart
                               data={radarData}
                               cx="50%"
@@ -1019,7 +1019,7 @@ export default function WhatIfTab({
                           <div className="text-[9px] font-mono text-cyan-400/70 uppercase tracking-widest text-center">
                             Сценарный Профиль
                           </div>
-                          <ResponsiveContainer width="100%" height={220}>
+                          <ResponsiveContainer width="100%" height={220} minWidth={0} minHeight={1}>
                             <RadarChart
                               data={radarData}
                               cx="50%"
@@ -1061,7 +1061,7 @@ export default function WhatIfTab({
                         <div className="text-[9px] font-mono text-slate-500 uppercase tracking-widest text-center mb-2">
                           Наложение
                         </div>
-                        <ResponsiveContainer width="100%" height={220}>
+                        <ResponsiveContainer width="100%" height={220} minWidth={0} minHeight={1}>
                           <RadarChart
                             data={radarData}
                             cx="50%"

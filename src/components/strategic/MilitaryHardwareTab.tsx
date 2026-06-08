@@ -151,8 +151,12 @@ const NUCLEAR_SOURCE = {
 };
 
 /** Format number with thousands separator. */
-function fmt(n: number): string {
-  return n.toLocaleString("ru-RU");
+function fmt(n: number | null | undefined): string {
+  return Number.isFinite(n) ? Number(n).toLocaleString("ru-RU") : "0";
+}
+
+function safeNumber(n: number | null | undefined, fallback = 0): number {
+  return Number.isFinite(n) ? Number(n) : fallback;
 }
 
 /** Rank badge color. */
@@ -379,19 +383,19 @@ export function MilitaryHardwareTab({ country }: MilitaryHardwareTabProps) {
   // ---- Derived data ----
 
   const personnelData = useMemo(() => [
-    { name: "Активный", value: country.activePersonnel, color: CYAN },
-    { name: "Резерв", value: country.reservePersonnel, color: AMBER },
-    { name: "Парамил.", value: Math.round(country.fitForServiceM * 1000 * 0.03), color: GREEN },
+    { name: "Активный", value: safeNumber(country.activePersonnel), color: CYAN },
+    { name: "Резерв", value: safeNumber(country.reservePersonnel), color: AMBER },
+    { name: "Парамил.", value: Math.round(safeNumber(country.fitForServiceM) * 1000 * 0.03), color: GREEN },
   ], [country]);
 
   const totalPersonnel = useMemo(
-    () => personnelData.reduce((s, p) => s + p.value, 0),
+    () => personnelData.reduce((s, p) => s + safeNumber(p.value), 0),
     [personnelData]
   );
 
   const manpowerIndex = useMemo(() => {
     const max = 3_500_000;
-    return Math.min(10, Math.round((totalPersonnel / max) * 10));
+    return Math.min(10, Math.max(0, Math.round((safeNumber(totalPersonnel) / max) * 10)));
   }, [totalPersonnel]);
 
   const airBreakdown = useMemo(() => {
@@ -502,7 +506,7 @@ export function MilitaryHardwareTab({ country }: MilitaryHardwareTabProps) {
         <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
           {/* Donut chart */}
           <div className="flex flex-col items-center">
-            <ResponsiveContainer width="100%" height={200}>
+            <ResponsiveContainer width="100%" height={200} minWidth={0} minHeight={1}>
               <PieChart>
                 <Pie
                   data={personnelData}
@@ -662,7 +666,7 @@ export function MilitaryHardwareTab({ country }: MilitaryHardwareTabProps) {
             <div className="mb-2 text-center font-mono text-[10px] uppercase tracking-widest text-[#8eb8d4]">
               Топ-10 стран по танкам
             </div>
-            <ResponsiveContainer width="100%" height={220}>
+            <ResponsiveContainer width="100%" height={220} minWidth={0} minHeight={1}>
               <BarChart
                 data={tankChartData}
                 layout="vertical"
@@ -733,7 +737,7 @@ export function MilitaryHardwareTab({ country }: MilitaryHardwareTabProps) {
 
           {/* Aircraft type donut */}
           <div className="flex flex-col items-center">
-            <ResponsiveContainer width="100%" height={210}>
+            <ResponsiveContainer width="100%" height={210} minWidth={0} minHeight={1}>
               <PieChart>
                 <Pie
                   data={airBreakdown}
@@ -814,7 +818,7 @@ export function MilitaryHardwareTab({ country }: MilitaryHardwareTabProps) {
             <div className="mb-2 font-mono text-[10px] uppercase tracking-widest text-[#8eb8d4]">
               Подводный флот
             </div>
-            <ResponsiveContainer width="100%" height={170}>
+            <ResponsiveContainer width="100%" height={170} minWidth={0} minHeight={1}>
               <PieChart>
                 <Pie
                   data={subBreakdown}
@@ -874,7 +878,7 @@ export function MilitaryHardwareTab({ country }: MilitaryHardwareTabProps) {
             <div className="mb-2 text-center font-mono text-[10px] uppercase tracking-widest text-[#8eb8d4]">
               Тоннаж флота (тыс. т)
             </div>
-            <ResponsiveContainer width="100%" height={200}>
+            <ResponsiveContainer width="100%" height={200} minWidth={0} minHeight={1}>
               <BarChart
                 data={fleetTonnageHighlighted}
                 layout="vertical"
@@ -971,7 +975,7 @@ export function MilitaryHardwareTab({ country }: MilitaryHardwareTabProps) {
       {/* ================================================================ */}
       <GlassPanel title="Общая военная мощь" icon="📊">
         <div className="flex flex-col items-center">
-          <ResponsiveContainer width="100%" height={320}>
+          <ResponsiveContainer width="100%" height={320} minWidth={0} minHeight={1}>
             <RadarChart
               cx="50%"
               cy="50%"

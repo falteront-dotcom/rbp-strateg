@@ -186,7 +186,7 @@ export function calculateStrategicMetric(
   const projection = clamp(air * 0.26 + navy * 0.32 + logisticsBase * 0.24 + economyBase * 0.12 + c2Base * 0.06);
   const density = clamp((n(country.bpTotal) / Math.sqrt(Math.max(n(country.areaKm2), 1))) * 850);
   const nuclearRisk = n(country.nuclearWarheads) > 0 ? 16 : 0;
-  const risk = clamp(n(country.bpTotal) * 0.38 + nuclearRisk + n(country.combatExperience) * 3 + projection * 0.22 + n(country.defensePctGdp) * 2);
+  const risk = clamp(n(country.bpTotal) * 0.34 + land * 0.08 + nuclearRisk + n(country.combatExperience) * 3 + projection * 0.22 + n(country.defensePctGdp) * 2);
 
   switch (key) {
     case "readiness": return clamp(readinessBase);
@@ -461,6 +461,22 @@ export function getMapObjectTooltip(object: unknown): { html: string; style: Rec
     reachScore?: number;
     coalition?: string | null;
     explanation?: string;
+    radiusKm?: number;
+    saturationScore?: number;
+    integratedAirDefense?: number;
+    coastalDenial?: number;
+    longRangeStrike?: number;
+    region?: string;
+    risk?: number;
+    throughput?: string;
+    adjacentIso?: string[];
+    throughputScore?: number;
+    vulnerability?: number;
+    routeType?: string;
+    involvedIso?: string[];
+    category?: string;
+    computedRisk?: number;
+    escalationCeiling?: number;
   };
   const style = {
     backgroundColor: "rgba(2, 6, 23, 0.94)",
@@ -485,6 +501,30 @@ export function getMapObjectTooltip(object: unknown): { html: string; style: Rec
   if (maybe.objectKind === "airReach" && maybe.name) {
     return {
       html: `<div style="font-weight:700;color:#22d3ee;margin-bottom:4px">${maybe.name}</div><div>Боевой радиус авиации: <b>${formatNumber(Number(maybe.combatRadiusKm ?? 0))} км</b></div><div>Экспедиционный радиус: <b>${formatNumber(Number(maybe.expeditionaryRadiusKm ?? 0))} км</b></div><div>Reach-score: <b>${(maybe.reachScore ?? 0).toFixed(1)}</b> · ${maybe.side ?? ""}${maybe.coalition ? ` / ${maybe.coalition}` : ""}</div><div style="opacity:.72;margin-top:5px;max-width:320px">${maybe.explanation ?? "Оценка учитывает авиацию, аэродромы, C2/РЭБ, авианосцы и союзную сеть."}</div>`,
+      style,
+    };
+  }
+  if (maybe.objectKind === "a2adZone" && maybe.name) {
+    return {
+      html: `<div style="font-weight:700;color:#fbbf24;margin-bottom:4px">${maybe.name} · A2/AD</div><div>Радиус denial: <b>~${formatNumber(Number(maybe.radiusKm ?? 0))} км</b></div><div>Насыщенность: <b>${(maybe.saturationScore ?? 0).toFixed(1)}</b>/100 · ПВО/C2: <b>${(maybe.integratedAirDefense ?? 0).toFixed(1)}</b></div><div>Coastal denial: <b>${(maybe.coastalDenial ?? 0).toFixed(1)}</b> · Дальний удар: <b>${(maybe.longRangeStrike ?? 0).toFixed(1)}</b></div><div style="opacity:.72;margin-top:5px;max-width:340px">${maybe.explanation ?? "Оценка A2/AD по публичным агрегированным данным."}</div>`,
+      style,
+    };
+  }
+  if (maybe.objectKind === "maritimeChokepoint" && maybe.name) {
+    return {
+      html: `<div style="font-weight:700;color:#22d3ee;margin-bottom:4px">${maybe.nameRu ?? maybe.name}</div><div>${maybe.region ?? "Maritime chokepoint"} · риск <b>${(maybe.risk ?? 0).toFixed(0)}</b>/100 · важность <b>${(maybe.importance ?? 0).toFixed(0)}</b>/100</div><div style="opacity:.78;margin-top:3px">${maybe.throughput ?? "Глобальный морской поток"}</div><div style="opacity:.72;margin-top:5px;max-width:340px">${maybe.description ?? "Критический узкий проход морской логистики."}</div>`,
+      style,
+    };
+  }
+  if (maybe.objectKind === "supplyCorridor" && maybe.name) {
+    return {
+      html: `<div style="font-weight:700;color:#a78bfa;margin-bottom:4px">${maybe.name}</div><div>Тип: <b>${maybe.routeType ?? "mixed"}</b> · сторона: <b>${maybe.side ?? "—"}</b></div><div>Пропускная способность: <b>${(maybe.throughputScore ?? 0).toFixed(0)}</b>/100 · уязвимость: <b>${(maybe.vulnerability ?? 0).toFixed(0)}</b>/100</div><div style="opacity:.72;margin-top:5px;max-width:340px">${maybe.description ?? "Ориентировочный коридор снабжения и переброски."}</div>`,
+      style,
+    };
+  }
+  if (maybe.objectKind === "flashpoint" && maybe.name) {
+    return {
+      html: `<div style="font-weight:700;color:#fb7185;margin-bottom:4px">${maybe.nameRu ?? maybe.name}</div><div>Категория: <b>${maybe.category ?? "strategic"}</b> · риск: <b>${(maybe.computedRisk ?? 0).toFixed(0)}</b>/100</div><div>Потолок эскалации: <b>${(maybe.escalationCeiling ?? 0).toFixed(0)}</b>/100 · участники: ${(maybe.involvedIso ?? []).join(", ")}</div><div style="opacity:.72;margin-top:5px;max-width:340px">${maybe.description ?? "Публично известная кризисная зона."}</div>`,
       style,
     };
   }

@@ -1,4 +1,4 @@
-import { eq, sql, desc } from "drizzle-orm";
+import { eq, desc } from "drizzle-orm";
 import { db } from "./index";
 import { countries, type Country } from "./schema";
 

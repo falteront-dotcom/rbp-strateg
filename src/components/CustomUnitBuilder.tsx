@@ -5,7 +5,6 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { Plus, X, BrainCircuit, Shield, Zap, Radio, Target, Download, Upload } from 'lucide-react';
 import { ARSENAL, Category, Country, IconType, Side, calculateCustomPotential, ParametricStats, ModuleType, createCustomUnitId, registerCustomUnit } from '@/lib/unit-database';
 import { cn } from '@/lib/utils';
-import { TRANSLATIONS } from '@/lib/i18n';
 
 interface CustomUnitBuilderProps {
     isOpen: boolean;
@@ -14,7 +13,6 @@ interface CustomUnitBuilderProps {
 }
 
 export default function CustomUnitBuilder({ isOpen, onClose, onUnitAdded }: CustomUnitBuilderProps) {
-    const t = TRANSLATIONS;
     const fileInputRef = useRef<HTMLInputElement>(null);
 
     const [name, setName] = useState('');
@@ -95,7 +93,7 @@ export default function CustomUnitBuilder({ isOpen, onClose, onUnitAdded }: Cust
                 }
                 alert("Арсенал успешно обновлен из файла!");
                 if (fileInputRef.current) fileInputRef.current.value = '';
-            } catch (err) {
+            } catch {
                 alert("Ошибка чтения файла JSON.");
             }
         };
@@ -380,6 +378,7 @@ function ModuleCheckbox({ id, label, desc, active, onChange }: { id: string, lab
         )}>
             <div className="flex items-center gap-2">
                 <input
+                    id={id}
                     type="checkbox"
                     checked={active}
                     onChange={(e) => onChange(e.target.checked)}

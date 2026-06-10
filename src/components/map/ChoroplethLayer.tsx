@@ -1,8 +1,7 @@
 "use client";
 
 import { GeoJsonLayer } from "@deck.gl/layers";
-import type { PickingInfo } from "@deck.gl/core";
-import type { Feature, Geometry, Polygon, MultiPolygon } from "geojson";
+import type { PickingInfo } from "@deck.gl/core";import type { Feature, Geometry } from "geojson";
 import { scaleSequential } from "d3-scale";
 import type { CountryCollection, NaturalEarthProperties } from "@/lib/geo/country-boundaries";
 

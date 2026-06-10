@@ -1,6 +1,5 @@
 import { RBPEngine } from './src/lib/rbp-engine';
 import { ARSENAL } from './src/lib/unit-database';
-import { Terrain, VehicleState } from './src/lib/logistics';
 import assert from 'assert';
 
 async function runTests() {

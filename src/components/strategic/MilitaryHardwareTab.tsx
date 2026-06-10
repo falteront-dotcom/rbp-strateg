@@ -83,14 +83,11 @@ interface MilitaryHardwareTabProps {
 // ---------------------------------------------------------------------------
 
 const CYAN = "#00e5ff";
-const CYAN_DIM = "#00e5ff66";
 const RED = "#ff3d5a";
 const AMBER = "#ffab00";
 const GREEN = "#00e676";
 const BLUE_STEEL = "#4fc3f7";
 const PURPLE = "#b388ff";
-
-const CHART_COLORS = [CYAN, RED, AMBER, GREEN, BLUE_STEEL, PURPLE];
 
 /** Reference data for top-10 tank counts (2025 GFP). */
 const TOP10_TANKS: ReadonlyArray<{ name: string; value: number }> = [
@@ -519,7 +516,7 @@ export function MilitaryHardwareTab({ country }: MilitaryHardwareTabProps) {
                   animationBegin={0}
                   animationDuration={800}
                 >
-                  {personnelData.map((d, i) => (
+                  {personnelData.map((d) => (
                     <Cell key={d.name} fill={d.color} />
                   ))}
                 </Pie>

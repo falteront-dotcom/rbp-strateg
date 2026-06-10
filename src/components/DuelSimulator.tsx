@@ -3,8 +3,7 @@
 import React, { useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { X, Swords, Target, Eye, Clock, Zap, Shield, AlertTriangle, Info, Brain } from 'lucide-react';
-import { UnitInfo } from '@/lib/unit-database';
-import { simulateEngagementAtDistance, CombatCapabilities, EngagementResult } from '@/lib/combat-engine';
+import { UnitInfo } from '@/lib/unit-database';import { simulateEngagementAtDistance, CombatCapabilities } from '@/lib/combat-engine';
 import { cn } from '@/lib/utils';
 
 interface DuelSimulatorProps {
@@ -39,9 +38,6 @@ export default function DuelSimulator({ isOpen, onClose, unitA, unitB, combatA, 
         const events = [];
         
         // 1. Detection
-        const detA = result.detectionRangeA;
-        const detB = result.detectionRangeB;
-        
         events.push({
             time: 0,
             label: 'Начало сближения',

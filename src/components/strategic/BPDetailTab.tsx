@@ -496,7 +496,7 @@ export function BPDetailTab({ country }: BPDetailTabProps) {
               ▲ Сильные стороны
             </h4>
             <div className="space-y-1.5">
-              {analysis.strengths.map((comp, idx) => (
+              {analysis.strengths.map((comp) => (
                 <div key={comp.key} className="flex items-center justify-between">
                   <span className="text-[11px] text-slate-300">
                     {comp.letter} · {comp.name}
@@ -517,7 +517,7 @@ export function BPDetailTab({ country }: BPDetailTabProps) {
               ▼ Слабые стороны
             </h4>
             <div className="space-y-1.5">
-              {analysis.weaknesses.map((comp, idx) => (
+              {analysis.weaknesses.map((comp) => (
                 <div key={comp.key} className="flex items-center justify-between">
                   <span className="text-[11px] text-slate-300">
                     {comp.letter} · {comp.name}

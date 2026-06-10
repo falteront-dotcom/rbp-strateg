@@ -1,23 +1,8 @@
 "use client";
 
-import { useMemo, useState } from "react";
-import {
-  BarChart,
-  Bar,
-  XAxis,
-  YAxis,
-  CartesianGrid,
-  Tooltip,
-  ResponsiveContainer,
-  LineChart,
-  Line,
-  Area,
-  AreaChart,
-  Cell,
-} from "recharts";
+import { useMemo, useState } from "react";import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Line, Area, AreaChart, Cell } from "recharts";
 import { motion } from "framer-motion";
-import type { CountryCompareData } from "@/lib/comparison";
-import { isoToFlag, formatLargeNumber, getBPTierLabel, getBPTierColor } from "@/lib/comparison";
+import type { CountryCompareData } from "@/lib/comparison";import { isoToFlag, getBPTierColor } from "@/lib/comparison";
 
 // ─── Props ──────────────────────────────────────────────────────────────────
 interface AnalyticsTabProps {

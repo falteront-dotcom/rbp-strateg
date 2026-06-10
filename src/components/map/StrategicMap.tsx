@@ -6,7 +6,7 @@ import type { MapRef } from "react-map-gl/mapbox";
 import type mapboxgl from "mapbox-gl";
 import { DeckGL } from "@deck.gl/react";
 import type { Layer, PickingInfo } from "@deck.gl/core";
-import type { Feature, FeatureCollection, Polygon, MultiPolygon } from "geojson";
+import type { Feature, MultiPolygon, Polygon } from "geojson";
 import { scaleSequential } from "d3-scale";
 import { MapErrorBoundary } from './MapErrorBoundary';
 import { GeoJsonLayer, ScatterplotLayer } from "@deck.gl/layers";
@@ -19,7 +19,6 @@ import { MapControls, MAP_STYLE_URLS } from "./MapControls";
 import type { MapStyle } from "./MapControls";
 import { CountryPopup } from "./CountryPopup";
 import { MapLegend } from "./MapLegend";
-import { LayerSelector } from "./LayerSelector";
 import type { AnalyticsLayerKey } from "./LayerSelector";
 import {
   loadCountryBoundaries,
@@ -40,9 +39,30 @@ import {
   createAirReachLayers,
   createMilitaryBaseLayers,
 } from "@/lib/map/military-bases";
+import {
+  createA2ADLayers,
+  createFlashpointLayers,
+  createMaritimeChokepointLayers,
+  createSupplyCorridorLayers,
+} from "@/lib/map/operational-intelligence";
 
 type PatchedLngLatConstructor = typeof mapboxgl.LngLat & { _safePatched?: boolean };
 type MutableMapboxGl = typeof mapboxgl & { LngLat: PatchedLngLatConstructor };
+
+function createSafeLngLatConstructor(OrigLngLat: PatchedLngLatConstructor): PatchedLngLatConstructor {
+  class SafeLngLat extends OrigLngLat {
+    static _safePatched = true;
+    constructor(lng: number, lat: number) {
+      super(
+        typeof lng === "number" && isFinite(lng) ? lng : 0,
+        typeof lat === "number" && isFinite(lat) ? lat : 0,
+      );
+    }
+  }
+  Object.setPrototypeOf(SafeLngLat, OrigLngLat);
+  Object.assign(SafeLngLat, OrigLngLat);
+  return SafeLngLat as PatchedLngLatConstructor;
+}
 
 // ─── OKLCH → sRGB conversion (shared with AnalyticsLayers) ─────────────
 
@@ -402,133 +422,6 @@ function isTokenValid(token: string): boolean {
   return token.startsWith("pk.") && token.length > 20;
 }
 
-// ─── Fallback Component ────────────────────────────────────────────────
-
-function MapTokenFallback({ className }: { className?: string }) {
-  return (
-    <div
-      className={`relative w-full h-full overflow-hidden flex items-center justify-center ${className ?? ""}`}
-    >
-      {/* Tactical grid background */}
-      <div className="absolute inset-0 opacity-10" style={{
-        backgroundImage:
-          "linear-gradient(rgba(0,212,255,0.08) 1px, transparent 1px), linear-gradient(90deg, rgba(0,212,255,0.08) 1px, transparent 1px)",
-        backgroundSize: "40px 40px",
-      }} />
-
-      {/* Radial vignette */}
-      <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,transparent_30%,rgba(2,6,23,0.9)_100%)]" />
-
-      {/* Scan-line effect */}
-      <div className="absolute inset-0 opacity-[0.03] pointer-events-none" style={{
-        backgroundImage: "repeating-linear-gradient(0deg, transparent, transparent 2px, rgba(0,212,255,0.15) 2px, rgba(0,212,255,0.15) 4px)",
-        backgroundSize: "100% 4px",
-      }} />
-
-      {/* Main fallback panel */}
-      <div className="relative z-10 max-w-md w-full mx-4">
-        <div className="relative bg-slate-950/90 border border-tactical-primary/20 rounded-md overflow-hidden"
-          style={{
-            boxShadow: "0 0 40px rgba(0,212,255,0.08), inset 0 0 30px rgba(0,212,255,0.03)",
-          }}
-        >
-          {/* Tactical corners — top-left + top-right */}
-          <div className="absolute top-0 left-0 w-4 h-4 border-t-2 border-l-2 border-tactical-primary/60" />
-          <div className="absolute top-0 right-0 w-4 h-4 border-t-2 border-r-2 border-tactical-primary/60" />
-          {/* Tactical corners — bottom-left + bottom-right */}
-          <div className="absolute bottom-0 left-0 w-4 h-4 border-b-2 border-l-2 border-tactical-primary/60" />
-          <div className="absolute bottom-0 right-0 w-4 h-4 border-b-2 border-r-2 border-tactical-primary/60" />
-
-          {/* Header bar */}
-          <div className="px-4 py-2 border-b border-tactical-primary/15 flex items-center gap-2 bg-tactical-primary/[0.04]">
-            <div className="w-2 h-2 rounded-full bg-tactical-primary/60 animate-pulse" />
-            <span className="font-mono text-[9px] tracking-[0.2em] uppercase text-tactical-primary/50">
-              system.status
-            </span>
-            <span className="font-mono text-[9px] tracking-wider text-amber-500/70 ml-auto">
-              TOKEN_MISSING
-            </span>
-          </div>
-
-          {/* Body */}
-          <div className="px-5 py-5 space-y-4">
-            {/* Title */}
-            <div className="flex items-center gap-3">
-              <span className="text-2xl">🗺️</span>
-              <h2 className="font-mono text-sm font-bold tracking-wider text-tactical-primary">
-                Требуется токен Mapbox
-              </h2>
-            </div>
-
-            {/* Description */}
-            <p className="font-mono text-[11px] text-slate-400 leading-relaxed">
-              Для отображения стратегической карты необходим действующий токен Mapbox GL.
-              Бесплатный токен можно получить на сайте Mapbox.
-            </p>
-
-            {/* Instructions block */}
-            <div className="bg-slate-900/80 border border-white/5 rounded-sm p-3 space-y-2">
-              <div className="font-mono text-[9px] tracking-widest uppercase text-tactical-secondary/50 mb-1">
-                Инструкция
-              </div>
-              <ol className="font-mono text-[10px] text-slate-300 space-y-1.5 list-decimal list-inside">
-                <li>
-                  Перейдите на{" "}
-                  <a
-                    href="https://account.mapbox.com/auth/signup/"
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="text-tactical-primary hover:text-tactical-accent underline underline-offset-2 transition-colors"
-                  >
-                    account.mapbox.com
-                  </a>
-                </li>
-                <li>Зарегистрируйтесь (бесплатно)</li>
-                <li>Создайте токен в разделе Access Tokens</li>
-                <li>Добавьте токен в файл конфигурации</li>
-              </ol>
-            </div>
-
-            {/* Config file path */}
-            <div className="bg-slate-900/80 border border-white/5 rounded-sm p-3">
-              <div className="font-mono text-[9px] tracking-widest uppercase text-tactical-secondary/50 mb-1.5">
-                Файл конфигурации
-              </div>
-              <code className="font-mono text-[10px] text-amber-400/80 break-all">
-                .env.local
-              </code>
-              <div className="mt-2 bg-slate-950 border border-white/5 rounded-sm p-2">
-                <code className="font-mono text-[10px] text-tactical-primary/80">
-                  NEXT_PUBLIC_MAPBOX_TOKEN=pk.eyJ1Ijo...
-                </code>
-              </div>
-            </div>
-
-            {/* Footer note */}
-            <div className="flex items-start gap-2 pt-1">
-              <div className="w-1 h-1 rounded-full bg-amber-500/50 mt-1.5 shrink-0" />
-              <p className="font-mono text-[9px] text-slate-500 leading-relaxed">
-                Приложение работает без карты — список стран и аналитика доступны в боковой панели.
-                Перезапустите сервер после изменения .env.local.
-              </p>
-            </div>
-          </div>
-
-          {/* Bottom status bar */}
-          <div className="px-4 py-1.5 border-t border-tactical-primary/10 flex items-center justify-between bg-tactical-primary/[0.02]">
-            <span className="font-mono text-[8px] text-tactical-secondary/30 tracking-widest uppercase">
-              РБП Центр v2.0
-            </span>
-            <span className="font-mono text-[8px] text-tactical-secondary/30 tracking-wider">
-              map.disabled
-            </span>
-          </div>
-        </div>
-      </div>
-    </div>
-  );
-}
-
 // ─── Component ────────────────────────────────────────────────────────
 
 export function StrategicMap({
@@ -571,18 +464,7 @@ export function StrategicMap({
         const mgl = (mod.default ?? mod) as MutableMapboxGl;
         const OrigLngLat = mgl.LngLat;
         if (!OrigLngLat || OrigLngLat._safePatched) return;
-        class SafeLngLat extends OrigLngLat {
-          static _safePatched = true;
-          constructor(lng: number, lat: number) {
-            super(
-              typeof lng === 'number' && isFinite(lng) ? lng : 0,
-              typeof lat === 'number' && isFinite(lat) ? lat : 0
-            );
-          }
-        }
-        Object.setPrototypeOf(SafeLngLat, OrigLngLat);
-        Object.assign(SafeLngLat, OrigLngLat);
-        mgl.LngLat = SafeLngLat as PatchedLngLatConstructor;
+        mgl.LngLat = createSafeLngLatConstructor(OrigLngLat);
         if (!cancelled) setMapPatched(true);
       } catch (e) {
         console.warn('[StrategicMap] Failed to patch mapbox-gl:', e);
@@ -813,6 +695,22 @@ export function StrategicMap({
       }
       case "airRange": {
         layers.push(...createAirReachLayers(countriesRaw));
+        break;
+      }
+      case "a2ad": {
+        layers.push(...createA2ADLayers(countriesRaw));
+        break;
+      }
+      case "chokepoints": {
+        layers.push(...createMaritimeChokepointLayers());
+        break;
+      }
+      case "corridors": {
+        layers.push(...createSupplyCorridorLayers());
+        break;
+      }
+      case "flashpoints": {
+        layers.push(...createFlashpointLayers(countriesRaw));
         break;
       }
       case "density": {

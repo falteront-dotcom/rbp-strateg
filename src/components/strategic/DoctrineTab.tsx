@@ -11,22 +11,7 @@ import {
   Tooltip,
   ResponsiveContainer,
   Cell,
-} from "recharts";
-import {
-  Shield,
-  Swords,
-  Users,
-  Clock,
-  Zap,
-  BookOpen,
-  Radio,
-  Globe,
-  Target,
-  Landmark,
-  Radiation,
-  ChevronRight,
-  Activity,
-} from "lucide-react";
+} from "recharts";import { Shield, Swords, Users, Clock, Zap, BookOpen, Radio, Globe, Target, Radiation, ChevronRight, Activity } from "lucide-react";
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Types — mirrors CountryData from CountryCard.tsx + API

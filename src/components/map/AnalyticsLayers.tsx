@@ -1,7 +1,7 @@
 "use client";
 
 import { GeoJsonLayer, ScatterplotLayer } from "@deck.gl/layers";
-import type { Layer, PickingInfo } from "@deck.gl/core";
+import type { Layer } from "@deck.gl/core";
 import type { Feature, FeatureCollection, Geometry, Polygon, MultiPolygon } from "geojson";
 import { scaleSequential } from "d3-scale";
 import { getPosition } from "@/lib/geo/country-centroids";
@@ -217,9 +217,6 @@ export function createMilitaryBudgetLayer(
     }),
     getLineColor: [0, 150, 180, 50],
     getLineWidth: 1,
-    onHover: (info: PickingInfo) => {
-      // Hover handled by parent StrategicMap
-    },
     updateTriggers: {
       getFillColor: [bounds.min, bounds.max, data],
     },

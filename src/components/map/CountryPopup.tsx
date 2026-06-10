@@ -1,6 +1,4 @@
-"use client";
-
-import { useCallback, useState } from "react";
+"use client";import { useCallback } from "react";
 import { Popup } from "react-map-gl/mapbox";
 import type { LngLatLike } from "mapbox-gl";
 import { motion, AnimatePresence } from "framer-motion";

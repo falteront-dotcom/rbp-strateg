@@ -158,9 +158,10 @@ export function generateSIDC(
   const sideCode = side === "blue" ? "F" : side === "red" ? "H" : side === "neutral" ? "N" : "U";
   const domainCode = domain === "air" ? "A" : domain === "sea" ? "S" : domain === "subsurface" ? "U" : "G";
   const catCode = category === "unit" ? "U" : category === "equipment" ? "E" : "I";
+  const branchCode = branch.trim().slice(0, 2).toUpperCase().padEnd(2, "-");
   const battleDim = domain === "ground" ? "P" : domain === "air" ? "A" : domain === "sea" ? "S" : "U";
 
-  return `S${sideCode}${domainCode}${battleDim}${catCode}------`;
+  return `S${sideCode}${domainCode}${battleDim}${catCode}${branchCode}----`;
 }
 
 // ─── Get branch icon from SIDC ────────────────────────────────────────────────

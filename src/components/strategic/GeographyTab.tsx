@@ -1,14 +1,9 @@
 "use client";
 
-import { useMemo } from "react";
-import {
-  PieChart, Pie, Cell, ResponsiveContainer, Tooltip,
-  BarChart, Bar, XAxis, YAxis, CartesianGrid,
-} from "recharts";
+import { useMemo } from "react";import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip } from "recharts";
 import { motion } from "framer-motion";
 import type { CountryCompareData } from "@/lib/comparison";
 import { calcTerrainRaw, normalizeTerrain } from "@/lib/bp/terrain-potential";
-import { logNormalize } from "@/lib/bp/normalize";
 
 type TerrainPotentialInput = Parameters<typeof calcTerrainRaw>[0];
 

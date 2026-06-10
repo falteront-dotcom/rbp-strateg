@@ -289,6 +289,40 @@ export function IntelLayerIcon({ name, size = 16, className, title }: BaseIconPr
           <path d="M12 4.2l1.7 5.1 4.5 1.5v1.2l-4 .6 1 3.4-.9.7-2.3-2-2.3 2-.9-.7 1-3.4-4-.6v-1.2l4.5-1.5z" strokeWidth="1.05" fill="currentColor" fillOpacity="0.08" />
         </IconShell>
       );
+    case "a2ad":
+      return (
+        <IconShell {...common}>
+          <circle cx="12" cy="12" r="8.6" strokeWidth="0.9" strokeDasharray="2 2" opacity="0.55" />
+          <circle cx="12" cy="12" r="5.4" strokeWidth="1.05" opacity="0.75" />
+          <path d="M12 6.2l3.7 2.1v4.1c0 2.2-1.4 4.1-3.7 5.4-2.3-1.3-3.7-3.2-3.7-5.4V8.3z" strokeWidth="1.1" fill="currentColor" fillOpacity="0.08" />
+          <path d="M8.2 12h7.6M12 8.2v7.6" strokeWidth="0.95" opacity="0.8" />
+        </IconShell>
+      );
+    case "chokepoints":
+      return (
+        <IconShell {...common}>
+          <path d="M4.6 6.2c2.6 2.2 4.4 4 4.4 5.8s-1.8 3.6-4.4 5.8M19.4 6.2C16.8 8.4 15 10.2 15 12s1.8 3.6 4.4 5.8" strokeWidth="1.25" />
+          <path d="M9.3 12h5.4M12 8.8v6.4" strokeWidth="1.1" opacity="0.85" />
+          <circle cx="12" cy="12" r="2.2" fill="currentColor" fillOpacity="0.12" strokeWidth="1" />
+        </IconShell>
+      );
+    case "corridors":
+      return (
+        <IconShell {...common}>
+          <path d="M4.5 16.5c4.8-7.2 10.2-7.2 15 0" strokeWidth="1.25" strokeDasharray="2 1.8" />
+          <path d="M5.4 16.3h3.5M15.1 16.3h3.5M10.6 11.3l1.4-3 1.4 3" strokeWidth="1.05" />
+          <circle cx="5" cy="17" r="1.5" fill="currentColor" fillOpacity="0.16" />
+          <circle cx="19" cy="17" r="1.5" fill="currentColor" fillOpacity="0.16" />
+        </IconShell>
+      );
+    case "flashpoints":
+      return (
+        <IconShell {...common}>
+          <path d="M12 3.7l2.1 5 5.4.5-4.1 3.6 1.2 5.3-4.6-2.8-4.6 2.8 1.2-5.3-4.1-3.6 5.4-.5z" strokeWidth="1.05" fill="currentColor" fillOpacity="0.08" />
+          <circle cx="12" cy="12" r="3.5" strokeWidth="1" strokeDasharray="1.5 1.7" opacity="0.75" />
+          <path d="M12 8.9v4.1M12 15.2h.01" strokeWidth="1.7" />
+        </IconShell>
+      );
     case "density":
       return (
         <IconShell {...common}>

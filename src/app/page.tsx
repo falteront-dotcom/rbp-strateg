@@ -142,8 +142,8 @@ function StrategicDetailPanel({
         {activeTab === "comparison" && (
           <ComparisonTab
             countries={[compareData]}
-            onRemoveCountry={(_iso: string) => {}}
-            onAddCountry={(_iso: string) => {}}
+            onRemoveCountry={() => undefined}
+            onAddCountry={() => undefined}
           />
         )}
         {activeTab === "analytics" && (
@@ -269,6 +269,31 @@ const SIDE_BAR_COLORS: Record<string, string> = {
   CHINA: "side-bar-china",
   UKR: "side-bar-ukr",
   NEUTRAL: "side-bar-neutral",
+};
+
+const LAYER_BRIEF: Record<AnalyticsLayerKey, { label: string; signal: string; accent: string }> = {
+  bp: { label: "GLOBAL BP", signal: "Интегральная боевая мощь", accent: "text-tactical-primary" },
+  budget: { label: "WAR ECONOMY", signal: "Оборонные бюджеты и финансовая масса", accent: "text-emerald-300" },
+  fleet: { label: "SEA CONTROL", signal: "Флот, подлодки и морское давление", accent: "text-cyan-300" },
+  aviation: { label: "AIR ORDER", signal: "Авиационный парк и темп вылетов", accent: "text-sky-300" },
+  tanks: { label: "LAND MASS", signal: "Броня и наземный удар", accent: "text-amber-300" },
+  nukes: { label: "DETERRENCE", signal: "Ядерный порог и стратегическое сдерживание", accent: "text-red-300" },
+  readiness: { label: "READINESS", signal: "Готовность, опыт, мораль", accent: "text-green-300" },
+  logistics: { label: "LOGISTICS", signal: "Порты, аэродромы, топливо, снабжение", accent: "text-blue-300" },
+  economy: { label: "INDUSTRY", signal: "ВПК, ВВП, оборонное усилие", accent: "text-yellow-300" },
+  manpower: { label: "MOB DEPTH", signal: "Активные силы, резерв и демография", accent: "text-orange-300" },
+  c2: { label: "C4ISR/EW", signal: "Управление, связь, РЭБ, сенсоры", accent: "text-violet-300" },
+  artillery: { label: "FIRE MASS", signal: "Артиллерия и РСЗО", accent: "text-amber-300" },
+  projection: { label: "POWER PROJECTION", signal: "Дальняя проекция и expeditionary reach", accent: "text-sky-300" },
+  alliances: { label: "ALLIANCE NET", signal: "Блоки, совместимость и сетевые эффекты", accent: "text-indigo-300" },
+  bases: { label: "BASE NETWORK", signal: "Публичные стратегические базы и узлы", accent: "text-cyan-300" },
+  airRange: { label: "AIR REACH", signal: "Боевые и экспедиционные радиусы авиации", accent: "text-sky-300" },
+  a2ad: { label: "A2/AD", signal: "Зоны запрета доступа: ПВО, РЭБ, C2, дальний удар", accent: "text-amber-300" },
+  chokepoints: { label: "CHOKEPOINTS", signal: "Проливы, каналы и sea lines of communication", accent: "text-cyan-300" },
+  corridors: { label: "SUPPLY LINES", signal: "Коридоры переброски, снабжения и уязвимости", accent: "text-purple-300" },
+  flashpoints: { label: "FLASHPOINTS", signal: "Кризисные зоны и потолок эскалации", accent: "text-rose-300" },
+  density: { label: "BP DENSITY", signal: "Концентрация силы на территорию", accent: "text-violet-300" },
+  risk: { label: "ESCALATION", signal: "Вероятность эскалации и системные риски", accent: "text-red-300" },
 };
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -454,6 +479,28 @@ export default function Home() {
         c.isoCode.toLowerCase().includes(q),
     );
   }, [countries, searchQuery]);
+
+  const commandCenterStats = useMemo(() => {
+    const ranked = [...countries].sort((a, b) => (b.bpAdvanced ?? b.bpTotal) - (a.bpAdvanced ?? a.bpTotal));
+    const top = ranked[0] ?? null;
+    const totalBudget = countries.reduce((sum, c) => sum + (c.militaryBudgetBn || 0), 0);
+    const nuclearStates = countries.filter((c) => (c.nuclearWarheads || 0) > 0).length;
+    const natoCount = countries.filter((c) => c.side === "NATO" || c.coalition === "NATO").length;
+    const averageAdvanced = countries.length > 0
+      ? countries.reduce((sum, c) => sum + (c.bpAdvanced ?? c.bpTotal ?? 0), 0) / countries.length
+      : 0;
+    return {
+      topIso: top?.isoCode ?? "—",
+      topFlag: top ? isoToFlag(top.isoCode) : "🏳️",
+      topScore: top ? (top.bpAdvanced ?? top.bpTotal ?? 0) : 0,
+      totalBudget,
+      nuclearStates,
+      natoCount,
+      averageAdvanced,
+    };
+  }, [countries]);
+
+  const activeLayerBrief = LAYER_BRIEF[activeLayer];
 
   // ─── Handlers ──────────────────────────────────────────────────────────
   const handleCountryClick = useCallback((iso: string) => {
@@ -751,6 +798,39 @@ export default function Home() {
             countriesRaw={countriesMapData}
             className="absolute inset-0"
           />
+
+          <div className="absolute top-4 left-4 z-20 w-[min(560px,calc(100%-2rem))] pointer-events-none">
+            <div className="rounded-lg border border-tactical-primary/20 bg-slate-950/78 backdrop-blur-md shadow-[0_0_38px_rgba(34,211,238,0.14)] overflow-hidden">
+              <div className="flex items-center justify-between gap-3 border-b border-white/10 px-3 py-2">
+                <div>
+                  <div className={`font-mono text-[10px] tracking-[0.24em] uppercase ${activeLayerBrief.accent}`}>{activeLayerBrief.label}</div>
+                  <div className="mt-0.5 text-[10px] text-slate-400 font-mono">{activeLayerBrief.signal}</div>
+                </div>
+                <div className="rounded border border-white/10 bg-white/[0.04] px-2 py-1 text-right font-mono">
+                  <div className="text-[8px] tracking-widest uppercase text-slate-500">TOP AO</div>
+                  <div className="text-xs text-slate-100">{commandCenterStats.topFlag} {commandCenterStats.topIso} <span className="text-tactical-primary">{commandCenterStats.topScore.toFixed(1)}</span></div>
+                </div>
+              </div>
+              <div className="grid grid-cols-4 divide-x divide-white/10 font-mono text-[10px]">
+                <div className="px-3 py-2">
+                  <div className="text-slate-500 uppercase tracking-wider">Avg BP</div>
+                  <div className="text-slate-100 font-bold">{commandCenterStats.averageAdvanced.toFixed(1)}</div>
+                </div>
+                <div className="px-3 py-2">
+                  <div className="text-slate-500 uppercase tracking-wider">Budget</div>
+                  <div className="text-emerald-300 font-bold">${commandCenterStats.totalBudget.toFixed(0)}B</div>
+                </div>
+                <div className="px-3 py-2">
+                  <div className="text-slate-500 uppercase tracking-wider">Nuclear</div>
+                  <div className="text-red-300 font-bold">{commandCenterStats.nuclearStates}</div>
+                </div>
+                <div className="px-3 py-2">
+                  <div className="text-slate-500 uppercase tracking-wider">NATO+</div>
+                  <div className="text-sky-300 font-bold">{commandCenterStats.natoCount}</div>
+                </div>
+              </div>
+            </div>
+          </div>
 
           {/* Loading overlay */}
           {isLoading && (

@@ -17,8 +17,7 @@ import {
   Legend,
 } from "recharts";
 import { motion } from "framer-motion";
-import type { CountryCompareData } from "@/lib/comparison";
-import { isoToFlag, formatLargeNumber, getBPTierLabel, getBPTierColor } from "@/lib/comparison";
+import type { CountryCompareData } from "@/lib/comparison";import { isoToFlag, formatLargeNumber } from "@/lib/comparison";
 
 // ─── Props ──────────────────────────────────────────────────────────────────
 interface ComparisonTabProps {
@@ -48,27 +47,13 @@ export function ComparisonTab({ countries, onRemoveCountry, onAddCountry }: Comp
   const radarData = useMemo(() => {
     return COMPONENTS.map((comp) => {
       const entry: Record<string, unknown> = { component: comp.label };
-      countries.forEach((c, idx) => {
+      countries.forEach((c) => {
         entry[c.nameRu] = c[comp.key] as number;
       });
       return entry;
     });
   }, [countries]);
 
-  // Comparison table data
-  const tableData = useMemo(() => {
-    const base = countries[0];
-    return COMPONENTS.map((comp) => {
-      const row: Record<string, unknown> = { component: comp.label };
-      countries.forEach((c, idx) => {
-        const val = c[comp.key] as number;
-        const delta = base ? val - (base[comp.key] as number) : 0;
-        row[`val_${idx}`] = val;
-        row[`delta_${idx}`] = delta;
-      });
-      return row;
-    });
-  }, [countries]);
 
   // Hardware comparison data
   const hardwareData = useMemo(() => {
@@ -80,7 +65,7 @@ export function ComparisonTab({ countries, onRemoveCountry, onAddCountry }: Comp
     ];
     return metrics.map((m) => {
       const entry: Record<string, unknown> = { metric: m.label };
-      countries.forEach((c, idx) => {
+      countries.forEach((c) => {
         entry[`${c.nameRu}`] = (c as unknown as Record<string, unknown>)[m.key] as number ?? 0;
       });
       return entry;

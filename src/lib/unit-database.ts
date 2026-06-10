@@ -81,7 +81,8 @@ export function calculateAirPotential(stats: AirStats, modules: ModuleType[] = [
     // Baseline upgraded from 150km to 200km range
     const firepower = Math.min(10, (stats.missileRangeKm / 200) * 7);
     const techFactor = Math.max(1, Math.min(10, stats.techLevel));
-    return Number(((firepower * 0.3 + mobility * 0.3 + rcsFactor * 0.2 + techFactor * 0.2) / 2.5).toFixed(2));
+    const moduleMultiplier = modules.includes('stealth') ? 1.08 : modules.includes('beast') ? 1.05 : 1;
+    return Number((((firepower * 0.3 + mobility * 0.3 + rcsFactor * 0.2 + techFactor * 0.2) / 2.5) * moduleMultiplier).toFixed(2));
 }
 
 export function calculateADPotential(stats: AirDefenseStats, modules: ModuleType[] = []): number {
@@ -92,7 +93,8 @@ export function calculateADPotential(stats: AirDefenseStats, modules: ModuleType
     // Baseline deployed time 15->10 mins
     const deployFactor = Math.max(1, Math.min(10, 10 / Math.max(0.1, stats.deployTimeMin) * 3));
     const techFactor = Math.max(1, Math.min(10, stats.techLevel));
-    return Number(((rangeFactor * 0.3 + killFactor * 0.4 + deployFactor * 0.1 + techFactor * 0.2) / 2).toFixed(2));
+    const networkMultiplier = modules.length > 0 ? 1.02 : 1;
+    return Number((((rangeFactor * 0.3 + killFactor * 0.4 + deployFactor * 0.1 + techFactor * 0.2) / 2) * networkMultiplier).toFixed(2));
 }
 
 export function applyModulesToUnit(unit: UnitInfo, modules: ModuleType[]): UnitInfo {

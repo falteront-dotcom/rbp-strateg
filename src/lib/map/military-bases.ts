@@ -216,7 +216,7 @@ export function createMilitaryBaseLayers(): Layer[] {
     data: labels,
     pickable: false,
     getPosition: (d) => d.position,
-    getText: (d) => d.nameRu,
+    getText: (d) => d.name,
     getSize: (d) => 9 + (d.importance - 80) / 5,
     getColor: [226, 232, 240, 225],
     getTextAnchor: "middle",

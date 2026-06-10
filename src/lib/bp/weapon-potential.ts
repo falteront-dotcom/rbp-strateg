@@ -10,8 +10,7 @@
 // ─────────────────────────────────────────────────────────────────────────────
 
 import type { CountryRawData, ComponentScore } from "@/lib/bp/types";
-import type { BPComponent } from "@/lib/bp/types";
-import { minMaxNormalize, logNormalize } from "@/lib/bp/normalize";
+import type { BPComponent } from "@/lib/bp/types";import { logNormalize } from "@/lib/bp/normalize";
 
 /** Constants for nuke scoring ceiling */
 const NUKE_PER_1000 = 30;

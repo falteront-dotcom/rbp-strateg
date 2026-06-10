@@ -67,11 +67,8 @@ const CATEGORY_LABELS: Record<UnitCategory, { label: string; icon: string }> = {
 
 // ─── Component ───────────────────────────────────────────────────────────────
 export function UnitDeployment({
-  onDeploy,
   deployedUnits,
-  side,
   budget,
-  onBudgetChange,
 }: UnitDeploymentProps) {
   const [selectedCategory, setSelectedCategory] = useState<UnitCategory | "all">("all");
   const [selectedUnitId, setSelectedUnitId] = useState<string | null>(null);
@@ -90,11 +87,6 @@ export function UnitDeployment({
         ? UNIT_SPECS
         : UNIT_SPECS.filter((u) => u.category === selectedCategory),
     [selectedCategory]
-  );
-
-  const selectedUnit = useMemo(
-    () => UNIT_SPECS.find((u) => u.id === selectedUnitId) ?? null,
-    [selectedUnitId]
   );
 
   const forceComposition = useMemo(() => {

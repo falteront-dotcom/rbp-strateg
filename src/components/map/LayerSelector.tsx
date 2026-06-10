@@ -21,6 +21,10 @@ export type AnalyticsLayerKey =
   | "alliances"
   | "bases"
   | "airRange"
+  | "a2ad"
+  | "chokepoints"
+  | "corridors"
+  | "flashpoints"
   | "density"
   | "risk";
 
@@ -48,6 +52,10 @@ const LAYER_OPTIONS: LayerOption[] = [
   { key: "alliances", label: "Alliance Network", shortLabel: "ALLY" },
   { key: "bases", label: "Military Bases", shortLabel: "BASE" },
   { key: "airRange", label: "Aviation Combat Radius", shortLabel: "RNG" },
+  { key: "a2ad", label: "A2/AD Denial Envelopes", shortLabel: "A2AD" },
+  { key: "chokepoints", label: "Maritime Choke Points", shortLabel: "CHOKE" },
+  { key: "corridors", label: "Supply Corridors", shortLabel: "SUP" },
+  { key: "flashpoints", label: "Crisis Flashpoints", shortLabel: "HOT" },
   { key: "density", label: "BP Density", shortLabel: "DENS" },
   { key: "risk", label: "Escalation Risk", shortLabel: "RISK" },
 ];

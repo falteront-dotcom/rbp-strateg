@@ -7,7 +7,6 @@ import { ARSENAL, UnitInfo, ParametricStats, applyModulesToUnit, ModuleType, sim
 import { getCombatCapabilities } from '@/lib/combat-engine';
 import { Radar, RadarChart, PolarGrid, PolarAngleAxis, PolarRadiusAxis, ResponsiveContainer } from 'recharts';
 import { cn } from '@/lib/utils';
-import { TRANSLATIONS } from '@/lib/i18n';
 import DuelSimulator from './DuelSimulator';
 
 interface ComparisonMatrixProps {
@@ -32,7 +31,6 @@ function getUnitStats(unit: UnitInfo): ParametricStats {
 }
 
 export default function ComparisonMatrix({ isOpen, onClose }: ComparisonMatrixProps) {
-    const t = TRANSLATIONS;
     const arsenalEntries = Object.entries(ARSENAL);
 
     const [unitAId, setUnitAId] = useState<string>(arsenalEntries[0]?.[0] || '');
@@ -436,6 +434,7 @@ function ModuleCheckbox({ id, label, desc, active, onChange }: { id: string, lab
         )}>
             <div className="flex items-center gap-1.5">
                 <input
+                    id={id}
                     type="checkbox"
                     checked={active}
                     onChange={(e) => onChange(e.target.checked)}

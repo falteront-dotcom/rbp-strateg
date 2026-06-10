@@ -1,8 +1,4 @@
-import { ARSENAL, MODIFIERS, Side, UnitInfo } from "./unit-database";
-import { LogisticsManager, LogisticsState, Terrain, VehicleState } from "./logistics";
-import { HeightMap, MobilityManager, VisibilityManager, VehicleSpecs, BoundingBox } from "./terrain";
-import { C2Manager, CommandNode } from "./c2";
-import { getCombatCapabilities, simulateEngagementAtDistance } from "./combat-engine";
+import { MODIFIERS, UnitInfo } from "./unit-database";import { LogisticsManager, Terrain, VehicleState } from "./logistics";
 
 export type UnitStateType = 'IDLE' | 'MOVING' | 'FORMATION' | 'ENGAGING';
 export type FormationType = 'LINE' | 'WEDGE' | 'COLUMN' | 'DIAMOND' | 'NONE';

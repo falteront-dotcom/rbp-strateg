@@ -155,9 +155,6 @@ function buildStats(allData: CountryRawData[]): NormStats {
   return { max, min, avg };
 }
 
-function linear(value: number, max: number): number {
-  return clamp((safeNumber(value) / Math.max(max, 1)) * 100);
-}
 
 function logScore(value: number, max: number): number {
   const v = Math.max(0, safeNumber(value));
@@ -277,6 +274,49 @@ function logisticsComposite(data: CountryRawData): number {
   ) * 10;
 }
 
+function a2adPotential(data: CountryRawData): number {
+  const airDefense = logScore(data.totalAircraft * 0.55 + data.totalHelicopters * 0.18 + data.airfields * 1.6, 4200) * 0.25;
+  const navalDenial = logScore(data.totalNavy + data.submarines * 4 + data.ports * 2.2 + data.coastlineKm * 0.012, 700) * 0.18;
+  const longStrike = clamp(data.techLevel * 5 + data.ewCapability * 3 + logScore(data.militaryBudgetBn, 900) * 0.22 + (data.nuclearWarheads > 0 ? 10 : 0));
+  const integratedC2 = capped(data.c2Capability, 10) * 0.20 + capped(data.ewCapability, 10) * 0.18 + capped(data.techLevel, 10) * 0.19;
+  return clamp(airDefense + navalDenial + longStrike * 0.20 + integratedC2);
+}
+
+function basingDepthScore(data: CountryRawData): number {
+  const nationalDepth = logScore(data.airfields, 800) * 0.26 + logScore(data.ports, 120) * 0.18 + logScore(data.areaKm2, 17_000_000) * 0.14;
+  const expeditionary = capped(data.aircraftCarriers, 12) * 0.14 + logScore(data.merchantFleet, 6000) * 0.10;
+  const allianceNetwork = sideInteroperability(data) * ((data.coalition || data.side === "NATO") ? 0.18 : 0.08);
+  return clamp(nationalDepth + expeditionary + allianceNetwork);
+}
+
+function supplyLineResilienceScore(data: CountryRawData): number {
+  const redundancy = logScore(data.ports + data.airfields * 0.8 + data.merchantFleet * 0.04, 900) * 0.28;
+  const fuel = logScore(data.oilProductionKbd, 12_000) * 0.18;
+  const command = capped(data.c2Capability, 10) * 0.18 + capped(data.techLevel, 10) * 0.12;
+  const budget = logScore(data.militaryBudgetBn, 900) * 0.14;
+  const overstretchPenalty = Math.max(0, logScore(data.areaKm2, 17_000_000) - logScore(data.airfields + data.ports * 3, 1000)) * 0.20;
+  return clamp(redundancy + fuel + command + budget - overstretchPenalty + 12);
+}
+
+function chokepointLeverageScore(data: CountryRawData): number {
+  const strategicIso: Record<string, number> = {
+    USA: 18, GBR: 13, ESP: 10, MAR: 7, TUR: 14, EGY: 15, IRN: 15, OMN: 8, ARE: 7, SAU: 8,
+    SGP: 16, MYS: 12, IDN: 12, CHN: 12, TWN: 15, JPN: 10, KOR: 9, PHL: 9, NOR: 8, DNK: 9, PAN: 14,
+  };
+  const geography = (strategicIso[data.isoCode] ?? 0) + logScore(data.coastlineKm, 60_000) * 0.10 + logScore(data.ports, 120) * 0.16;
+  const enforcement = logScore(data.totalNavy + data.submarines * 3 + data.totalAircraft * 0.18, 1500) * 0.24 + capped(data.c2Capability, 10) * 0.16 + capped(data.techLevel, 10) * 0.12;
+  return clamp(geography + enforcement);
+}
+
+function industrialResilienceScore(data: CountryRawData): number {
+  const scale = logScore(data.gdpPppBn, 35_000) * 0.24 + logScore(data.militaryBudgetBn, 900) * 0.19;
+  const energy = logScore(data.oilProductionKbd, 12_000) * 0.15;
+  const tech = capped(data.techLevel, 10) * 0.16;
+  const mobilization = logScore(data.populationM + data.fitForServiceM * 0.45, 1450) * 0.14;
+  const sealift = logScore(data.merchantFleet + data.ports * 10, 7000) * 0.12;
+  return clamp(scale + energy + tech + mobilization + sealift);
+}
+
 function balanceScore(values: number[]): number {
   const valid = values.map((v) => clamp(v));
   const avg = valid.reduce((a, b) => a + b, 0) / Math.max(valid.length, 1);
@@ -329,8 +369,9 @@ function buildAirDomain(data: CountryRawData, stats: NormStats): AdvancedDomainS
   const airReach = estimateAirOperationalReach(data);
   const drivers = [
     driver("airComposite", "Авиационный парк", airRaw, logScore(airRaw, maxRaw), 0.24, "Боевые самолёты, вертолёты и инфраструктура аэродромов."),
-    driver("combatRadius", "Боевой радиус авиации", airReach.combatRadiusKm, airReach.reachScore, 0.17, "Радиусы авиации, дозаправка, аэродромная сеть, авианосцы и союзные базы влияют на реальную дальность применения силы."),
-    driver("airfieldNetwork", "Сеть аэродромов", data.airfields, logScore(data.airfields, stats.max.airfields), 0.14, "Чем больше аэродромов, тем выше рассредоточение и темп вылетов."),
+    driver("combatRadius", "Боевой радиус авиации", airReach.combatRadiusKm, airReach.reachScore, 0.16, "Радиусы авиации, дозаправка, аэродромная сеть, авианосцы и союзные базы влияют на реальную дальность применения силы."),
+    driver("a2adIntegration", "Интегрированная зона A2/AD", a2adPotential(data), a2adPotential(data), 0.10, "Связывает авиацию, ПВО, РЭБ, C2, дальний удар и морское denial в единую зону запрета доступа."),
+    driver("airfieldNetwork", "Сеть аэродромов", data.airfields, logScore(data.airfields, stats.max.airfields), 0.13, "Чем больше аэродромов, тем выше рассредоточение и темп вылетов."),
     driver("techAir", "Технологичность авиации", data.techLevel, capped(data.techLevel, 10), 0.17, "Технологический уровень приближает оценку к качеству платформ, сенсоров и вооружений."),
     driver("c2Air", "Воздушное C2", data.c2Capability, capped(data.c2Capability, 10), 0.13, "Сетевое управление, AWACS/ISR и интеграция ПВО."),
     driver("ewAir", "РЭБ в воздушной среде", data.ewCapability, capped(data.ewCapability, 10), 0.08, "РЭБ повышает выживаемость и снижает эффективность противника."),
@@ -347,8 +388,9 @@ function buildMaritimeDomain(data: CountryRawData, stats: NormStats): AdvancedDo
     driver("maritimeComposite", "Суммарный морской потенциал", raw, logScore(raw, maxRaw), 0.28, "Корабли, подлодки, авианосцы, порты, торговый флот и длина береговой линии."),
     driver("blueWater", "Океанская проекция", blueWater, logScore(blueWater, stats.max.aircraftCarriers * 12 + stats.max.submarines * 3 + stats.max.merchantFleet * 0.03), 0.22, "Авианосцы, подлодки и торговый флот дают дальнюю проекцию силы."),
     driver("submarineForce", "Подводный флот", data.submarines, logScore(data.submarines, stats.max.submarines), 0.16, "Подлодки — ключевой инструмент сдерживания и морского denial."),
-    driver("portBase", "Портовая база", data.ports, logScore(data.ports, stats.max.ports), 0.14, "Порты поддерживают ремонт, снабжение и развёртывание флота."),
-    driver("coastalAccess", "Доступ к морю", data.coastlineKm, logScore(data.coastlineKm, stats.max.coastlineKm), 0.10, "Береговая линия расширяет возможности, но также добавляет уязвимые направления."),
+    driver("portBase", "Портовая база", data.ports, logScore(data.ports, stats.max.ports), 0.13, "Порты поддерживают ремонт, снабжение и развёртывание флота."),
+    driver("chokepointLeverage", "Контроль морских узких мест", chokepointLeverageScore(data), chokepointLeverageScore(data), 0.11, "География проливов/каналов плюс флот, авиация, C2 и портовая сеть дают рычаг над sea lines of communication."),
+    driver("coastalAccess", "Доступ к морю", data.coastlineKm, logScore(data.coastlineKm, stats.max.coastlineKm), 0.09, "Береговая линия расширяет возможности, но также добавляет уязвимые направления."),
     driver("navalTech", "Технологии ВМФ", data.techLevel, capped(data.techLevel, 10), 0.10, "Качество сенсоров, ПВО кораблей, ракет и связи."),
   ];
   const confidence = data.coastlineKm > 0 ? estimateConfidence(data) : 80;
@@ -389,8 +431,9 @@ function buildIndustrialDomain(data: CountryRawData, stats: NormStats): Advanced
     driver("defenseEffort", "Оборонное усилие", data.defensePctGdp, capped(data.defensePctGdp, 12), 0.11, "Доля ВВП показывает политическую готовность вкладываться в оборону."),
     driver("energyBase", "Энергетическая база", data.oilProductionKbd, logScore(data.oilProductionKbd, stats.max.oilProductionKbd), 0.11, "Нефть — прокси топливной автономности и экспортной выручки."),
     driver("techIndustry", "Технологический уровень ВПК", data.techLevel, capped(data.techLevel, 10), 0.14, "Чем выше techLevel, тем выше качество ВПК и способность к сложным системам."),
-    driver("budgetPerActive", "Бюджет на военнослужащего", budgetPerActive, logScore(budgetPerActive * 1_000_000, 0.45), 0.10, "Содержательная оценка качества оснащения, подготовки и техобслуживания."),
-    driver("industrialComposite", "Индустриальный композит", industrialComposite(data), industrialComposite(data) / 10, 0.08, "Сводный показатель экономики, бюджета, технологий и опыта."),
+    driver("budgetPerActive", "Бюджет на военнослужащего", budgetPerActive, logScore(budgetPerActive * 1_000_000, 0.45), 0.09, "Содержательная оценка качества оснащения, подготовки и техобслуживания."),
+    driver("industrialResilience", "Устойчивость ВПК и цепочек", industrialResilienceScore(data), industrialResilienceScore(data), 0.10, "ВВП, бюджет, энергия, технологии, мобилизационная база, порты и торговый флот показывают способность держать затяжной конфликт."),
+    driver("industrialComposite", "Индустриальный композит", industrialComposite(data), industrialComposite(data) / 10, 0.07, "Сводный показатель экономики, бюджета, технологий и опыта."),
   ];
   return domain("industrialEndurance", drivers, estimateConfidence(data));
 }
@@ -400,8 +443,10 @@ function buildLogisticsDomain(data: CountryRawData, stats: NormStats): AdvancedD
   const drivers = [
     driver("ports", "Морские порты", data.ports, logScore(data.ports, stats.max.ports), 0.13, "Порты обеспечивают импорт, экспедиционную логистику и ремонт."),
     driver("airfields", "Аэродромы", data.airfields, logScore(data.airfields, stats.max.airfields), 0.15, "Аэродромы обеспечивают переброску, рассредоточение и темп операций."),
-    driver("airExpeditionaryReach", "Воздушная дальность снабжения", airReach.expeditionaryRadiusKm, airReach.reachScore, 0.12, "Боевой/экспедиционный радиус авиации влияет на переброску, сопровождение и темп операций вне своей территории."),
-    driver("merchantFleet", "Торговый флот", data.merchantFleet, logScore(data.merchantFleet, stats.max.merchantFleet), 0.10, "Мобилизационный морской транспорт."),
+    driver("airExpeditionaryReach", "Воздушная дальность снабжения", airReach.expeditionaryRadiusKm, airReach.reachScore, 0.11, "Боевой/экспедиционный радиус авиации влияет на переброску, сопровождение и темп операций вне своей территории."),
+    driver("basingDepth", "Глубина сети базирования", basingDepthScore(data), basingDepthScore(data), 0.10, "Аэродромы, порты, стратегическая глубина, авианосцы и союзная сеть определяют устойчивость развертывания."),
+    driver("supplyLineResilience", "Устойчивость линий снабжения", supplyLineResilienceScore(data), supplyLineResilienceScore(data), 0.10, "Резервные порты/аэродромы, топливо, C2, бюджет и масштаб территории показывают, насколько сложно перерезать снабжение."),
+    driver("merchantFleet", "Торговый флот", data.merchantFleet, logScore(data.merchantFleet, stats.max.merchantFleet), 0.09, "Мобилизационный морской транспорт."),
     driver("oil", "Топливная автономность", data.oilProductionKbd, logScore(data.oilProductionKbd, stats.max.oilProductionKbd), 0.11, "Снижает уязвимость к внешним поставкам топлива."),
     driver("areaManageability", "Управляемость территории", data.areaKm2, clamp(100 - logScore(data.areaKm2, stats.max.areaKm2) * 0.35 + capped(data.airfields, 700) * 0.25), 0.09, "Большая территория полезна для глубины, но усложняет снабжение без инфраструктуры."),
     driver("coastlineReach", "Морской доступ", data.coastlineKm, logScore(data.coastlineKm, stats.max.coastlineKm), 0.07, "Береговая линия расширяет логистический радиус при наличии портов."),
@@ -415,8 +460,9 @@ function buildC4ReadinessDomain(data: CountryRawData): AdvancedDomainScore {
   const interoperability = sideInteroperability(data);
   const drivers = [
     driver("c2Capability", "C2", data.c2Capability, capped(data.c2Capability, 10), 0.20, "Командование, связь, разведка и штабная культура."),
-    driver("ewCapability", "РЭБ", data.ewCapability, capped(data.ewCapability, 10), 0.15, "Способность мешать противнику и защищать свои сети."),
-    driver("techLevel", "Технологический уровень", data.techLevel, capped(data.techLevel, 10), 0.17, "Прокси сенсоров, БПЛА, связи, ВТО и ИТ-инфраструктуры."),
+    driver("ewCapability", "РЭБ", data.ewCapability, capped(data.ewCapability, 10), 0.14, "Способность мешать противнику и защищать свои сети."),
+    driver("a2adCommandLoop", "Контур управления A2/AD", a2adPotential(data), a2adPotential(data), 0.10, "Интеграция ПВО/ПРО, РЭБ, дальнего удара и сенсоров требует зрелого командного контура."),
+    driver("techLevel", "Технологический уровень", data.techLevel, capped(data.techLevel, 10), 0.16, "Прокси сенсоров, БПЛА, связи, ВТО и ИТ-инфраструктуры."),
     driver("morale", "Мораль", data.moraleIndex, capped(data.moraleIndex, 10), 0.12, "Устойчивость частей под давлением."),
     driver("combatExperience", "Боевой опыт", data.combatExperience, capped(data.combatExperience, 10), 0.14, "Опыт резко снижает фрикцию на первых этапах конфликта."),
     driver("interoperability", "Интероперабельность", interoperability, interoperability, 0.12, "Союзная совместимость, стандарты, обмен разведданными и логистика."),
@@ -432,8 +478,9 @@ function buildGeoDomain(data: CountryRawData, stats: NormStats): AdvancedDomainS
   const drivers = [
     driver("strategicDepth", "Стратегическая глубина", data.areaKm2, depth, 0.24, "Большая территория увеличивает глубину обороны и рассредоточение."),
     driver("access", "Доступность театра", data.coastlineKm + data.ports + data.airfields, access, 0.23, "Морской и воздушный доступ для переброски и снабжения."),
-    driver("resourcePosition", "Ресурсная позиция", data.oilProductionKbd, logScore(data.oilProductionKbd, stats.max.oilProductionKbd), 0.13, "Энергетическая база снижает стратегическую зависимость."),
-    driver("climateComplexity", "Климатическая сложность", data.areaKm2, clamp(depth * 0.4 + (data.climateZone ? 35 : 20)), 0.10, "Разнообразные условия могут осложнять действия противника, но требуют адаптации."),
+    driver("resourcePosition", "Ресурсная позиция", data.oilProductionKbd, logScore(data.oilProductionKbd, stats.max.oilProductionKbd), 0.12, "Энергетическая база снижает стратегическую зависимость."),
+    driver("chokepointPosition", "Позиция относительно узких мест", chokepointLeverageScore(data), chokepointLeverageScore(data), 0.11, "Близость к проливам, каналам и морским коммуникациям повышает геостратегический рычаг."),
+    driver("climateComplexity", "Климатическая сложность", data.areaKm2, clamp(depth * 0.4 + (data.climateZone ? 35 : 20)), 0.09, "Разнообразные условия могут осложнять действия противника, но требуют адаптации."),
     driver("defensiveDepth", "Оборонная глубина", defensive, defensive, 0.14, "Сводная оценка глубины, доступа и инфраструктуры."),
     driver("regionalPosture", "Региональная позиция", sideInteroperability(data), sideInteroperability(data), 0.16, "Союзы и блоковая принадлежность меняют геостратегическое окружение."),
   ];
@@ -469,8 +516,18 @@ function computeModifiers(data: CountryRawData, domains: AdvancedDomainScore[]):
   const industry = byKey.get("industrialEndurance") ?? 0;
   const maritime = byKey.get("maritimePower") ?? 0;
   const deterrence = byKey.get("strategicDeterrence") ?? 0;
+  const a2ad = a2adPotential(data);
+  const basingDepth = basingDepthScore(data);
+  const chokepoint = chokepointLeverageScore(data);
+  const supplyResilience = supplyLineResilienceScore(data);
+  const industrialResilience = industrialResilienceScore(data);
   const airReach = estimateAirOperationalReach(data);
 
+  if (a2ad > 78 && (air > 62 || maritime > 55)) mods.push(makeModifier("integrated_a2ad_bastion", "Интегрированный A2/AD-бастион", "synergy", 1.7, "Сильная ПВО/РЭБ/C2 связка с авиацией или флотом создаёт denial-зону и повышает цену входа противника."));
+  if (basingDepth > 72 && logistics > 60) mods.push(makeModifier("deep_basing_network", "Глубокая сеть базирования", "bonus", 1.1, "Аэродромы, порты и союзные узлы дают устойчивый темп развёртывания и восстановление после ударов."));
+  if (chokepoint > 70 && maritime > 52) mods.push(makeModifier("sea_lane_leverage", "Рычаг над морскими коммуникациями", "bonus", 1.2, "География узких мест при достаточном флоте/авиации усиливает стратегическое давление на supply chains."));
+  if (supplyResilience < 38 && land + air > 115) mods.push(makeModifier("fragile_supply_lines", "Хрупкие линии снабжения", "constraint", -1.5, "Боевые домены сильнее, чем инфраструктура их устойчивого снабжения; возрастает риск оперативного проседания."));
+  if (industrialResilience > 76 && logistics > 55) mods.push(makeModifier("resilient_war_industry", "Устойчивая военная промышленность", "bonus", 1.0, "Экономика, энергия, технологии и транспортная сеть поддерживают длительную кампанию лучше среднего."));
   if (airReach.combatRadiusKm > 2300 && logistics > 62) mods.push(makeModifier("long_range_air_projection", "Дальняя авиационная проекция", "bonus", 1.4, "Большой боевой радиус авиации при сильной логистике расширяет оперативную глубину и давление на удалённые ТВД."));
   if (air > 62 && airReach.combatRadiusKm < 850) mods.push(makeModifier("short_air_radius_constraint", "Короткий авиационный радиус", "constraint", -1.1, "Крупный авиапарк с малым радиусом хуже влияет на стратегическую проекцию и дальнее прикрытие."));
   if (air > 72 && c4 > 70) mods.push(makeModifier("air_c4_synergy", "Синергия авиации и C4ISR", "synergy", 1.8, "Высокий air power при хорошем C4ISR повышает реальный темп высокоточных операций."));
@@ -495,8 +552,16 @@ function computeRiskFlags(data: CountryRawData, domains: AdvancedDomainScore[]):
   const industry = byKey.get("industrialEndurance") ?? 0;
   const c4 = byKey.get("c4isrReadiness") ?? 0;
   const maritime = byKey.get("maritimePower") ?? 0;
+  const a2ad = a2adPotential(data);
+  const basingDepth = basingDepthScore(data);
+  const supplyResilience = supplyLineResilienceScore(data);
+  const chokepoint = chokepointLeverageScore(data);
   const airReach = estimateAirOperationalReach(data);
 
+  if (a2ad < 42 && (air > 55 || maritime > 50)) flags.push({ key: "a2ad_integration_gap", label: "Слабая интеграция A2/AD", severity: "medium", explanation: "Платформы есть, но C2/РЭБ/ПВО/дальний удар не дают плотной denial-зоны." });
+  if (basingDepth < 38 && logistics > 50) flags.push({ key: "thin_basing_depth", label: "Тонкая сеть базирования", severity: "medium", explanation: "Логистика выглядит неплохо, но запас аэродромов/портов/союзных узлов ограничивает устойчивость развёртывания." });
+  if (supplyResilience < 35 && land + air > 110) flags.push({ key: "supply_line_fragility", label: "Уязвимые линии снабжения", severity: "high", explanation: "Боевой потенциал требует большего резервирования портов, аэродромов, топлива и C2 снабжения." });
+  if (chokepoint > 68 && maritime < 45) flags.push({ key: "chokepoint_underpowered", label: "Узкое место без достаточной силы", severity: "medium", explanation: "География даёт рычаг, но флот/авиация/управление не полностью поддерживают контроль морских коммуникаций." });
   if (air > 60 && airReach.combatRadiusKm < 900) flags.push({ key: "air_radius_gap", label: "Ограниченный радиус авиации", severity: "medium", explanation: "Авиационный парк есть, но боевой радиус/сеть баз ограничивают дальнее применение силы." });
   if (land > 70 && logistics < 45) flags.push({ key: "logistics_gap", label: "Логистический разрыв", severity: "high", explanation: "Сухопутная масса значительно опережает логистический радиус." });
   if (air > 65 && c4 < 45) flags.push({ key: "air_c2_gap", label: "Авиация без достаточного C2", severity: "medium", explanation: "Большой авиапарк хуже реализуется без C4ISR/РЭБ." });

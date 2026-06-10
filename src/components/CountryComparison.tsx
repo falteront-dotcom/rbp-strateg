@@ -35,24 +35,7 @@ import {
   TrendingUp,
   TrendingDown,
   Minus,
-} from "lucide-react";
-import {
-  COMPARISON_BP_COMPONENTS,
-  COMPARISON_BP_LABELS,
-  COMPARISON_BP_SHORT_LABELS,
-  SIDE_STROKE_COLORS,
-  SIDE_FILL_COLORS,
-  SIDE_TEXT_CLASSES,
-  SIDE_BG_CLASSES,
-  isoToFlag,
-  formatLargeNumber,
-  getBPTierColor,
-  getBPTierLabel,
-  type CountryCompareData,
-  type ComparisonResult,
-  type ComponentDelta,
-  type MetricDelta,
-} from "@/lib/comparison";
+} from "lucide-react";import { COMPARISON_BP_COMPONENTS, COMPARISON_BP_LABELS, COMPARISON_BP_SHORT_LABELS, SIDE_STROKE_COLORS, SIDE_FILL_COLORS, SIDE_TEXT_CLASSES, SIDE_BG_CLASSES, isoToFlag, formatLargeNumber, getBPTierColor, getBPTierLabel, type CountryCompareData, type ComparisonResult, type MetricDelta } from "@/lib/comparison";
 import { cn } from "@/lib/utils";
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -133,7 +116,7 @@ export default function CountryComparison({
     if (next) {
       setSelectedIsoCodes((prev) => [...prev, next.isoCode]);
     }
-  }, [selectedIsoCodes.length, allCountries]);
+  }, [selectedIsoCodes, allCountries]);
 
   const removeCountry = useCallback(
     (iso: string) => {
@@ -574,7 +557,7 @@ function OverallWinnerBanner({
 }: {
   result: ComparisonResult;
 }) {
-  const { overallLeader, totalBPValues, countries } = result;
+  const { overallLeader, countries } = result;
 
   if (overallLeader === -1) {
     return (
@@ -649,7 +632,7 @@ function ComparisonTable({
             <th className="text-left text-tactical-secondary/60 tracking-widest uppercase py-2 px-3 text-[9px]">
               Компонент
             </th>
-            {countries.map((c, idx) => {
+            {countries.map((c) => {
               const side = c.side ?? "NEUTRAL";
               const sideClass =
                 SIDE_TEXT_CLASSES[side] ?? SIDE_TEXT_CLASSES.NEUTRAL;
@@ -725,7 +708,7 @@ function ComparisonTable({
                     {COMPARISON_BP_LABELS[comp]}
                   </span>
                 </td>
-                {countries.map((c, idx) => {
+                {countries.map((c) => {
                   const val = c[comp] as number;
                   const isMax = val === maxVal && maxVal !== minVal;
                   const isMin = val === minVal && maxVal !== minVal;

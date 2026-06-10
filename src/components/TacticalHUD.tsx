@@ -1,15 +1,6 @@
 "use client"
 
-import React, { useState, useEffect, useRef, useMemo } from 'react';
-import { motion, AnimatePresence, useSpring } from 'framer-motion';
-import {
-    Plane, Shield, Zap,
-    CloudIcon as WeatherCloud, Activity,
-    Crosshair, Radio, Settings,
-    Navigation, Trash2, AlertTriangle,
-    MoveUpRight, Swords, Radar
-} from 'lucide-react';
-import { ARSENAL, MODIFIERS, UnitInfo, Country, IconType, Side } from '@/lib/unit-database';
+import React, { useState, useEffect, useRef, useMemo } from 'react';import { motion, AnimatePresence } from 'framer-motion';import { Activity, Crosshair, Radio, Settings, Trash2, AlertTriangle, MoveUpRight } from 'lucide-react';import { ARSENAL, MODIFIERS, IconType } from '@/lib/unit-database';
 import { RBPEngine, ActiveUnit, FormationType } from '@/lib/rbp-engine';
 import { cn } from '@/lib/utils';
 import { TRANSLATIONS } from '@/lib/i18n';
@@ -23,7 +14,7 @@ export const TacticalUnitIcon = ({ type, side, size = 32 }: { type: IconType, si
     <MilitaryUnitIcon type={type} side={side} size={size} />
 );
 
-const UnitMarker = React.memo(({ u, removeUnit, isSelected, onSelect, onDoubleClick, registerNode }: { u: ActiveUnit, removeUnit: (id: string) => void, isSelected: boolean, onSelect: (event: React.MouseEvent<HTMLDivElement>) => void, onDoubleClick?: () => void, registerNode: (id: string, node: HTMLDivElement | null) => void }) => {
+const UnitMarker = React.memo(({ u, isSelected, onSelect, onDoubleClick, registerNode }: { u: ActiveUnit, isSelected: boolean, onSelect: (event: React.MouseEvent<HTMLDivElement>) => void, onDoubleClick?: () => void, registerNode: (id: string, node: HTMLDivElement | null) => void }) => {
     // Initial static values (will be immediately taken over by 60FPS DOM manipulation loop)
     const initialRot = Math.atan2(u.vy, u.vx) * (180 / Math.PI) + 90;
 
@@ -123,14 +114,14 @@ export default function TacticalHUD() {
     const [time, setTime] = useState(new Date());
     const [logs, setLogs] = useState<{ id: string, text: string, type: 'info' | 'warn' | 'crit', time: string }[]>([]);
 
-    const addLog = (text: string, type: 'info' | 'warn' | 'crit' = 'info') => {
+    const addLog = React.useCallback((text: string, type: 'info' | 'warn' | 'crit' = 'info') => {
         setLogs(prev => [{
             id: Math.random().toString(36).substr(2, 9),
             text,
             type,
             time: new Date().toLocaleTimeString('ru-RU', { hour12: false })
         }, ...prev].slice(0, 50));
-    };
+    }, []);
 
     const requestRef = useRef<number>(null);
     const prevTargetsRef = useRef<Record<string, string | undefined>>({});
@@ -156,7 +147,7 @@ export default function TacticalHUD() {
             groups[country].push(u);
         });
         return groups;
-    }, [activeUnits, t.countries]);
+    }, [activeUnits, t]);
 
     useEffect(() => {
         const timer = setInterval(() => setTime(new Date()), 1000);
@@ -166,52 +157,59 @@ export default function TacticalHUD() {
     const lastTimeRef = useRef<number>(0);
     const lastRenderTickRef = useRef<number>(0);
 
-    const animate = (time: number) => {
-        if (lastTimeRef.current === 0) {
-            lastTimeRef.current = time;
-        }
-        const dt = time - lastTimeRef.current;
-        lastTimeRef.current = time;
-        engine.stepSimulation(dt);
-        const overview = engine.getOverview();
-
-        // 60 FPS Direct DOM Manipulation (Bypasses React)
-        overview.units.forEach(u => {
-            const node = markerRefs.current[u.id];
-            if (node) {
-                node.style.left = `${u.lon}%`;
-                node.style.top = `${u.lat}%`;
-
-                const rotNode = node.querySelector(`#unit-rot-${u.id}`) as HTMLDivElement;
-                if (rotNode) {
-                    const targetRot = Math.atan2(u.vy, u.vx) * (180 / Math.PI) + 90;
-                    rotNode.style.setProperty('--rot', `${targetRot}deg`);
-                }
+    useEffect(() => {
+        const tick = (time: number) => {
+            if (lastTimeRef.current === 0) {
+                lastTimeRef.current = time;
             }
-        });
+            const dt = time - lastTimeRef.current;
+            lastTimeRef.current = time;
+            engine.stepSimulation(dt);
+            const overview = engine.getOverview();
 
-        // Throttle React State Updates to ~10 FPS
-        if (time - lastRenderTickRef.current > 100) {
-            lastRenderTickRef.current = time;
-
-            // Detect new target locks for logging
+            // 60 FPS Direct DOM Manipulation (Bypasses React)
             overview.units.forEach(u => {
-                const prevTargetId = prevTargetsRef.current[u.id];
-                if (u.targetId && prevTargetId !== u.targetId) {
-                    const target = overview.units.find(t => t.id === u.targetId);
-                    if (target) {
-                        addLog(`ЗАХВАТ: ${u.unit.displayName} -> ${target.unit.displayName}`, 'warn');
+                const node = markerRefs.current[u.id];
+                if (node) {
+                    node.style.left = `${u.lon}%`;
+                    node.style.top = `${u.lat}%`;
+
+                    const rotNode = node.querySelector(`#unit-rot-${u.id}`) as HTMLDivElement;
+                    if (rotNode) {
+                        const targetRot = Math.atan2(u.vy, u.vx) * (180 / Math.PI) + 90;
+                        rotNode.style.setProperty('--rot', `${targetRot}deg`);
                     }
                 }
-                prevTargetsRef.current[u.id] = u.targetId;
             });
 
-            setActiveUnits([...overview.units]);
-            setSummary({ NATO: overview.NATO, RUS: overview.RUS, CHINA: overview.CHINA });
-        }
+            // Throttle React State Updates to ~10 FPS
+            if (time - lastRenderTickRef.current > 100) {
+                lastRenderTickRef.current = time;
 
-        requestRef.current = requestAnimationFrame(animate);
-    };
+                // Detect new target locks for logging
+                overview.units.forEach(u => {
+                    const prevTargetId = prevTargetsRef.current[u.id];
+                    if (u.targetId && prevTargetId !== u.targetId) {
+                        const target = overview.units.find(t => t.id === u.targetId);
+                        if (target) {
+                            addLog(`ЗАХВАТ: ${u.unit.displayName} -> ${target.unit.displayName}`, 'warn');
+                        }
+                    }
+                    prevTargetsRef.current[u.id] = u.targetId;
+                });
+
+                setActiveUnits([...overview.units]);
+                setSummary({ NATO: overview.NATO, RUS: overview.RUS, CHINA: overview.CHINA });
+            }
+
+            requestRef.current = requestAnimationFrame(tick);
+        };
+
+        requestRef.current = requestAnimationFrame(tick);
+        return () => {
+            if (requestRef.current) cancelAnimationFrame(requestRef.current);
+        };
+    }, [engine, addLog]);
 
     const updateSystem = React.useCallback((nextWeather: keyof typeof MODIFIERS.weather = weather, nextEw: keyof typeof MODIFIERS.ew = ew) => {
         engine.setWeather(nextWeather);
@@ -221,12 +219,6 @@ export default function TacticalHUD() {
         setActiveUnits([...overview.units]);
     }, [engine, weather, ew]);
 
-    useEffect(() => {
-        requestRef.current = requestAnimationFrame(animate);
-        return () => {
-            if (requestRef.current) cancelAnimationFrame(requestRef.current);
-        };
-    }, []);
 
     const handleDeploy = () => {
         const unit = ARSENAL[selectedUnit];
@@ -700,7 +692,6 @@ export default function TacticalHUD() {
                                 <UnitMarker
                                     key={u.id}
                                     u={u}
-                                    removeUnit={removeUnit}
                                     isSelected={selectedIds.includes(u.id)}
                                     registerNode={registerNode}
                                     onSelect={(event) => {

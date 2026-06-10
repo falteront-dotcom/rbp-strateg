@@ -34,24 +34,7 @@ import {
   Ship,
   Crosshair,
 } from "lucide-react";
-import type { Country } from "@/db/schema";
-import {
-  COALITION_REGISTRY,
-  COALITION_NAMES,
-  COALITION_LABELS_RU,
-  BP_LABELS_RU,
-  getCountryCoalition,
-  getCoalitionMembers,
-  getCoalitionAggregateBP,
-  getCoalitionComparison,
-  simulateCoalitionSwitch,
-  isoToFlag,
-  formatLargeNumber,
-  getBPTierLabel,
-  getRankBadge,
-  type AggregateBP,
-  type SwitchScenario,
-} from "@/lib/coalition-analysis";
+import type { Country } from "@/db/schema";import { COALITION_REGISTRY, COALITION_NAMES, COALITION_LABELS_RU, BP_LABELS_RU, getCountryCoalition, getCoalitionMembers, getCoalitionAggregateBP, getCoalitionComparison, simulateCoalitionSwitch, isoToFlag, formatLargeNumber, getRankBadge, type AggregateBP } from "@/lib/coalition-analysis";
 import {
   COALITION_BP_COMPONENTS,
   type CoalitionBPComponent,

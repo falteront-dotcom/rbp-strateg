@@ -1,21 +1,7 @@
 "use client";
 
 import { useMemo } from "react";
-import { motion } from "framer-motion";
-import {
-  Radar,
-  RadarChart,
-  PolarGrid,
-  PolarAngleAxis,
-  PolarRadiusAxis,
-  ResponsiveContainer,
-  BarChart,
-  Bar,
-  XAxis,
-  YAxis,
-  Cell,
-  Tooltip,
-} from "recharts";
+import { motion } from "framer-motion";import { Radar, RadarChart, PolarGrid, PolarAngleAxis, PolarRadiusAxis, ResponsiveContainer, BarChart, Bar, XAxis, YAxis, Tooltip } from "recharts";
 import { Shield, Users, Fuel, Radio, Landmark, BookOpen, AlertCircle, Mountain, Swords } from "lucide-react";
 import {
   COALITION_BP_COMPONENTS,

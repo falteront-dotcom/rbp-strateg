@@ -45,17 +45,7 @@ import {
   Atom,
   Ban,
   UsersRound,
-} from "lucide-react";
-import {
-  COMPARISON_BP_SHORT_LABELS,
-  COMPARISON_BP_COMPONENTS,
-  type ComparisonBPComponent,
-  type CountryCompareData,
-  isoToFlag,
-  formatLargeNumber,
-  getBPTierLabel,
-  getBPTierColor,
-} from "@/lib/comparison";
+} from "lucide-react";import { COMPARISON_BP_SHORT_LABELS, COMPARISON_BP_COMPONENTS, type ComparisonBPComponent, type CountryCompareData, isoToFlag, getBPTierLabel, getBPTierColor } from "@/lib/comparison";
 import {
   calculateWhatIf,
   DEFAULT_SCENARIO_PARAMS,
@@ -73,7 +63,6 @@ import {
   type ScenarioPreset,
 } from "@/lib/what-if-engine";
 import type { BPComponent, CountryRawData } from "@/lib/bp/types";
-import { BP_COMPONENTS } from "@/lib/bp/types";
 import { cn } from "@/lib/utils";
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -167,7 +156,9 @@ function SliderControl({
         : "bg-amber-400";
   const isNegative: boolean = value < 0;
   const displayValue: string =
-    value > 0 ? `+${Math.round(value * 100)}%` : `${Math.round(value * 100)}%`;
+    unit === "%"
+      ? (value > 0 ? `+${Math.round(value * 100)}%` : `${Math.round(value * 100)}%`)
+      : `${value.toFixed(step < 1 ? 2 : 0)}${unit}`;
 
   return (
     <div className="space-y-1.5">

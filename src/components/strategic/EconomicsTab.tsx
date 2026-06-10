@@ -13,20 +13,7 @@ import {
   AreaChart,
   Area,
   Cell,
-} from 'recharts';
-import {
-  DollarSign,
-  Users,
-  Droplets,
-  Shield,
-  TrendingUp,
-  AlertTriangle,
-  CheckCircle2,
-  Gauge,
-  ArrowUpRight,
-  ArrowDownRight,
-  Minus,
-} from 'lucide-react';
+} from 'recharts';import { DollarSign, Users, Droplets, Shield, TrendingUp, AlertTriangle, Gauge, ArrowUpRight, ArrowDownRight, Minus } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import type { Country } from '@/db/schema';
 
@@ -324,6 +311,8 @@ function FiscalIndicator({ pct }: { pct: number }) {
         </motion.span>
       </div>
 
+      <div className="mb-2 text-[9px] font-mono uppercase tracking-widest text-slate-500">Уровень риска {level}/4</div>
+
       {/* Bar */}
       <div className="relative h-3 bg-white/5 rounded-full overflow-hidden mb-3">
         <motion.div
@@ -505,10 +494,9 @@ export function EconomicsTab({ country, allCountries }: EconomicsTabProps) {
     const militaryShare = country.gdpPppBn > 0
       ? (country.militaryBudgetBn / country.gdpPppBn) * 100
       : 0;
-    const civilianShare = 100 - militaryShare;
     return [
       { name: 'ВВП', value: country.gdpPppBn, fill: 'rgba(34,211,238,0.15)' },
-      { name: 'Оборонный', value: country.militaryBudgetBn, fill: 'var(--color-tactical-primary)' },
+      { name: `Оборонный ${militaryShare.toFixed(1)}%`, value: country.militaryBudgetBn, fill: 'var(--color-tactical-primary)' },
       { name: 'Гражданский', value: country.gdpPppBn - country.militaryBudgetBn, fill: 'rgba(34,211,238,0.08)' },
     ];
   }, [country.gdpPppBn, country.militaryBudgetBn]);

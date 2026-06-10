@@ -35,8 +35,6 @@ export default function DuelSimulator({ isOpen, onClose, unitA, unitB, combatA, 
         );
     }, [unitA, unitB, engagementDistance, combatA, combatB]);
 
-    if (!result) return null;
-
     const timeline = useMemo(() => {
         const events = [];
         

@@ -445,7 +445,23 @@ export function createRiskHaloLayer(countries: ReadonlyArray<StrategicMapCountry
 
 export function getMapObjectTooltip(object: unknown): { html: string; style: Record<string, string> } | null {
   if (!object || typeof object !== "object") return null;
-  const maybe = object as Partial<StrategicMetricPoint & StrategicArcPoint> & { properties?: Record<string, unknown> };
+  const maybe = object as Partial<StrategicMetricPoint & StrategicArcPoint> & {
+    objectKind?: string;
+    properties?: Record<string, unknown>;
+    nameRu?: string;
+    operator?: string;
+    alliance?: string;
+    type?: string;
+    importance?: number;
+    airRadiusKm?: number;
+    navalReachKm?: number;
+    description?: string;
+    combatRadiusKm?: number;
+    expeditionaryRadiusKm?: number;
+    reachScore?: number;
+    coalition?: string | null;
+    explanation?: string;
+  };
   const style = {
     backgroundColor: "rgba(2, 6, 23, 0.94)",
     border: "1px solid rgba(34, 211, 238, 0.35)",
@@ -456,6 +472,22 @@ export function getMapObjectTooltip(object: unknown): { html: string; style: Rec
     borderRadius: "6px",
     boxShadow: "0 0 24px rgba(34, 211, 238, 0.14)",
   };
+  if (maybe.objectKind === "militaryBase" && maybe.name) {
+    const reachBits = [
+      typeof maybe.airRadiusKm === "number" ? `авиа-радиус ~${formatNumber(maybe.airRadiusKm)} км` : null,
+      typeof maybe.navalReachKm === "number" ? `морской радиус ~${formatNumber(maybe.navalReachKm)} км` : null,
+    ].filter(Boolean).join(" · ");
+    return {
+      html: `<div style="font-weight:700;color:#22d3ee;margin-bottom:4px">${maybe.nameRu ?? maybe.name}</div><div>${maybe.operator ?? ""} · <b>${maybe.alliance ?? ""}</b> · ${maybe.type ?? "base"}</div><div>Важность узла: <b>${(maybe.importance ?? 0).toFixed(0)}</b>/100</div>${reachBits ? `<div style="opacity:.75;margin-top:3px">${reachBits}</div>` : ""}<div style="opacity:.72;margin-top:5px;max-width:320px">${maybe.description ?? "Публичная ориентировочная точка стратегической инфраструктуры."}</div>`,
+      style,
+    };
+  }
+  if (maybe.objectKind === "airReach" && maybe.name) {
+    return {
+      html: `<div style="font-weight:700;color:#22d3ee;margin-bottom:4px">${maybe.name}</div><div>Боевой радиус авиации: <b>${formatNumber(Number(maybe.combatRadiusKm ?? 0))} км</b></div><div>Экспедиционный радиус: <b>${formatNumber(Number(maybe.expeditionaryRadiusKm ?? 0))} км</b></div><div>Reach-score: <b>${(maybe.reachScore ?? 0).toFixed(1)}</b> · ${maybe.side ?? ""}${maybe.coalition ? ` / ${maybe.coalition}` : ""}</div><div style="opacity:.72;margin-top:5px;max-width:320px">${maybe.explanation ?? "Оценка учитывает авиацию, аэродромы, C2/РЭБ, авианосцы и союзную сеть."}</div>`,
+      style,
+    };
+  }
   if (maybe.position && maybe.name && maybe.label) {
     const extra = maybe.extra ?? {};
     return {

@@ -5,7 +5,13 @@
 // ─────────────────────────────────────────────────────────────────────────────
 
 import { NextRequest, NextResponse } from "next/server";
-import { getDoctrineByType, getAllDoctrines, getDoctrinesByCountry, getCounterDoctrine } from "@/lib/tactical-doctrines";
+import { getDoctrineByType, getAllDoctrines, getDoctrinesByCountry, getCounterDoctrine, type DoctrineType } from "@/lib/tactical-doctrines";
+
+const DOCTRINE_TYPES = ["deep_operation", "airland_battle", "maneuver_warfare", "attrition_warfare", "hybrid_warfare", "area_denial", "insurgency", "maritime_power", "nuclear_deterrence", "network_centric"] as const;
+
+function isDoctrineType(value: string): value is DoctrineType {
+  return DOCTRINE_TYPES.includes(value as DoctrineType);
+}
 
 export async function GET(request: NextRequest) {
   try {
@@ -15,7 +21,10 @@ export async function GET(request: NextRequest) {
     const counter = searchParams.get("counter") ?? undefined;
 
     if (type && counter === "true") {
-      const counterDoctrines = getCounterDoctrine(type as any);
+      if (!isDoctrineType(type)) {
+        return NextResponse.json({ error: "Invalid doctrine type", validTypes: DOCTRINE_TYPES }, { status: 400 });
+      }
+      const counterDoctrines = getCounterDoctrine(type);
       return NextResponse.json({
         doctrine: type,
         counterDoctrines: counterDoctrines.map((d) => ({
@@ -27,7 +36,10 @@ export async function GET(request: NextRequest) {
     }
 
     if (type) {
-      const doctrine = getDoctrineByType(type as any);
+      if (!isDoctrineType(type)) {
+        return NextResponse.json({ error: "Invalid doctrine type", validTypes: DOCTRINE_TYPES }, { status: 400 });
+      }
+      const doctrine = getDoctrineByType(type);
       if (!doctrine) {
         return NextResponse.json({ error: "Doctrine not found" }, { status: 404 });
       }

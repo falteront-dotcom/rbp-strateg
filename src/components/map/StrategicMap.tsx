@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import MapGL from "react-map-gl/mapbox";
 import type { MapRef } from "react-map-gl/mapbox";
+import type mapboxgl from "mapbox-gl";
 import { DeckGL } from "@deck.gl/react";
 import type { Layer, PickingInfo } from "@deck.gl/core";
 import type { Feature, FeatureCollection, Polygon, MultiPolygon } from "geojson";
@@ -35,6 +36,13 @@ import {
   createTopCountryLabelsLayer,
   getMapObjectTooltip,
 } from "@/lib/map/strategic-map-intelligence";
+import {
+  createAirReachLayers,
+  createMilitaryBaseLayers,
+} from "@/lib/map/military-bases";
+
+type PatchedLngLatConstructor = typeof mapboxgl.LngLat & { _safePatched?: boolean };
+type MutableMapboxGl = typeof mapboxgl & { LngLat: PatchedLngLatConstructor };
 
 // ─── OKLCH → sRGB conversion (shared with AnalyticsLayers) ─────────────
 
@@ -560,9 +568,9 @@ export function StrategicMap({
     (async () => {
       try {
         const mod = await import('mapbox-gl');
-        const mgl = mod.default || mod;
+        const mgl = (mod.default ?? mod) as MutableMapboxGl;
         const OrigLngLat = mgl.LngLat;
-        if (!OrigLngLat || (OrigLngLat as any)._safePatched) return;
+        if (!OrigLngLat || OrigLngLat._safePatched) return;
         class SafeLngLat extends OrigLngLat {
           static _safePatched = true;
           constructor(lng: number, lat: number) {
@@ -573,10 +581,8 @@ export function StrategicMap({
           }
         }
         Object.setPrototypeOf(SafeLngLat, OrigLngLat);
-        Object.keys(OrigLngLat).forEach((key) => {
-          try { (SafeLngLat as any)[key] = (OrigLngLat as any)[key]; } catch (_) {}
-        });
-        mgl.LngLat = SafeLngLat as any;
+        Object.assign(SafeLngLat, OrigLngLat);
+        mgl.LngLat = SafeLngLat as PatchedLngLatConstructor;
         if (!cancelled) setMapPatched(true);
       } catch (e) {
         console.warn('[StrategicMap] Failed to patch mapbox-gl:', e);
@@ -799,6 +805,14 @@ export function StrategicMap({
       }
       case "alliances": {
         layers.push(createAllianceArcLayer(countriesRaw));
+        break;
+      }
+      case "bases": {
+        layers.push(...createMilitaryBaseLayers());
+        break;
+      }
+      case "airRange": {
+        layers.push(...createAirReachLayers(countriesRaw));
         break;
       }
       case "density": {

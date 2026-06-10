@@ -415,7 +415,7 @@ export function BPDetailTab({ country }: BPDetailTabProps) {
                 fontSize: 11,
                 fontFamily: "monospace",
               }}
-              formatter={((value: number) => [`${Number(value).toFixed(1)}`, "Оценка"]) as any}
+              formatter={(value: number | string | undefined) => [`${Number(value ?? 0).toFixed(1)}`, "Оценка"]}
               labelFormatter={(label: unknown) => {
                 const lbl = String(label);
                 const comp = COMPONENTS.find((c) => c.letter === lbl);
@@ -460,7 +460,7 @@ export function BPDetailTab({ country }: BPDetailTabProps) {
                   fontSize: 11,
                   fontFamily: "monospace",
                 }}
-                formatter={((value: number) => [`${Number(value).toFixed(0)}%`, "Вес"]) as any}
+                formatter={(value: number | string | undefined) => [`${Number(value ?? 0).toFixed(0)}%`, "Вес"]}
               />
             </PieChart>
           </ResponsiveContainer>

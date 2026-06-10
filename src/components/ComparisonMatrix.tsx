@@ -79,12 +79,9 @@ export default function ComparisonMatrix({ isOpen, onClose }: ComparisonMatrixPr
     const renderStats = (stats: ParametricStats | null, compareStats: ParametricStats | null, rightAlign: boolean = false) => {
         if (!stats) return null;
 
-        // Only calculate diff deltas if both units share the same stat category
-        const canCompare = compareStats && typeof compareStats === 'object' && compareStats.type === stats.type;
-        const cStats = canCompare ? compareStats as any : null;
-        const s = stats as any;
-
         if (stats.type === 'ground') {
+            const cStats = compareStats?.type === 'ground' ? compareStats : null;
+            const s = stats;
             return (
                 <div className="space-y-3">
                     <StatRow label="Двигатель" valA={s.powerHP} valB={cStats?.powerHP} unit="HP" icon={<Zap size={14} className="text-blue-500" />} rightAlign={rightAlign} />
@@ -98,6 +95,8 @@ export default function ComparisonMatrix({ isOpen, onClose }: ComparisonMatrixPr
         }
 
         if (stats.type === 'aircraft') {
+            const cStats = compareStats?.type === 'aircraft' ? compareStats : null;
+            const s = stats;
             return (
                 <div className="space-y-3">
                     <StatRow label="Тяга Двигателей" valA={s.thrustKgf} valB={cStats?.thrustKgf} unit="кгс" icon={<Zap size={14} className="text-blue-500" />} rightAlign={rightAlign} />
@@ -111,6 +110,8 @@ export default function ComparisonMatrix({ isOpen, onClose }: ComparisonMatrixPr
         }
 
         if (stats.type === 'air_defense') {
+            const cStats = compareStats?.type === 'air_defense' ? compareStats : null;
+            const s = stats;
             return (
                 <div className="space-y-3">
                     <StatRow label="Дальн. Радара" valA={s.radarRangeKm} valB={cStats?.radarRangeKm} unit="км" icon={<Radio size={14} className="text-blue-500" />} rightAlign={rightAlign} />

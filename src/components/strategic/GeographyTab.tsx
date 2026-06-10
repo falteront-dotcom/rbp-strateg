@@ -10,6 +10,12 @@ import type { CountryCompareData } from "@/lib/comparison";
 import { calcTerrainRaw, normalizeTerrain } from "@/lib/bp/terrain-potential";
 import { logNormalize } from "@/lib/bp/normalize";
 
+type TerrainPotentialInput = Parameters<typeof calcTerrainRaw>[0];
+
+interface TerrainTooltipPayload {
+  payload?: { militaryImpact?: string };
+}
+
 // ─── Props ──────────────────────────────────────────────────────────────────
 interface GeographyTabProps {
   country: CountryCompareData;
@@ -218,8 +224,8 @@ export function GeographyTab({ country, allCountries = [] }: GeographyTabProps) 
   // Real terrain score from BP model
   const terrainScore = useMemo(() => {
     if (allCountries.length > 0) {
-      const rawResult = calcTerrainRaw(country as any);
-      const allRaws = allCountries.map(c => calcTerrainRaw(c as any).raw);
+      const rawResult = calcTerrainRaw(country as unknown as TerrainPotentialInput);
+      const allRaws = allCountries.map(c => calcTerrainRaw(c as unknown as TerrainPotentialInput).raw);
       return Math.round(normalizeTerrain(rawResult.raw, allRaws));
     }
     return null;
@@ -267,7 +273,7 @@ export function GeographyTab({ country, allCountries = [] }: GeographyTabProps) 
                   fontSize: 10,
                   fontFamily: "monospace",
                 }}
-                formatter={((value: number, name: string, props: any) => [`${value}% — ${props.payload.militaryImpact}`]) as any}
+                formatter={(value: number | string | undefined, _name: string | undefined, props: TerrainTooltipPayload) => [`${value ?? 0}% — ${props.payload?.militaryImpact ?? ""}`]}
               />
             </PieChart>
           </ResponsiveContainer>

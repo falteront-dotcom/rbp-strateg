@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect, useCallback, useMemo } from "react";
+import type { ComponentProps } from "react";
 import {
   Radio,
   Map as MapIcon,
@@ -72,7 +73,18 @@ function StrategicDetailPanel({
   onCompare: (iso: string) => void;
 }) {
   const [activeTab, setActiveTab] = useState<StrategicTab>("summary");
-  const compareData = country as unknown as CountryCompareData;
+  const compareData: CountryCompareData = country;
+  const countryCardData = country as ComponentProps<typeof CountryCard>["country"];
+  const bpCountry = country as unknown as ComponentProps<typeof BPDetailTab>["country"];
+  const economicsCountry = country as unknown as ComponentProps<typeof EconomicsTab>["country"];
+  const militaryCountry = country as unknown as ComponentProps<typeof MilitaryHardwareTab>["country"];
+  const coalitionCountry = country as unknown as ComponentProps<typeof CoalitionTab>["country"];
+  const doctrineCountry = country as unknown as ComponentProps<typeof DoctrineTab>["country"];
+  const geographyCountry = country as unknown as ComponentProps<typeof GeographyTab>["country"];
+  const coalitionCountries = allCountries as unknown as ComponentProps<typeof CoalitionTab>["allCountries"];
+  const analyticsCountries = allCountries as unknown as ComponentProps<typeof AnalyticsTab>["countries"];
+  const whatIfCountries = allCountries as unknown as ComponentProps<typeof WhatIfTab>["allCountries"];
+  const geographyCountries = allCountries as unknown as ComponentProps<typeof GeographyTab>["allCountries"];
 
   return (
     <div className="flex flex-col h-full">
@@ -113,19 +125,19 @@ function StrategicDetailPanel({
       {/* Tab content */}
       <div className="flex-1 overflow-y-auto custom-scrollbar p-3">
         {activeTab === "summary" && (
-          <CountryCard country={country as any} onClose={() => {}} onCompare={(iso: string) => onCompare(iso)} />
+          <CountryCard country={countryCardData} onClose={() => {}} onCompare={(iso: string) => onCompare(iso)} />
         )}
         {activeTab === "bp" && (
-          <BPDetailTab country={compareData as any} />
+          <BPDetailTab country={bpCountry} />
         )}
         {activeTab === "economics" && (
-          <EconomicsTab country={compareData as any} />
+          <EconomicsTab country={economicsCountry} />
         )}
         {activeTab === "military" && (
-          <MilitaryHardwareTab country={compareData as any} />
+          <MilitaryHardwareTab country={militaryCountry} />
         )}
         {activeTab === "coalition" && (
-          <CoalitionTab country={compareData as any} allCountries={allCountries as any} />
+          <CoalitionTab country={coalitionCountry} allCountries={coalitionCountries} />
         )}
         {activeTab === "comparison" && (
           <ComparisonTab
@@ -135,16 +147,16 @@ function StrategicDetailPanel({
           />
         )}
         {activeTab === "analytics" && (
-          <AnalyticsTab countries={allCountries} selectedISO={country.isoCode} />
+          <AnalyticsTab countries={analyticsCountries} selectedISO={country.isoCode} />
         )}
         {activeTab === "whatif" && (
-          <WhatIfTab isOpen={true} onClose={() => {}} allCountries={allCountries} initialIsoCode={country.isoCode} />
+          <WhatIfTab isOpen={true} onClose={() => {}} allCountries={whatIfCountries} initialIsoCode={country.isoCode} />
         )}
         {activeTab === "doctrine" && (
-          <DoctrineTab country={compareData as any} />
+          <DoctrineTab country={doctrineCountry} />
         )}
         {activeTab === "geography" && (
-          <GeographyTab country={compareData as any} allCountries={allCountries} />
+          <GeographyTab country={geographyCountry} allCountries={geographyCountries} />
         )}
       </div>
     </div>
@@ -174,11 +186,11 @@ interface CountryData {
   totalTanks: number;
   totalAfv: number;
   totalArtillery: number;
-  totalMlrs?: number;
+  totalMlrs: number;
   totalAircraft: number;
   totalHelicopters: number;
   totalNavy: number;
-  aircraftCarriers?: number;
+  aircraftCarriers: number;
   submarines: number;
   nuclearWarheads: number;
 
@@ -187,7 +199,7 @@ interface CountryData {
   oilProductionKbd: number;
   merchantFleet: number;
 
-  fitForServiceM?: number;
+  fitForServiceM: number;
   techLevel: number;
   moraleIndex: number;
   combatExperience: number;

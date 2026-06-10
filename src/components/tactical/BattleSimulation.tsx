@@ -184,7 +184,7 @@ export function BattleSimulation({
                 ))
               ) : (
                 <div className="text-[9px] text-slate-500">
-                  Нет событий. Нажмите "Следующий тур" для начала.
+                  Нет событий. Нажмите &quot;Следующий тур&quot; для начала.
                 </div>
               )}
             </div>

@@ -2,6 +2,7 @@
 
 import { useMemo } from "react";
 import { motion } from "framer-motion";
+import type { Variants } from "framer-motion";
 import {
   BarChart,
   Bar,
@@ -357,7 +358,7 @@ function getProjectionLabel(proj: PowerProjection): { ru: string; color: string 
 // Animation variants
 // ─────────────────────────────────────────────────────────────────────────────
 
-const sectionVariants: Record<string, unknown> = {
+const sectionVariants: Variants = {
   hidden: { opacity: 0, y: 12 },
   visible: (i: number) => ({
     opacity: 1,
@@ -417,7 +418,7 @@ export function DoctrineTab({ country }: DoctrineTabProps) {
     <div className="flex flex-col gap-3 p-1 font-mono overflow-y-auto max-h-[calc(100vh-8rem)]">
       {/* ─── 1. Defense Posture ─── */}
       <motion.section
-        custom={0} variants={sectionVariants as any} initial="hidden" animate="visible"
+        custom={0} variants={sectionVariants} initial="hidden" animate="visible"
         className="glass-panel rounded-lg p-4 border border-white/5"
       >
         <div className="flex items-center gap-2 mb-3">
@@ -451,7 +452,7 @@ export function DoctrineTab({ country }: DoctrineTabProps) {
 
       {/* ─── 2. Alliance Membership ─── */}
       <motion.section
-        custom={1} variants={sectionVariants as any} initial="hidden" animate="visible"
+        custom={1} variants={sectionVariants} initial="hidden" animate="visible"
         className="glass-panel rounded-lg p-4 border border-white/5"
       >
         <div className="flex items-center gap-2 mb-3">
@@ -493,7 +494,7 @@ export function DoctrineTab({ country }: DoctrineTabProps) {
 
       {/* ─── 3. Combat Experience Timeline ─── */}
       <motion.section
-        custom={2} variants={sectionVariants as any} initial="hidden" animate="visible"
+        custom={2} variants={sectionVariants} initial="hidden" animate="visible"
         className="glass-panel rounded-lg p-4 border border-white/5"
       >
         <div className="flex items-center justify-between mb-3">
@@ -563,7 +564,7 @@ export function DoctrineTab({ country }: DoctrineTabProps) {
 
       {/* ─── 4. Military Modernization Index ─── */}
       <motion.section
-        custom={3} variants={sectionVariants as any} initial="hidden" animate="visible"
+        custom={3} variants={sectionVariants} initial="hidden" animate="visible"
         className="glass-panel rounded-lg p-4 border border-white/5"
       >
         <div className="flex items-center gap-2 mb-3">
@@ -618,7 +619,7 @@ export function DoctrineTab({ country }: DoctrineTabProps) {
 
       {/* ─── 5. Strategic Culture Profile ─── */}
       <motion.section
-        custom={4} variants={sectionVariants as any} initial="hidden" animate="visible"
+        custom={4} variants={sectionVariants} initial="hidden" animate="visible"
         className="glass-panel rounded-lg p-4 border border-white/5"
       >
         <div className="flex items-center gap-2 mb-3">
@@ -679,7 +680,7 @@ export function DoctrineTab({ country }: DoctrineTabProps) {
 
       {/* ─── 6. Doctrine Score Breakdown ─── */}
       <motion.section
-        custom={5} variants={sectionVariants as any} initial="hidden" animate="visible"
+        custom={5} variants={sectionVariants} initial="hidden" animate="visible"
         className="glass-panel rounded-lg p-4 border border-white/5"
       >
         <div className="flex items-center justify-between mb-3">

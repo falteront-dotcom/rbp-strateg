@@ -19,6 +19,8 @@ export type AnalyticsLayerKey =
   | "artillery"
   | "projection"
   | "alliances"
+  | "bases"
+  | "airRange"
   | "density"
   | "risk";
 
@@ -44,6 +46,8 @@ const LAYER_OPTIONS: LayerOption[] = [
   { key: "artillery", label: "Artillery Mass", shortLabel: "ART" },
   { key: "projection", label: "Power Projection", shortLabel: "PROJ" },
   { key: "alliances", label: "Alliance Network", shortLabel: "ALLY" },
+  { key: "bases", label: "Military Bases", shortLabel: "BASE" },
+  { key: "airRange", label: "Aviation Combat Radius", shortLabel: "RNG" },
   { key: "density", label: "BP Density", shortLabel: "DENS" },
   { key: "risk", label: "Escalation Risk", shortLabel: "RISK" },
 ];

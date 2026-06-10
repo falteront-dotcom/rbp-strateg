@@ -342,10 +342,12 @@ export default function WhatIfTab({
   useEffect(() => {
     if (!isOpen) return;
     const decoded = decodeScenarioFromURL(window.location.search);
-    if (decoded) {
+    if (!decoded) return;
+    const timer = window.setTimeout(() => {
       setSelectedIso(decoded.isoCode);
       setParams(decoded.params);
-    }
+    }, 0);
+    return () => window.clearTimeout(timer);
   }, [isOpen]);
 
   // ─── Selected country data ──────────────────────────────────────────
@@ -443,9 +445,9 @@ export default function WhatIfTab({
   useEffect(() => {
     if (!selectedRawData || allRawData.length === 0) return;
 
-    setIsCalculating(true);
     // Debounce heavy calculation
     const timer = setTimeout(() => {
+      setIsCalculating(true);
       try {
         const scenarioResult: ScenarioResult = calculateWhatIf(
           selectedRawData,

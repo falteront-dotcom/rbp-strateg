@@ -23,7 +23,7 @@ export const TacticalUnitIcon = ({ type, side, size = 32 }: { type: IconType, si
     <MilitaryUnitIcon type={type} side={side} size={size} />
 );
 
-const UnitMarker = React.memo(({ u, removeUnit, isSelected, onSelect, onDoubleClick, registerNode }: { u: ActiveUnit, removeUnit: (id: string) => void, isSelected: boolean, onSelect: () => void, onDoubleClick?: () => void, registerNode: (id: string, node: HTMLDivElement | null) => void }) => {
+const UnitMarker = React.memo(({ u, removeUnit, isSelected, onSelect, onDoubleClick, registerNode }: { u: ActiveUnit, removeUnit: (id: string) => void, isSelected: boolean, onSelect: (event: React.MouseEvent<HTMLDivElement>) => void, onDoubleClick?: () => void, registerNode: (id: string, node: HTMLDivElement | null) => void }) => {
     // Initial static values (will be immediately taken over by 60FPS DOM manipulation loop)
     const initialRot = Math.atan2(u.vy, u.vx) * (180 / Math.PI) + 90;
 
@@ -38,7 +38,7 @@ const UnitMarker = React.memo(({ u, removeUnit, isSelected, onSelect, onDoubleCl
             className="absolute pointer-events-auto will-change-[left,top]"
             onClick={(e) => {
                 e.stopPropagation();
-                onSelect();
+                onSelect(e);
             }}
             onDoubleClick={(e) => {
                 e.stopPropagation();
@@ -97,6 +97,15 @@ const UnitMarker = React.memo(({ u, removeUnit, isSelected, onSelect, onDoubleCl
         </div>
     );
 });
+UnitMarker.displayName = "UnitMarker";
+
+function isWeatherKey(value: string): value is keyof typeof MODIFIERS.weather {
+    return value in MODIFIERS.weather;
+}
+
+function isEwKey(value: string): value is keyof typeof MODIFIERS.ew {
+    return value in MODIFIERS.ew;
+}
 
 export default function TacticalHUD() {
     const [engine] = useState(() => new RBPEngine());
@@ -154,10 +163,13 @@ export default function TacticalHUD() {
         return () => clearInterval(timer);
     }, []);
 
-    const lastTimeRef = useRef<number>(performance.now());
-    const lastRenderTickRef = useRef<number>(performance.now());
+    const lastTimeRef = useRef<number>(0);
+    const lastRenderTickRef = useRef<number>(0);
 
     const animate = (time: number) => {
+        if (lastTimeRef.current === 0) {
+            lastTimeRef.current = time;
+        }
         const dt = time - lastTimeRef.current;
         lastTimeRef.current = time;
         engine.stepSimulation(dt);
@@ -201,24 +213,20 @@ export default function TacticalHUD() {
         requestRef.current = requestAnimationFrame(animate);
     };
 
+    const updateSystem = React.useCallback((nextWeather: keyof typeof MODIFIERS.weather = weather, nextEw: keyof typeof MODIFIERS.ew = ew) => {
+        engine.setWeather(nextWeather);
+        engine.setEW(nextEw);
+        const overview = engine.getOverview();
+        setSummary({ NATO: overview.NATO, RUS: overview.RUS, CHINA: overview.CHINA });
+        setActiveUnits([...overview.units]);
+    }, [engine, weather, ew]);
+
     useEffect(() => {
         requestRef.current = requestAnimationFrame(animate);
         return () => {
             if (requestRef.current) cancelAnimationFrame(requestRef.current);
         };
     }, []);
-
-    useEffect(() => {
-        updateSystem();
-    }, [weather, ew]);
-
-    const updateSystem = () => {
-        engine.setWeather(weather);
-        engine.setEW(ew);
-        const overview = engine.getOverview();
-        setSummary({ NATO: overview.NATO, RUS: overview.RUS, CHINA: overview.CHINA });
-        setActiveUnits([...overview.units]);
-    };
 
     const handleDeploy = () => {
         const unit = ARSENAL[selectedUnit];
@@ -695,8 +703,8 @@ export default function TacticalHUD() {
                                     removeUnit={removeUnit}
                                     isSelected={selectedIds.includes(u.id)}
                                     registerNode={registerNode}
-                                    onSelect={() => {
-                                        if (window.event && (window.event as any).shiftKey) {
+                                    onSelect={(event) => {
+                                        if (event.shiftKey) {
                                             setSelectedIds(prev => prev.includes(u.id) ? prev.filter(id => id !== u.id) : [...prev, u.id]);
                                         } else {
                                             setSelectedIds([u.id]);
@@ -743,7 +751,7 @@ export default function TacticalHUD() {
                                     data-testid="weather-select"
                                     className="mt-1 w-full bg-slate-950/80 border border-white/5 text-[10px] p-2 rounded-md outline-none text-tactical-primary font-bold shadow-inner"
                                     value={weather}
-                                    onChange={(e) => setWeather(e.target.value as any)}
+                                    onChange={(e) => { if (isWeatherKey(e.target.value)) { setWeather(e.target.value); updateSystem(e.target.value, ew); } }}
                                 >
                                     {Object.keys(MODIFIERS.weather).map(w => <option key={w} value={w}>{t.weather[w as keyof typeof t.weather]}</option>)}
                                 </select>
@@ -754,7 +762,7 @@ export default function TacticalHUD() {
                                     data-testid="ew-select"
                                     className="mt-1 w-full bg-slate-950/80 border border-white/5 text-[10px] p-2 rounded-md outline-none text-tactical-accent font-bold shadow-inner"
                                     value={ew}
-                                    onChange={(e) => setEw(e.target.value as any)}
+                                    onChange={(e) => { if (isEwKey(e.target.value)) { setEw(e.target.value); updateSystem(weather, e.target.value); } }}
                                 >
                                     {Object.keys(MODIFIERS.ew).map(e => <option key={e} value={e}>{t.ew[e as keyof typeof t.ew]}</option>)}
                                 </select>

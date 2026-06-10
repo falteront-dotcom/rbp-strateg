@@ -275,7 +275,7 @@ export function ComparisonTab({ countries, onRemoveCountry, onAddCountry }: Comp
                 fontSize: 10,
                 fontFamily: "monospace",
               }}
-              formatter={((value: number) => formatLargeNumber(value)) as any}
+              formatter={(value: number | string | undefined) => formatLargeNumber(Number(value ?? 0))}
             />
           </BarChart>
         </ResponsiveContainer>

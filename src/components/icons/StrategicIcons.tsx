@@ -273,6 +273,22 @@ export function IntelLayerIcon({ name, size = 16, className, title }: BaseIconPr
           <path d="M12 4v6M18.7 7.9l-4.9 3M18.7 16.1l-4.9-3M12 20v-6M5.3 16.1l4.9-3M5.3 7.9l4.9 3" strokeWidth="0.9" opacity="0.75" />
         </IconShell>
       );
+    case "bases":
+      return (
+        <IconShell {...common}>
+          <path d="M5.2 18.8h13.6M7 18.8V9.2l5-3.2 5 3.2v9.6" strokeWidth="1.25" />
+          <path d="M9 18.8v-5h6v5M10.2 10.2h3.6M12 6v5.2" strokeWidth="1.05" opacity="0.8" />
+          <circle cx="12" cy="12" r="7.6" strokeWidth="0.85" strokeDasharray="1.6 2.4" opacity="0.5" />
+        </IconShell>
+      );
+    case "airRange":
+      return (
+        <IconShell {...common}>
+          <circle cx="12" cy="12" r="8.4" strokeWidth="0.9" opacity="0.45" />
+          <circle cx="12" cy="12" r="5.2" strokeWidth="1" opacity="0.65" />
+          <path d="M12 4.2l1.7 5.1 4.5 1.5v1.2l-4 .6 1 3.4-.9.7-2.3-2-2.3 2-.9-.7 1-3.4-4-.6v-1.2l4.5-1.5z" strokeWidth="1.05" fill="currentColor" fillOpacity="0.08" />
+        </IconShell>
+      );
     case "density":
       return (
         <IconShell {...common}>

@@ -2,7 +2,7 @@
 
 import { GeoJsonLayer } from "@deck.gl/layers";
 import type { PickingInfo } from "@deck.gl/core";
-import type { Feature, Polygon, MultiPolygon } from "geojson";
+import type { Feature, Geometry, Polygon, MultiPolygon } from "geojson";
 import { scaleSequential } from "d3-scale";
 import type { CountryCollection, NaturalEarthProperties } from "@/lib/geo/country-boundaries";
 
@@ -22,7 +22,7 @@ interface BPEnrichedProperties extends NaturalEarthProperties {
   bpRank: number | null;
 }
 
-type BPFeature = Feature<Polygon | MultiPolygon, BPEnrichedProperties>;
+type BPFeature = Feature<Geometry, BPEnrichedProperties>;
 
 interface ChoroplethLayerProps {
   data: CountryCollection | null;
@@ -127,7 +127,7 @@ export function ChoroplethLayer({
     }),
   } : null;
 
-  const layer = new GeoJsonLayer({
+  const layer = new GeoJsonLayer<BPEnrichedProperties>({
         id: "choropleth-bp",
         data: enrichedData ?? undefined,
         visible: !!enrichedData,
@@ -167,19 +167,19 @@ export function ChoroplethLayer({
             ];
           }
           return baseColor;
-        }) as any,
+        }),
         getLineColor: ((feature: BPFeature) => {
           const iso = featureISO(feature);
           if (iso && iso === selectedISO) return [0, 220, 230, 255];
           if (iso && iso === hoveredISO) return [0, 180, 200, 220];
           return [0, 150, 180, 60];
-        }) as any,
+        }),
         getLineWidth: ((feature: BPFeature) => {
           const iso = featureISO(feature);
           if (iso === selectedISO) return 3;
           if (iso === hoveredISO) return 2;
           return 1;
-        }) as any,
+        }),
         onHover: (info: PickingInfo) => {
           const feature = info.object as BPFeature | undefined;
           const iso = feature ? featureISO(feature) : null;

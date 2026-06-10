@@ -1,9 +1,9 @@
 "use client"
 
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Plus, X, BrainCircuit, Shield, Zap, Radio, Target, Download, Upload } from 'lucide-react';
-import { ARSENAL, Category, Country, IconType, Side, calculateCustomPotential, ParametricStats, ModuleType } from '@/lib/unit-database';
+import { ARSENAL, Category, Country, IconType, Side, calculateCustomPotential, ParametricStats, ModuleType, createCustomUnitId, registerCustomUnit } from '@/lib/unit-database';
 import { cn } from '@/lib/utils';
 import { TRANSLATIONS } from '@/lib/i18n';
 
@@ -19,7 +19,6 @@ export default function CustomUnitBuilder({ isOpen, onClose, onUnitAdded }: Cust
 
     const [name, setName] = useState('');
     const [country, setCountry] = useState<Country>('US');
-    const [side, setSide] = useState<Side>('NATO');
     const [category, setCategory] = useState<Category>('ground');
     const [iconType, setIconType] = useState<IconType>('MBT');
 
@@ -32,33 +31,28 @@ export default function CustomUnitBuilder({ isOpen, onClose, onUnitAdded }: Cust
 
     const potential = calculateCustomPotential(stats, modules);
 
-    // Auto-set Side based on Country
-    useEffect(() => {
-        if (['RU', 'CN'].includes(country)) {
-            setSide(country === 'RU' ? 'RUS' : 'CHINA');
-        } else {
-            setSide('NATO');
-        }
-    }, [country]);
+    const side: Side = country === 'RU' ? 'RUS' : country === 'CN' ? 'CHINA' : 'NATO';
 
-    // Auto-set Icon and default stats based on Category
-    useEffect(() => {
-        if (category === 'aircraft') {
+    const handleCategoryChange = (nextCategory: Category) => {
+        setCategory(nextCategory);
+        if (nextCategory === 'aircraft') {
             setIconType('Fighter');
             setStats(defaultAirStats);
-        } else if (category === 'air_defense') {
+        } else if (nextCategory === 'air_defense') {
             setIconType('SAM');
             setStats(defaultADStats);
         } else {
+            setIconType('MBT');
+            setStats(defaultGroundStats);
         }
-        setModules([]); // reset modules on category change
-    }, [category]);
+        setModules([]);
+    };
 
     const handleSave = () => {
         if (!name.trim()) return;
 
-        const unitId = `custom_${Date.now()}`;
-        ARSENAL[unitId] = {
+        const unitId = createCustomUnitId(name);
+        registerCustomUnit(unitId, {
             name: name,
             displayName: name,
             country,
@@ -66,8 +60,9 @@ export default function CustomUnitBuilder({ isOpen, onClose, onUnitAdded }: Cust
             category,
             iconType,
             potential,
+            stats,
             activeModules: modules
-        };
+        });
 
         onUnitAdded(unitId);
         onClose();
@@ -95,7 +90,7 @@ export default function CustomUnitBuilder({ isOpen, onClose, onUnitAdded }: Cust
                 // Simple validation
                 for (const key in importedArsenal) {
                     if (importedArsenal[key].name && importedArsenal[key].potential !== undefined) {
-                        ARSENAL[key] = importedArsenal[key];
+                        registerCustomUnit(key, importedArsenal[key]);
                     }
                 }
                 alert("Арсенал успешно обновлен из файла!");
@@ -188,7 +183,7 @@ export default function CustomUnitBuilder({ isOpen, onClose, onUnitAdded }: Cust
                                             <label className="text-[10px] text-slate-500 font-mono uppercase tracking-[.1em] mb-1 block">Категория</label>
                                             <select
                                                 value={category}
-                                                onChange={(e) => setCategory(e.target.value as Category)}
+                                                onChange={(e) => handleCategoryChange(e.target.value as Category)}
                                                 className="w-full bg-slate-950/80 border border-white/10 text-xs p-3 rounded-md outline-none text-white focus:border-tactical-primary/50"
                                             >
                                                 <option value="ground">Наземные Силы</option>

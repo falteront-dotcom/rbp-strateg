@@ -99,7 +99,7 @@ export function applyModulesToUnit(unit: UnitInfo, modules: ModuleType[]): UnitI
     if (!unit.stats) return { ...unit, activeModules: modules };
 
     // Deep clone stats so we don't mutate the original DB
-    let newStats = JSON.parse(JSON.stringify(unit.stats)) as ParametricStats;
+    const newStats = JSON.parse(JSON.stringify(unit.stats)) as ParametricStats;
 
     if (newStats.type === 'ground') {
         if (modules.includes('era')) newStats.armorRHA *= 1.3;
@@ -120,6 +120,19 @@ export function applyModulesToUnit(unit: UnitInfo, modules: ModuleType[]): UnitI
         activeModules: modules,
         potential: calculateCustomPotential(newStats, modules)
     };
+}
+
+
+let customUnitSequence = 0;
+
+export function createCustomUnitId(name: string): string {
+    customUnitSequence += 1;
+    const slug = name.trim().toLowerCase().replace(/[^a-z0-9а-яё]+/gi, "_").replace(/^_+|_+$/g, "") || "unit";
+    return `custom_${slug}_${customUnitSequence}`;
+}
+
+export function registerCustomUnit(unitId: string, unit: UnitInfo): void {
+    ARSENAL[unitId] = unit;
 }
 
 export function getRadarFactors(unit: UnitInfo): Record<string, number> {
@@ -289,8 +302,8 @@ export function simulateEngagement(unitA: UnitInfo, unitB: UnitInfo, iterations:
         const pHitB = Math.min(0.95, Math.max(0.1, (unitB.potential / 10) * (0.8 + Math.random() * 0.4)));
 
         // Factor in KAZ/APS
-        let aSurvivesAPS = unitA.activeModules?.includes('aps') ? (Math.random() < 0.6) : false; // 60% intercept chance
-        let bSurvivesAPS = unitB.activeModules?.includes('aps') ? (Math.random() < 0.6) : false;
+        const aSurvivesAPS = unitA.activeModules?.includes('aps') ? (Math.random() < 0.6) : false; // 60% intercept chance
+        const bSurvivesAPS = unitB.activeModules?.includes('aps') ? (Math.random() < 0.6) : false;
 
         const aHitLanded = Math.random() < pHitA && !bSurvivesAPS;
         const bHitLanded = Math.random() < pHitB && !aSurvivesAPS;

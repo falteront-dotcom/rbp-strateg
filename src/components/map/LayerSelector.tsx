@@ -77,14 +77,13 @@ export function LayerSelector({
   className,
 }: LayerSelectorProps) {
   return (
-    <div className={`flex flex-col gap-1 ${className ?? ""}`}>
-      {/* Section header */}
-      <div className="text-[9px] tracking-[0.25em] text-tactical-primary/50 uppercase font-mono mb-1 px-1">
-        Intel Layer
+    <div className={`flex min-w-0 max-w-[60vw] items-center gap-2 ${className ?? ""}`}>
+      <div className="hidden 2xl:block shrink-0 text-[8px] tracking-[0.22em] text-tactical-primary/45 uppercase font-mono px-1">
+        Layer
       </div>
 
       {/* Layer buttons */}
-      <div className="flex flex-row flex-wrap gap-1">
+      <div className="custom-scrollbar flex min-w-0 flex-1 flex-row flex-nowrap gap-1 overflow-x-auto overflow-y-hidden pb-1 pr-1">
         {LAYER_OPTIONS.map((opt) => {
           const isActive = activeLayer === opt.key;
 
@@ -93,8 +92,8 @@ export function LayerSelector({
               key={opt.key}
               onClick={() => onLayerChange(opt.key)}
               className={`
-                group relative font-mono text-[10px] tracking-[0.12em] uppercase
-                px-2.5 py-1.5 rounded-sm border transition-colors duration-150
+                group relative shrink-0 font-mono text-[10px] tracking-[0.12em] uppercase
+                px-2.5 py-1.5 rounded-md border transition-colors duration-150
                 cursor-pointer select-none layer-btn-glow
                 ${
                   isActive

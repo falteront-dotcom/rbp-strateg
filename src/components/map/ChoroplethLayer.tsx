@@ -1,7 +1,8 @@
 "use client";
 
 import { GeoJsonLayer } from "@deck.gl/layers";
-import type { PickingInfo } from "@deck.gl/core";import type { Feature, Geometry } from "geojson";
+import type { PickingInfo } from "@deck.gl/core";
+import type { Feature, Geometry } from "geojson";
 import { scaleSequential } from "d3-scale";
 import type { CountryCollection, NaturalEarthProperties } from "@/lib/geo/country-boundaries";
 
@@ -63,17 +64,17 @@ function bpColorInterpolator(t: number): [number, number, number, number] {
   let hue: number;
   if (tc <= 0.5) {
     const s = tc * 2;
-    lightness = 75 + s * 10;
-    chroma = 0.18;
+    lightness = 58 + s * 12;
+    chroma = 0.13;
     hue = 200 - s * 110;
   } else {
     const s = (tc - 0.5) * 2;
-    lightness = 85 - s * 20;
-    chroma = 0.18 + s * 0.07;
+    lightness = 70 - s * 14;
+    chroma = 0.15 + s * 0.06;
     hue = 90 - s * 65;
   }
   const rgb = oklchToRgb(lightness / 100, chroma, hue);
-  return [rgb[0], rgb[1], rgb[2], 200];
+  return [rgb[0], rgb[1], rgb[2], 132];
 }
 
 /** Extract ISO from enriched feature */
@@ -151,27 +152,27 @@ export function ChoroplethLayer({
               Math.min(255, baseColor[0] + 30),
               Math.min(255, baseColor[1] + 30),
               Math.min(255, baseColor[2] + 30),
-              240,
+              205,
             ];
           }
           if (selectedISO && iso !== selectedISO) {
-            return [baseColor[0], baseColor[1], baseColor[2], 100];
+            return [baseColor[0], baseColor[1], baseColor[2], 62];
           }
           if (iso && iso === selectedISO) {
             return [
               Math.min(255, baseColor[0] + 15),
               Math.min(255, baseColor[1] + 15),
               Math.min(255, baseColor[2] + 15),
-              255,
+              218,
             ];
           }
           return baseColor;
         }),
         getLineColor: ((feature: BPFeature) => {
           const iso = featureISO(feature);
-          if (iso && iso === selectedISO) return [0, 220, 230, 255];
-          if (iso && iso === hoveredISO) return [0, 180, 200, 220];
-          return [0, 150, 180, 60];
+          if (iso && iso === selectedISO) return [125, 249, 255, 230];
+          if (iso && iso === hoveredISO) return [103, 232, 249, 190];
+          return [103, 232, 249, 54];
         }),
         getLineWidth: ((feature: BPFeature) => {
           const iso = featureISO(feature);

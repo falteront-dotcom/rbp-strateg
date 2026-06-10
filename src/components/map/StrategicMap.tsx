@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import MapGL from "react-map-gl/mapbox";
-import type { MapRef } from "react-map-gl/mapbox";
+import type { MapRef, ViewState as MapboxViewState } from "react-map-gl/mapbox";
 import type mapboxgl from "mapbox-gl";
 import { DeckGL } from "@deck.gl/react";
 import type { Layer, PickingInfo } from "@deck.gl/core";
@@ -265,13 +265,7 @@ export interface CountryMapData {
 }
 
 /** Default initial view state: centered on Eastern Europe */
-type ViewState = {
-  longitude: number;
-  latitude: number;
-  zoom: number;
-  pitch: number;
-  bearing: number;
-};
+type ViewState = Pick<MapboxViewState, "longitude" | "latitude" | "zoom" | "pitch" | "bearing" | "padding">;
 
 const INITIAL_VIEW: ViewState = {
   longitude: 30,
@@ -279,7 +273,65 @@ const INITIAL_VIEW: ViewState = {
   zoom: 3,
   pitch: 45,
   bearing: 0,
+  padding: { top: 0, bottom: 0, left: 0, right: 0 },
 };
+
+
+function tuneStrategicBaseMap(map: mapboxgl.Map): void {
+  const style = map.getStyle();
+  const layers = style.layers ?? [];
+  const mutableMap = map as unknown as {
+    setLayoutProperty: (id: string, property: string, value: string) => void;
+    setPaintProperty: (id: string, property: string, value: string | number) => void;
+  };
+  const safeLayout = (id: string, property: string, value: string) => {
+    try { mutableMap.setLayoutProperty(id, property, value); } catch { /* layer/style mismatch */ }
+  };
+  const safePaint = (id: string, property: string, value: string | number) => {
+    try { mutableMap.setPaintProperty(id, property, value); } catch { /* layer/style mismatch */ }
+  };
+
+  for (const layer of layers) {
+    const id = layer.id.toLowerCase();
+
+    // The application draws its own strategic labels. Hide Mapbox labels/POIs
+    // so roads/cities/countries do not merge visually with the custom HUD layer.
+    if (layer.type === "symbol") {
+      safeLayout(layer.id, "visibility", "none");
+      continue;
+    }
+
+    if (layer.type === "background") {
+      safePaint(layer.id, "background-color", "#030712");
+      continue;
+    }
+
+    if (layer.type === "fill") {
+      if (id.includes("water") || id.includes("ocean")) {
+        safePaint(layer.id, "fill-color", "#020817");
+        safePaint(layer.id, "fill-opacity", 0.86);
+      } else if (id.includes("land") || id.includes("landuse")) {
+        safePaint(layer.id, "fill-color", "#06111f");
+        safePaint(layer.id, "fill-opacity", 0.52);
+      }
+    }
+
+    if (layer.type === "line") {
+      if (id.includes("road") || id.includes("bridge") || id.includes("tunnel")) {
+        safePaint(layer.id, "line-opacity", 0.035);
+      } else if (id.includes("admin") || id.includes("boundary")) {
+        safePaint(layer.id, "line-color", "rgba(103,232,249,0.16)");
+        safePaint(layer.id, "line-opacity", 0.28);
+      } else {
+        safePaint(layer.id, "line-opacity", 0.12);
+      }
+    }
+  }
+
+  try {
+    map.setFog({ color: "#020617", "high-color": "#04111f", "horizon-blend": 0.02, "space-color": "#01030a", "star-intensity": 0.04 });
+  } catch { /* not available for all styles */ }
+}
 
 // ─── Props ────────────────────────────────────────────────────────────
 
@@ -736,7 +788,7 @@ export function StrategicMap({
 
     const selectedRings = createSelectedRingsLayer(countriesRaw, selectedISO);
     if (selectedRings) layers.push(selectedRings);
-    if (countriesRaw.length > 0 && activeLayer !== "geoDetails") layers.push(createTopCountryLabelsLayer(countriesRaw));
+    if (countriesRaw.length > 0 && activeLayer !== "geoDetails") layers.push(createTopCountryLabelsLayer(countriesRaw, viewState.zoom));
 
     return layers;
   }, [
@@ -767,45 +819,18 @@ export function StrategicMap({
 
   // ─── Map control handlers ────────────────────────────────
   const handleZoomIn = useCallback(() => {
-    const map = mapRef.current?.getMap();
-    if (map) {
-      const currentZoom = map.getZoom();
-      map.easeTo({ zoom: currentZoom + 1, duration: 300 });
-      return;
-    }
-    setViewState((prev) => ({ ...prev, zoom: Math.min(12, prev.zoom + 1) }));
+    setViewState((prev) => ({ ...prev, zoom: Math.min(12, prev.zoom + 0.75) }));
   }, []);
 
   const handleZoomOut = useCallback(() => {
-    const map = mapRef.current?.getMap();
-    if (map) {
-      const currentZoom = map.getZoom();
-      map.easeTo({ zoom: Math.max(1, currentZoom - 1), duration: 300 });
-      return;
-    }
-    setViewState((prev) => ({ ...prev, zoom: Math.max(1, prev.zoom - 1) }));
+    setViewState((prev) => ({ ...prev, zoom: Math.max(1, prev.zoom - 0.75) }));
   }, []);
 
   const handleReset = useCallback(() => {
-    const map = mapRef.current?.getMap();
-    if (map) {
-      map.flyTo({
-        center: [INITIAL_VIEW.longitude, INITIAL_VIEW.latitude],
-        zoom: INITIAL_VIEW.zoom,
-        pitch: INITIAL_VIEW.pitch,
-        bearing: INITIAL_VIEW.bearing,
-        duration: 1200,
-      });
-    }
     setViewState(INITIAL_VIEW);
   }, []);
 
   const handleCompass = useCallback(() => {
-    const map = mapRef.current?.getMap();
-    if (map) {
-      map.easeTo({ bearing: 0, duration: 600 });
-      return;
-    }
     setViewState((prev) => ({ ...prev, bearing: 0 }));
   }, []);
 
@@ -819,6 +844,11 @@ export function StrategicMap({
 
   const handleToggleChoropleth = useCallback(() => {
     setChoroplethVisible((prev) => !prev);
+  }, []);
+
+  const handleBaseMapReady = useCallback(() => {
+    const map = mapRef.current?.getMap();
+    if (map) tuneStrategicBaseMap(map);
   }, []);
 
   // ─── Popup details handler ──────────────────────────────
@@ -864,16 +894,16 @@ export function StrategicMap({
           <div style={{ position: "absolute", zIndex: 0, width: `${pixelSize.w}px`, height: `${pixelSize.h}px`, top: 0, left: 0 }}>
             <MapGL
               ref={mapRef}
-              initialViewState={{
-                longitude: INITIAL_VIEW.longitude,
-                latitude: INITIAL_VIEW.latitude,
-                zoom: INITIAL_VIEW.zoom,
-              }}
+              viewState={{ ...viewState, width: pixelSize.w, height: pixelSize.h }}
               mapStyle={styleUrl}
               mapboxAccessToken={MAPBOX_TOKEN}
               style={{ width: `${pixelSize.w}px`, height: `${pixelSize.h}px` }}
               projection="mercator"
               antialias
+              interactive={false}
+              reuseMaps
+              onLoad={handleBaseMapReady}
+              onStyleData={handleBaseMapReady}
             >
               {/* Country hover popup — only in BP mode */}
               {activeLayer === "bp" && (
@@ -888,6 +918,7 @@ export function StrategicMap({
             </MapGL>
           </div>
           </MapErrorBoundary>
+          <div className="strategic-map-base-mask" />
 
           {/* DeckGL overlay — sibling above MapGL */}
           <DeckGL
@@ -954,6 +985,8 @@ export function StrategicMap({
           Загрузка карты...
         </div>
       )}
+
+      <div className="strategic-map-vignette" />
 
       {/* Map HUD controls */}
       <MapControls

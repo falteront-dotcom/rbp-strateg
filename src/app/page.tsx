@@ -103,12 +103,12 @@ function StrategicDetailPanel({
       </div>
 
       {/* Tab bar */}
-      <div className="flex overflow-x-auto border-b border-white/5 custom-scrollbar px-1">
+      <div className="flex overflow-x-auto overflow-y-hidden border-b border-white/5 custom-scrollbar px-1">
         {STRATEGIC_TABS.map((tab) => (
           <button
             key={tab.key}
             onClick={() => setActiveTab(tab.key)}
-            className={`px-2 py-1.5 text-[9px] font-mono whitespace-nowrap border-b-2 transition-colors ${
+            className={`shrink-0 px-2.5 py-1.5 text-[9px] font-mono whitespace-nowrap border-b-2 transition-colors ${
               activeTab === tab.key
                 ? "border-tactical-primary text-tactical-primary"
                 : "border-transparent text-slate-500 hover:text-slate-300"
@@ -592,7 +592,7 @@ export default function Home() {
           {/* Mode Toggle */}
           <button
             onClick={handleModeToggle}
-            className="glass-panel rounded-md px-3 py-1.5 font-mono text-[9px] tracking-widest uppercase text-tactical-accent/80 hover:text-tactical-accent hover:border-tactical-accent/30 transition-all cursor-pointer flex items-center gap-1.5"
+            className="glass-panel rbp-interactive rounded-md px-3 py-1.5 font-mono text-[9px] tracking-widest uppercase text-tactical-accent/80 hover:text-tactical-accent hover:border-tactical-accent/30 transition-all cursor-pointer flex items-center gap-1.5"
           >
             <Crosshair size={12} />
             Тактический
@@ -628,7 +628,7 @@ export default function Home() {
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 placeholder="Поиск страны..."
-                className="w-full bg-slate-950/80 border border-white/10 text-[11px] p-2 pl-8 rounded-md outline-none focus:border-tactical-primary/50 transition-all text-slate-200 placeholder:text-slate-600"
+                className="w-full bg-slate-950/80 border border-white/10 text-[11px] p-2 pl-8 rounded-md outline-none focus:border-tactical-primary/50 focus:ring-2 focus:ring-tactical-primary/10 transition-all text-slate-200 placeholder:text-slate-600"
               />
               {searchQuery && (
                 <button
@@ -662,7 +662,7 @@ export default function Home() {
                       key={country.isoCode}
                       onClick={() => handleCountryClick(country.isoCode)}
                       className={`
-                        w-full flex items-center gap-3 px-3 py-2.5 text-left transition-all cursor-pointer
+                        rbp-interactive w-full flex items-center gap-3 px-3 py-2.5 text-left transition-all cursor-pointer
                         border-l-2 hover:bg-white/5
                         ${
                           isSelected
@@ -844,7 +844,7 @@ export default function Home() {
         </div>
 
         {/* ─── RIGHT SIDEBAR: Country Detail Panel with Tabs ─── */}
-        <aside className="w-96 glass-panel border-l border-white/5 shrink-0 z-30 overflow-y-auto custom-scrollbar country-panel-enter">
+        <aside className="w-[28rem] 2xl:w-[32rem] glass-panel border-l border-white/5 shrink-0 z-30 overflow-y-auto custom-scrollbar country-panel-enter">
           {selectedCountry ? (
             <StrategicDetailPanel
               country={selectedCountry}

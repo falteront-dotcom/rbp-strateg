@@ -205,7 +205,7 @@ export function CountryCard({ country, onClose, onCompare }: CountryCardProps) {
             </div>
             <button
               onClick={handleClose}
-              className="p-1.5 text-white/40 hover:text-tactical-primary transition-colors cursor-pointer"
+              className="rbp-interactive rounded-md p-1.5 text-white/40 hover:text-tactical-primary transition-colors cursor-pointer"
               aria-label="Close country card"
             >
               <X size={16} />
@@ -403,14 +403,14 @@ export function CountryCard({ country, onClose, onCompare }: CountryCardProps) {
         <div className="mt-auto p-4 flex gap-2">
           <button
             onClick={handleCompare}
-            className="flex-1 py-2.5 bg-tactical-accent/10 hover:bg-tactical-accent/20 border border-tactical-accent/30 text-tactical-accent font-bold tracking-widest text-[10px] rounded-md transition-all duration-200 flex items-center justify-center gap-2 cursor-pointer uppercase"
+            className="rbp-interactive flex-1 py-2.5 bg-tactical-accent/10 hover:bg-tactical-accent/20 border border-tactical-accent/30 text-tactical-accent font-bold tracking-widest text-[10px] rounded-md transition-all duration-200 flex items-center justify-center gap-2 cursor-pointer uppercase"
           >
             <GitCompareArrows size={14} />
             Сравнить
           </button>
           <button
             onClick={handleClose}
-            className="flex-1 py-2.5 bg-white/5 hover:bg-white/10 border border-white/10 text-white/60 hover:text-white font-bold tracking-widest text-[10px] rounded-md transition-all duration-200 cursor-pointer uppercase"
+            className="rbp-interactive flex-1 py-2.5 bg-white/5 hover:bg-white/10 border border-white/10 text-white/60 hover:text-white font-bold tracking-widest text-[10px] rounded-md transition-all duration-200 cursor-pointer uppercase"
           >
             Закрыть
           </button>

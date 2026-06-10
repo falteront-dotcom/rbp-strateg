@@ -97,6 +97,7 @@ export interface StrategicLabelPoint {
   position: [number, number];
   value: number;
   text: string;
+  rank: number;
 }
 
 function n(value: number | undefined | null): number {
@@ -393,34 +394,37 @@ export function createAllianceArcLayer(countries: ReadonlyArray<StrategicMapCoun
   });
 }
 
-export function createTopCountryLabelsLayer(countries: ReadonlyArray<StrategicMapCountry>): Layer {
+export function createTopCountryLabelsLayer(countries: ReadonlyArray<StrategicMapCountry>, zoom: number): Layer {
+  const maxCount = zoom < 2.8 ? 8 : zoom < 3.7 ? 12 : zoom < 4.8 ? 18 : 26;
   const labels: StrategicLabelPoint[] = [...countries]
     .sort((a, b) => (n(b.bpAdvanced) || n(b.bpTotal)) - (n(a.bpAdvanced) || n(a.bpTotal)))
-    .slice(0, 24)
-    .map((c) => {
+    .slice(0, maxCount)
+    .map((c, rank) => {
       const value = n(c.bpAdvanced) || n(c.bpTotal);
       return {
         iso: c.isoCode,
         name: c.nameRu || c.name,
         position: getPosition(c.isoCode),
         value,
-        text: `${c.isoCode} ${Math.round(value)}`,
+        rank,
+        text: zoom < 4.2 ? `${c.isoCode} ${Math.round(value)}` : `${c.isoCode} · ${Math.round(value)}`,
       };
     });
   return new TextLayer<StrategicLabelPoint>({
-    id: "top-country-labels",
+    id: `top-country-labels-${Math.round(zoom * 10)}`,
     data: labels,
     pickable: false,
     getPosition: (d) => d.position,
     getText: (d) => d.text,
-    getSize: (d) => 10 + (d.value / 100) * 8,
-    getColor: [226, 232, 240, 220],
+    getSize: (d) => 9 + Math.min(5, d.value / 22) + Math.max(0, zoom - 3) * 0.8,
+    getColor: [226, 232, 240, zoom < 3.2 ? 178 : 210],
+    getPixelOffset: (d) => [0, (d.rank % 3 - 1) * 10],
     getAngle: 0,
     getTextAnchor: "middle",
     getAlignmentBaseline: "center",
     background: true,
-    getBackgroundColor: [2, 6, 23, 165],
-    backgroundPadding: [4, 2],
+    getBackgroundColor: [2, 6, 23, 205],
+    backgroundPadding: [5, 2],
     fontFamily: "monospace",
   });
 }

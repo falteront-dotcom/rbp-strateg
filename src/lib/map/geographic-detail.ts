@@ -200,10 +200,10 @@ export const STRATEGIC_NODES: StrategicNodePoint[] = [
 ];
 
 function visibleCities(zoom: number): CityPoint[] {
-  const minImportance = zoom < 1.65 ? 88 : zoom < 2.3 ? 80 : zoom < 3.2 ? 72 : 0;
-  const maxCount = zoom < 1.65 ? 24 : zoom < 2.3 ? 46 : zoom < 3.2 ? 72 : MAJOR_CITIES.length;
+  const minImportance = zoom < 2.0 ? 92 : zoom < 2.8 ? 86 : zoom < 3.8 ? 80 : zoom < 5.0 ? 72 : 0;
+  const maxCount = zoom < 2.0 ? 14 : zoom < 2.8 ? 24 : zoom < 3.8 ? 38 : zoom < 5.0 ? 64 : MAJOR_CITIES.length;
   return [...MAJOR_CITIES]
-    .filter((city) => city.importance >= minImportance || city.isCapital)
+    .filter((city) => city.importance >= minImportance || (zoom >= 3.2 && city.isCapital))
     .sort((a, b) => b.importance - a.importance || b.populationM - a.populationM)
     .slice(0, maxCount);
 }
@@ -230,7 +230,7 @@ export function buildCountryNamePoints(countries: ReadonlyArray<StrategicMapCoun
 }
 
 export function createCountryNameLayer(countries: ReadonlyArray<StrategicMapCountry>, zoom: number, pickable = true): Layer {
-  const maxCount = zoom < 1.65 ? 28 : zoom < 2.4 ? 44 : countries.length;
+  const maxCount = zoom < 2.2 ? 10 : zoom < 3.2 ? 18 : zoom < 4.5 ? 32 : countries.length;
   const data = buildCountryNamePoints(countries).slice(0, maxCount);
 
   return new TextLayer<CountryNamePoint>({
@@ -238,13 +238,16 @@ export function createCountryNameLayer(countries: ReadonlyArray<StrategicMapCoun
     data,
     pickable,
     getPosition: (d) => d.position,
-    getText: (d) => (zoom < 2.2 ? d.iso : `${d.iso} ${d.name}`),
-    getSize: (d) => 9 + clamp(d.bp) / 14 + Math.max(0, zoom - 1.5) * 1.6,
-    getColor: (d) => sideColor(d.side),
+    getText: (d) => (zoom < 3.8 ? d.iso : `${d.iso} ${d.name}`),
+    getSize: (d) => 8 + clamp(d.bp) / 18 + Math.max(0, zoom - 2.5) * 1.1,
+    getColor: (d) => {
+      const color = sideColor(d.side);
+      return [color[0], color[1], color[2], zoom < 3 ? 170 : color[3]];
+    },
     getTextAnchor: "middle",
     getAlignmentBaseline: "center",
     background: true,
-    getBackgroundColor: [2, 6, 23, 145],
+    getBackgroundColor: [2, 6, 23, 190],
     backgroundPadding: [4, 2],
     fontFamily: "monospace",
   });
@@ -270,12 +273,12 @@ export function createMajorCityLayers(zoom: number): Layer[] {
 
   const cityLabels = new TextLayer<CityPoint>({
     id: `geo-city-labels-${Math.round(zoom * 10)}`,
-    data: zoom < 1.8 ? data.slice(0, 28) : data,
+    data: zoom < 2.5 ? data.slice(0, 12) : zoom < 3.8 ? data.slice(0, 24) : data,
     pickable: false,
     getPosition: (d) => d.position,
-    getText: (d) => `${d.name} ${d.populationM >= 10 ? d.populationM.toFixed(0) : d.populationM.toFixed(1)}M`,
-    getSize: (d) => 8 + Math.min(5, Math.sqrt(d.populationM)) + Math.max(0, zoom - 2),
-    getColor: [226, 232, 240, 225],
+    getText: (d) => (zoom < 3.8 ? d.name : `${d.name} ${d.populationM >= 10 ? d.populationM.toFixed(0) : d.populationM.toFixed(1)}M`),
+    getSize: (d) => 7 + Math.min(4, Math.sqrt(d.populationM)) + Math.max(0, zoom - 3) * 0.75,
+    getColor: [226, 232, 240, zoom < 3.2 ? 180 : 220],
     getPixelOffset: [0, -13],
     getTextAnchor: "middle",
     getAlignmentBaseline: "bottom",

@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useMemo } from 'react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { motion } from 'framer-motion';
 import {
   BarChart,
@@ -9,11 +9,11 @@ import {
   YAxis,
   CartesianGrid,
   Tooltip,
-  ResponsiveContainer,
   AreaChart,
   Area,
   Cell,
-} from 'recharts';import { DollarSign, Users, Droplets, Shield, TrendingUp, AlertTriangle, Gauge, ArrowUpRight, ArrowDownRight, Minus } from 'lucide-react';
+} from 'recharts';
+import { DollarSign, Users, Droplets, Shield, TrendingUp, AlertTriangle, Gauge, ArrowUpRight, ArrowDownRight, Minus } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import type { Country } from '@/db/schema';
 
@@ -131,7 +131,7 @@ function MetricCard({
       initial={{ opacity: 0, y: 12 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ delay, duration: 0.35 }}
-      className="glass-panel rounded-lg p-4 flex flex-col gap-1.5 relative overflow-hidden group"
+      className="glass-panel rbp-interactive rounded-xl p-3 min-h-[126px] flex flex-col gap-2 relative overflow-hidden group"
     >
       <div
         className="absolute top-0 left-0 w-0.5 h-full opacity-60 group-hover:opacity-100 transition-opacity"
@@ -141,15 +141,15 @@ function MetricCard({
         <div className="p-1.5 rounded" style={{ backgroundColor: `${accent}18` }}>
           <Icon size={14} style={{ color: accent }} />
         </div>
-        <span className="text-[9px] font-bold tracking-[.2em] uppercase text-slate-500">
+        <span className="min-w-0 text-[8px] font-bold leading-snug tracking-[.16em] uppercase text-slate-500 break-words">
           {label}
         </span>
       </div>
-      <p className="text-xl font-black font-mono tracking-tight" style={{ color: accent }}>
+      <p className="max-w-full overflow-hidden text-[clamp(1.05rem,2.2vw,1.35rem)] leading-tight font-black font-mono tracking-tight tabular-nums break-words" style={{ color: accent }}>
         {value}
       </p>
       {sub && (
-        <p className="text-[9px] font-mono text-slate-500 tracking-wider">{sub}</p>
+        <p className="text-[8px] leading-snug font-mono text-slate-500 tracking-wider break-words">{sub}</p>
       )}
     </motion.div>
   );
@@ -165,6 +165,36 @@ interface ChartTooltipProps {
   active?: boolean;
   payload?: TooltipEntry[];
   label?: string;
+}
+
+function ChartViewport({
+  children,
+}: {
+  children: (size: { width: number; height: number }) => React.ReactNode;
+}) {
+  const ref = useRef<HTMLDivElement | null>(null);
+  const [size, setSize] = useState({ width: 0, height: 0 });
+
+  useEffect(() => {
+    const el = ref.current;
+    if (!el) return;
+
+    const measure = () => {
+      const rect = el.getBoundingClientRect();
+      setSize({ width: Math.max(160, Math.floor(rect.width)), height: Math.max(160, Math.floor(rect.height)) });
+    };
+
+    measure();
+    const observer = new ResizeObserver(measure);
+    observer.observe(el);
+    return () => observer.disconnect();
+  }, []);
+
+  return (
+    <div ref={ref} className="h-52 min-w-0">
+      {size.width > 0 && size.height > 0 ? children(size) : null}
+    </div>
+  );
 }
 
 /** Custom Recharts tooltip */
@@ -519,7 +549,7 @@ export function EconomicsTab({ country, allCountries }: EconomicsTabProps) {
           <div className="h-px flex-1 bg-gradient-to-l from-tactical-primary/40 to-transparent" />
         </div>
 
-        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3">
+        <div className="rbp-auto-metric-grid">
           <MetricCard
             icon={DollarSign}
             label="ВВП (ППС)"
@@ -572,13 +602,13 @@ export function EconomicsTab({ country, allCountries }: EconomicsTabProps) {
       </section>
 
       {/* ─── SECTION: CHARTS ROW ─── */}
-      <section className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+      <section className="rbp-panel-grid">
         {/* Military Budget vs GDP */}
         <motion.div
           initial={{ opacity: 0, y: 16 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.3, duration: 0.4 }}
-          className="glass-panel rounded-lg p-5"
+          className="glass-panel rounded-xl p-4 overflow-hidden min-w-0"
         >
           <div className="flex items-center justify-between mb-4">
             <div className="flex items-center gap-2">
@@ -592,9 +622,9 @@ export function EconomicsTab({ country, allCountries }: EconomicsTabProps) {
             </span>
           </div>
 
-          <div className="h-52">
-            <ResponsiveContainer width="100%" height="100%" minWidth={0} minHeight={1}>
-              <BarChart data={budgetVsGdpData} margin={{ top: 5, right: 10, left: 10, bottom: 5 }}>
+          <ChartViewport>
+            {({ width, height }) => (
+              <BarChart width={width} height={height} data={budgetVsGdpData} margin={{ top: 8, right: 8, left: 0, bottom: 8 }}>
                 <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.05)" vertical={false} />
                 <XAxis
                   dataKey="name"
@@ -607,6 +637,7 @@ export function EconomicsTab({ country, allCountries }: EconomicsTabProps) {
                   axisLine={false}
                   tickLine={false}
                   tickFormatter={(v: number) => fmtBn(v)}
+                  width={38}
                 />
                 <Tooltip content={<ChartTooltip />} cursor={{ fill: 'rgba(255,255,255,0.03)' }} />
                 <Bar dataKey="value" radius={[3, 3, 0, 0]} maxBarSize={60}>
@@ -615,8 +646,8 @@ export function EconomicsTab({ country, allCountries }: EconomicsTabProps) {
                   ))}
                 </Bar>
               </BarChart>
-            </ResponsiveContainer>
-          </div>
+            )}
+          </ChartViewport>
 
           {/* Proportion callout */}
           <div className="mt-3 flex items-center justify-between px-2 py-2 bg-white/[0.03] rounded border border-white/5">
@@ -632,7 +663,7 @@ export function EconomicsTab({ country, allCountries }: EconomicsTabProps) {
           initial={{ opacity: 0, y: 16 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.4, duration: 0.4 }}
-          className="glass-panel rounded-lg p-5"
+          className="glass-panel rounded-xl p-4 overflow-hidden min-w-0"
         >
           <div className="flex items-center justify-between mb-4">
             <div className="flex items-center gap-2">
@@ -660,9 +691,9 @@ export function EconomicsTab({ country, allCountries }: EconomicsTabProps) {
             </div>
           </div>
 
-          <div className="h-52">
-            <ResponsiveContainer width="100%" height="100%" minWidth={0} minHeight={1}>
-              <AreaChart data={trendData} margin={{ top: 5, right: 10, left: 10, bottom: 5 }}>
+          <ChartViewport>
+            {({ width, height }) => (
+              <AreaChart width={width} height={height} data={trendData} margin={{ top: 8, right: 8, left: 0, bottom: 8 }}>
                 <defs>
                   <linearGradient id="budgetGradient" x1="0" y1="0" x2="0" y2="1">
                     <stop offset="5%" stopColor="var(--color-tactical-primary)" stopOpacity={0.3} />
@@ -681,6 +712,7 @@ export function EconomicsTab({ country, allCountries }: EconomicsTabProps) {
                   axisLine={false}
                   tickLine={false}
                   tickFormatter={(v: number) => `$${v}B`}
+                  width={38}
                 />
                 <Tooltip content={<ChartTooltip />} />
                 <Area
@@ -694,8 +726,8 @@ export function EconomicsTab({ country, allCountries }: EconomicsTabProps) {
                   activeDot={{ r: 5, fill: 'var(--color-tactical-primary)', stroke: '#0e1520', strokeWidth: 2 }}
                 />
               </AreaChart>
-            </ResponsiveContainer>
-          </div>
+            )}
+          </ChartViewport>
 
           {/* Year range */}
           <div className="mt-3 flex items-center justify-between px-2 py-2 bg-white/[0.03] rounded border border-white/5">
@@ -708,7 +740,7 @@ export function EconomicsTab({ country, allCountries }: EconomicsTabProps) {
       </section>
 
       {/* ─── SECTION: GAUGE + FISCAL ─── */}
-      <section className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+      <section className="rbp-panel-grid">
         {/* Economic Efficiency Gauge */}
         <motion.div
           initial={{ opacity: 0, y: 16 }}

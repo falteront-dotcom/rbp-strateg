@@ -289,6 +289,16 @@ export function IntelLayerIcon({ name, size = 16, className, title }: BaseIconPr
           <path d="M12 4.2l1.7 5.1 4.5 1.5v1.2l-4 .6 1 3.4-.9.7-2.3-2-2.3 2-.9-.7 1-3.4-4-.6v-1.2l4.5-1.5z" strokeWidth="1.05" fill="currentColor" fillOpacity="0.08" />
         </IconShell>
       );
+    case "geoDetails":
+      return (
+        <IconShell {...common}>
+          <circle cx="12" cy="12" r="8.3" strokeWidth="0.9" opacity="0.45" />
+          <path d="M4.4 10.6c2.4-1.4 4.6-1.3 6.5.2 1.8 1.3 3.8 1.3 6.1-.1l2.6-1.6M5 15.2c2.6-1 4.8-.8 6.8.5 1.7 1 3.5.9 5.4-.3l1.7-1" strokeWidth="1.05" opacity="0.72" />
+          <circle cx="8.1" cy="8" r="1.25" fill="currentColor" strokeWidth="0" />
+          <circle cx="15.7" cy="15.9" r="1.15" fill="currentColor" strokeWidth="0" />
+          <path d="M12 3.9c-1.4 2.2-2.1 4.9-2.1 8.1s.7 5.9 2.1 8.1M12 3.9c1.4 2.2 2.1 4.9 2.1 8.1s-.7 5.9-2.1 8.1" strokeWidth="0.8" opacity="0.55" />
+        </IconShell>
+      );
     case "a2ad":
       return (
         <IconShell {...common}>

@@ -477,6 +477,12 @@ export function getMapObjectTooltip(object: unknown): { html: string; style: Rec
     category?: string;
     computedRisk?: number;
     escalationCeiling?: number;
+    iso?: string;
+    countryIso?: string;
+    populationM?: number;
+    bp?: number;
+    nodeType?: string;
+    role?: string;
   };
   const style = {
     backgroundColor: "rgba(2, 6, 23, 0.94)",
@@ -488,6 +494,24 @@ export function getMapObjectTooltip(object: unknown): { html: string; style: Rec
     borderRadius: "6px",
     boxShadow: "0 0 24px rgba(34, 211, 238, 0.14)",
   };
+  if (maybe.objectKind === "countryName" && maybe.name) {
+    return {
+      html: `<div style="font-weight:700;color:#22d3ee;margin-bottom:4px">${maybe.nameRu ?? maybe.name} · ${maybe.iso ?? ""}</div><div>Боевой потенциал: <b>${(maybe.bp ?? 0).toFixed(1)}</b> · сторона: <b>${maybe.side ?? "—"}</b></div><div>Население: <b>${formatNumber(Number(maybe.populationM ?? 0))} млн</b> · регион: ${maybe.region ?? "—"}</div>`,
+      style,
+    };
+  }
+  if (maybe.objectKind === "city" && maybe.name) {
+    return {
+      html: `<div style="font-weight:700;color:#e2e8f0;margin-bottom:4px">${maybe.name} · ${maybe.countryIso ?? ""}</div><div>Тип: <b>${maybe.role ?? "population center"}</b> · население агломерации: <b>${formatNumber(Number(maybe.populationM ?? 0))} млн</b></div><div style="opacity:.72;margin-top:4px">Публичная ориентировочная точка города/агломерации для стратегической карты.</div>`,
+      style,
+    };
+  }
+  if (maybe.objectKind === "strategicNode" && maybe.name) {
+    return {
+      html: `<div style="font-weight:700;color:#a78bfa;margin-bottom:4px">${maybe.name} · ${maybe.countryIso ?? ""}</div><div>Узел: <b>${maybe.nodeType ?? "infrastructure"}</b> · throughput-score: <b>${(maybe.throughputScore ?? 0).toFixed(0)}</b>/100</div><div style="opacity:.72;margin-top:5px;max-width:340px">${maybe.description ?? "Стратегический инфраструктурный узел по публичным данным."}</div>`,
+      style,
+    };
+  }
   if (maybe.objectKind === "militaryBase" && maybe.name) {
     const reachBits = [
       typeof maybe.airRadiusKm === "number" ? `авиа-радиус ~${formatNumber(maybe.airRadiusKm)} км` : null,

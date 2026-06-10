@@ -45,6 +45,10 @@ import {
   createMaritimeChokepointLayers,
   createSupplyCorridorLayers,
 } from "@/lib/map/operational-intelligence";
+import {
+  createCountryNameLayer,
+  createGeographicDetailLayers,
+} from "@/lib/map/geographic-detail";
 
 type PatchedLngLatConstructor = typeof mapboxgl.LngLat & { _safePatched?: boolean };
 type MutableMapboxGl = typeof mapboxgl & { LngLat: PatchedLngLatConstructor };
@@ -586,8 +590,10 @@ export function StrategicMap({
         minBP,
         maxBP,
       });
+      const bpLayers: Layer[] = [layer, createCountryNameLayer(countriesRaw, viewState.zoom, false)];
       const selectedRings = createSelectedRingsLayer(countriesRaw, selectedISO);
-      return selectedRings ? [layer, selectedRings] : [layer];
+      if (selectedRings) bpLayers.push(selectedRings);
+      return bpLayers;
     }
 
     // ─── Analytics Layers ──────────────────────────────────
@@ -697,6 +703,10 @@ export function StrategicMap({
         layers.push(...createAirReachLayers(countriesRaw));
         break;
       }
+      case "geoDetails": {
+        layers.push(...createGeographicDetailLayers(countriesRaw, viewState.zoom));
+        break;
+      }
       case "a2ad": {
         layers.push(...createA2ADLayers(countriesRaw));
         break;
@@ -726,7 +736,7 @@ export function StrategicMap({
 
     const selectedRings = createSelectedRingsLayer(countriesRaw, selectedISO);
     if (selectedRings) layers.push(selectedRings);
-    if (countriesRaw.length > 0) layers.push(createTopCountryLabelsLayer(countriesRaw));
+    if (countriesRaw.length > 0 && activeLayer !== "geoDetails") layers.push(createTopCountryLabelsLayer(countriesRaw));
 
     return layers;
   }, [
@@ -742,6 +752,7 @@ export function StrategicMap({
     handleCountryHover,
     handleCountryClick,
     countriesRaw,
+    viewState.zoom,
   ]);
 
   const selectedCountryRaw = useMemo(

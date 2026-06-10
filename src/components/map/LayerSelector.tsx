@@ -21,6 +21,7 @@ export type AnalyticsLayerKey =
   | "alliances"
   | "bases"
   | "airRange"
+  | "geoDetails"
   | "a2ad"
   | "chokepoints"
   | "corridors"
@@ -52,6 +53,7 @@ const LAYER_OPTIONS: LayerOption[] = [
   { key: "alliances", label: "Alliance Network", shortLabel: "ALLY" },
   { key: "bases", label: "Military Bases", shortLabel: "BASE" },
   { key: "airRange", label: "Aviation Combat Radius", shortLabel: "RNG" },
+  { key: "geoDetails", label: "Geography / Cities / Nodes", shortLabel: "GEO" },
   { key: "a2ad", label: "A2/AD Denial Envelopes", shortLabel: "A2AD" },
   { key: "chokepoints", label: "Maritime Choke Points", shortLabel: "CHOKE" },
   { key: "corridors", label: "Supply Corridors", shortLabel: "SUP" },

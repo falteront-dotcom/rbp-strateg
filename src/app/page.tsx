@@ -288,6 +288,7 @@ const LAYER_BRIEF: Record<AnalyticsLayerKey, { label: string; signal: string; ac
   alliances: { label: "ALLIANCE NET", signal: "Блоки, совместимость и сетевые эффекты", accent: "text-indigo-300" },
   bases: { label: "BASE NETWORK", signal: "Публичные стратегические базы и узлы", accent: "text-cyan-300" },
   airRange: { label: "AIR REACH", signal: "Боевые и экспедиционные радиусы авиации", accent: "text-sky-300" },
+  geoDetails: { label: "GEO DETAIL", signal: "Государства, города, население, порты, аэродромы и логистика", accent: "text-teal-300" },
   a2ad: { label: "A2/AD", signal: "Зоны запрета доступа: ПВО, РЭБ, C2, дальний удар", accent: "text-amber-300" },
   chokepoints: { label: "CHOKEPOINTS", signal: "Проливы, каналы и sea lines of communication", accent: "text-cyan-300" },
   corridors: { label: "SUPPLY LINES", signal: "Коридоры переброски, снабжения и уязвимости", accent: "text-purple-300" },

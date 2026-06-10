@@ -17,8 +17,7 @@ import {
   Legend,
 } from "recharts";
 import { motion } from "framer-motion";
-import type { CountryCompareData } from "@/lib/comparison";
-import { isoToFlag, formatLargeNumber, getBPTierLabel, getBPTierColor } from "@/lib/comparison";
+import type { CountryCompareData } from "@/lib/comparison";import { isoToFlag, formatLargeNumber } from "@/lib/comparison";
 
 // ─── Props ──────────────────────────────────────────────────────────────────
 interface ComparisonTabProps {
@@ -48,27 +47,13 @@ export function ComparisonTab({ countries, onRemoveCountry, onAddCountry }: Comp
   const radarData = useMemo(() => {
     return COMPONENTS.map((comp) => {
       const entry: Record<string, unknown> = { component: comp.label };
-      countries.forEach((c, idx) => {
+      countries.forEach((c) => {
         entry[c.nameRu] = c[comp.key] as number;
       });
       return entry;
     });
   }, [countries]);
 
-  // Comparison table data
-  const tableData = useMemo(() => {
-    const base = countries[0];
-    return COMPONENTS.map((comp) => {
-      const row: Record<string, unknown> = { component: comp.label };
-      countries.forEach((c, idx) => {
-        const val = c[comp.key] as number;
-        const delta = base ? val - (base[comp.key] as number) : 0;
-        row[`val_${idx}`] = val;
-        row[`delta_${idx}`] = delta;
-      });
-      return row;
-    });
-  }, [countries]);
 
   // Hardware comparison data
   const hardwareData = useMemo(() => {
@@ -80,7 +65,7 @@ export function ComparisonTab({ countries, onRemoveCountry, onAddCountry }: Comp
     ];
     return metrics.map((m) => {
       const entry: Record<string, unknown> = { metric: m.label };
-      countries.forEach((c, idx) => {
+      countries.forEach((c) => {
         entry[`${c.nameRu}`] = (c as unknown as Record<string, unknown>)[m.key] as number ?? 0;
       });
       return entry;
@@ -223,7 +208,7 @@ export function ComparisonTab({ countries, onRemoveCountry, onAddCountry }: Comp
           <h3 className="text-xs font-bold text-tactical-primary tracking-widest uppercase mb-3">
             ◈ Радар сравнения
           </h3>
-          <ResponsiveContainer width="100%" height={260}>
+          <ResponsiveContainer width="100%" height={260} minWidth={0} minHeight={1}>
             <RadarChart data={radarData} cx="50%" cy="50%" outerRadius="70%">
               <PolarGrid stroke="#1e293b" />
               <PolarAngleAxis dataKey="component" tick={{ fill: "#94a3b8", fontSize: 9 }} />
@@ -259,7 +244,7 @@ export function ComparisonTab({ countries, onRemoveCountry, onAddCountry }: Comp
         <h3 className="text-xs font-bold text-tactical-primary tracking-widest uppercase mb-3">
           ◈ Сравнение вооружений
         </h3>
-        <ResponsiveContainer width="100%" height={200}>
+        <ResponsiveContainer width="100%" height={200} minWidth={0} minHeight={1}>
           <BarChart data={hardwareData}>
             <CartesianGrid strokeDasharray="3 3" stroke="#1e293b" />
             <XAxis dataKey="metric" tick={{ fill: "#94a3b8", fontSize: 10 }} />
@@ -275,7 +260,7 @@ export function ComparisonTab({ countries, onRemoveCountry, onAddCountry }: Comp
                 fontSize: 10,
                 fontFamily: "monospace",
               }}
-              formatter={((value: number) => formatLargeNumber(value)) as any}
+              formatter={(value: number | string | undefined) => formatLargeNumber(Number(value ?? 0))}
             />
           </BarChart>
         </ResponsiveContainer>

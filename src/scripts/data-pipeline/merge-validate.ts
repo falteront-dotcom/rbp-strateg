@@ -18,7 +18,6 @@
 import { getGFPData } from "./scrape-gfp";
 import { getNuclearData } from "./nuclear-data";
 import { COUNTRY_NAMES_RU } from "@/lib/geo/country-names-ru";
-import type { NewCountry } from "@/db/schema";
 
 interface ConflictRecord {
   iso3: string;
@@ -107,6 +106,7 @@ function deriveSide(iso3: string): "NATO" | "RUS" | "CHINA" | "UKR" | "NEUTRAL" 
   if (iso3 === "UKR") return "UKR";
   if (NATO_MEMBERS.has(iso3)) return "NATO";
   if (CSTO_MEMBERS.has(iso3)) return "RUS";
+  if (AUKUS_MEMBERS.has(iso3)) return "NATO";
   if (iso3 === "CHN" || iso3 === "PRK") return "CHINA";
   return "NEUTRAL";
 }
@@ -247,11 +247,11 @@ export async function runPipeline(): Promise<{
     const gfpArea = (gfp as unknown as Record<string, unknown>)?.areaKm2 as number | undefined;
     const gfpCoast = (gfp as unknown as Record<string, unknown>)?.coastlineKm as number | undefined;
     
-    let gdpPppBn = wb?.gdpPppBn ?? 0;
+    const gdpPppBn = wb?.gdpPppBn ?? 0;
     let militaryBudgetBn = wb?.militaryBudgetBn ?? gfpBudget ?? 0;
     let defensePctGdp = wb?.defensePctGdp ?? 0;
-    let populationM = wb?.populationM ?? 0;
-    let areaKm2 = wb?.areaKm2 ?? gfpArea ?? 0;
+    const populationM = wb?.populationM ?? 0;
+    const areaKm2 = wb?.areaKm2 ?? gfpArea ?? 0;
 
     // Cross-validate budget between GFP and WB
     if (gfpBudget && wb?.militaryBudgetBn) {
@@ -344,7 +344,7 @@ export async function runPipeline(): Promise<{
 // Direct execution
 if (typeof require !== "undefined" && require.main === module) {
   runPipeline()
-    .then(({ countries, conflicts, stats }) => {
+    .then(({ countries, stats }) => {
       console.log("\n📊 Results:");
       console.log(JSON.stringify(stats, null, 2));
       console.log(`\nTop 5:`);

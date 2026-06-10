@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useMemo } from 'react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { motion } from 'framer-motion';
 import {
   BarChart,
@@ -9,24 +9,11 @@ import {
   YAxis,
   CartesianGrid,
   Tooltip,
-  ResponsiveContainer,
   AreaChart,
   Area,
   Cell,
 } from 'recharts';
-import {
-  DollarSign,
-  Users,
-  Droplets,
-  Shield,
-  TrendingUp,
-  AlertTriangle,
-  CheckCircle2,
-  Gauge,
-  ArrowUpRight,
-  ArrowDownRight,
-  Minus,
-} from 'lucide-react';
+import { DollarSign, Users, Droplets, Shield, TrendingUp, AlertTriangle, Gauge, ArrowUpRight, ArrowDownRight, Minus } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import type { Country } from '@/db/schema';
 
@@ -144,7 +131,7 @@ function MetricCard({
       initial={{ opacity: 0, y: 12 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ delay, duration: 0.35 }}
-      className="glass-panel rounded-lg p-4 flex flex-col gap-1.5 relative overflow-hidden group"
+      className="glass-panel rbp-interactive rounded-xl p-3 min-h-[126px] flex flex-col gap-2 relative overflow-hidden group"
     >
       <div
         className="absolute top-0 left-0 w-0.5 h-full opacity-60 group-hover:opacity-100 transition-opacity"
@@ -154,15 +141,15 @@ function MetricCard({
         <div className="p-1.5 rounded" style={{ backgroundColor: `${accent}18` }}>
           <Icon size={14} style={{ color: accent }} />
         </div>
-        <span className="text-[9px] font-bold tracking-[.2em] uppercase text-slate-500">
+        <span className="min-w-0 text-[8px] font-bold leading-snug tracking-[.16em] uppercase text-slate-500 break-words">
           {label}
         </span>
       </div>
-      <p className="text-xl font-black font-mono tracking-tight" style={{ color: accent }}>
+      <p className="max-w-full overflow-hidden text-[clamp(1.05rem,2.2vw,1.35rem)] leading-tight font-black font-mono tracking-tight tabular-nums break-words" style={{ color: accent }}>
         {value}
       </p>
       {sub && (
-        <p className="text-[9px] font-mono text-slate-500 tracking-wider">{sub}</p>
+        <p className="text-[8px] leading-snug font-mono text-slate-500 tracking-wider break-words">{sub}</p>
       )}
     </motion.div>
   );
@@ -178,6 +165,36 @@ interface ChartTooltipProps {
   active?: boolean;
   payload?: TooltipEntry[];
   label?: string;
+}
+
+function ChartViewport({
+  children,
+}: {
+  children: (size: { width: number; height: number }) => React.ReactNode;
+}) {
+  const ref = useRef<HTMLDivElement | null>(null);
+  const [size, setSize] = useState({ width: 0, height: 0 });
+
+  useEffect(() => {
+    const el = ref.current;
+    if (!el) return;
+
+    const measure = () => {
+      const rect = el.getBoundingClientRect();
+      setSize({ width: Math.max(160, Math.floor(rect.width)), height: Math.max(160, Math.floor(rect.height)) });
+    };
+
+    measure();
+    const observer = new ResizeObserver(measure);
+    observer.observe(el);
+    return () => observer.disconnect();
+  }, []);
+
+  return (
+    <div ref={ref} className="h-52 min-w-0">
+      {size.width > 0 && size.height > 0 ? children(size) : null}
+    </div>
+  );
 }
 
 /** Custom Recharts tooltip */
@@ -197,6 +214,7 @@ function ChartTooltip({ active, payload, label }: ChartTooltipProps) {
 
 /** SVG Gauge Arc — military budget per soldier vs global average */
 function EfficiencyGauge({ budget, personnel }: { budget: number; personnel: number }) {
+  const svgId = React.useId().replace(/:/g, '');
   const perSoldier = personnel > 0 ? (budget * 1e9) / personnel : 0;
   const ratio = perSoldier / GLOBAL_AVG_BUDGET_PER_SOLDIER;
   // Clamp 0–2 for display
@@ -230,9 +248,29 @@ function EfficiencyGauge({ budget, personnel }: { budget: number; personnel: num
 
   return (
     <div className="flex flex-col items-center gap-3">
-      <svg width={cx * 2} height={cy + 16} viewBox={`0 0 ${cx * 2} ${cy + 16}`}>
+      <svg width={cx * 2} height={cy + 16} viewBox={`0 0 ${cx * 2} ${cy + 16}`} aria-hidden="true">
+        <defs>
+          <linearGradient id={`${svgId}-efficiency`} x1="18" y1="28" x2="122" y2="100" gradientUnits="userSpaceOnUse">
+            <stop stopColor={gaugeColor} stopOpacity="0.35" />
+            <stop offset="0.55" stopColor={gaugeColor} stopOpacity="1" />
+            <stop offset="1" stopColor={gaugeColor} stopOpacity="0.65" />
+          </linearGradient>
+          <radialGradient id={`${svgId}-efficiency-core`} cx="0" cy="0" r="1" gradientUnits="userSpaceOnUse" gradientTransform={`translate(${cx} ${cy}) rotate(90) scale(64 36)`}>
+            <stop stopColor={gaugeColor} stopOpacity="0.2" />
+            <stop offset="1" stopColor={gaugeColor} stopOpacity="0" />
+          </radialGradient>
+          <filter id={`${svgId}-efficiency-glow`} x="-30%" y="-60%" width="160%" height="200%">
+            <feGaussianBlur stdDeviation="2.4" result="blur" />
+            <feMerge>
+              <feMergeNode in="blur" />
+              <feMergeNode in="SourceGraphic" />
+            </feMerge>
+          </filter>
+        </defs>
+        <ellipse cx={cx} cy={cy - 3} rx="64" ry="31" fill={`url(#${svgId}-efficiency-core)`} />
         {/* Background arc */}
-        <path d={arcPath(startAngle, endAngle)} fill="none" stroke="rgba(255,255,255,0.08)" strokeWidth={stroke} strokeLinecap="round" />
+        <path d={arcPath(startAngle, endAngle)} fill="none" stroke="rgba(255,255,255,0.08)" strokeWidth={stroke + 2} strokeLinecap="round" />
+        <path d={arcPath(startAngle, endAngle)} fill="none" stroke="rgba(148,163,184,0.18)" strokeWidth="1" strokeLinecap="round" strokeDasharray="3 6" />
         {/* Filled arc */}
         {pct > 0 && (
           <motion.path
@@ -241,17 +279,26 @@ function EfficiencyGauge({ budget, personnel }: { budget: number; personnel: num
             transition={{ duration: 1.2, ease: 'easeOut' }}
             d={arcPath(startAngle, fillAngle)}
             fill="none"
-            stroke={gaugeColor}
-            strokeWidth={stroke}
+            stroke={`url(#${svgId}-efficiency)`}
+            strokeWidth={stroke + 1}
             strokeLinecap="round"
-            style={{ filter: `drop-shadow(0 0 6px ${gaugeColor}60)` }}
+            filter={`url(#${svgId}-efficiency-glow)`}
           />
         )}
+        {[0, 0.25, 0.5, 0.75, 1].map((tick) => {
+          const angle = startAngle - tick * totalAngle;
+          const rad = (angle * Math.PI) / 180;
+          const x1 = cx + (radius - 4) * Math.cos(rad);
+          const y1 = cy - (radius - 4) * Math.sin(rad);
+          const x2 = cx + (radius + 5) * Math.cos(rad);
+          const y2 = cy - (radius + 5) * Math.sin(rad);
+          return <line key={tick} x1={x1} y1={y1} x2={x2} y2={y2} stroke="rgba(148,163,184,0.34)" strokeWidth="1" />;
+        })}
         {/* Center text */}
-        <text x={cx} y={cy - 8} textAnchor="middle" fill={gaugeColor} fontSize="18" fontWeight="900" fontFamily="monospace">
+        <text x={cx} y={cy - 8} textAnchor="middle" fill={gaugeColor} fontSize="18" fontWeight="900" fontFamily="monospace" style={{ filter: `drop-shadow(0 0 6px ${gaugeColor}80)` }}>
           ${perSoldier >= 1000 ? `${(perSoldier / 1000).toFixed(0)}K` : perSoldier.toFixed(0)}
         </text>
-        <text x={cx} y={cy + 10} textAnchor="middle" fill="#94a3b8" fontSize="8" fontFamily="monospace">
+        <text x={cx} y={cy + 10} textAnchor="middle" fill="#94a3b8" fontSize="8" fontFamily="monospace" letterSpacing="0.12em">
           на военнослужащего
         </text>
       </svg>
@@ -293,6 +340,8 @@ function FiscalIndicator({ pct }: { pct: number }) {
           {label}
         </motion.span>
       </div>
+
+      <div className="mb-2 text-[9px] font-mono uppercase tracking-widest text-slate-500">Уровень риска {level}/4</div>
 
       {/* Bar */}
       <div className="relative h-3 bg-white/5 rounded-full overflow-hidden mb-3">
@@ -475,10 +524,9 @@ export function EconomicsTab({ country, allCountries }: EconomicsTabProps) {
     const militaryShare = country.gdpPppBn > 0
       ? (country.militaryBudgetBn / country.gdpPppBn) * 100
       : 0;
-    const civilianShare = 100 - militaryShare;
     return [
       { name: 'ВВП', value: country.gdpPppBn, fill: 'rgba(34,211,238,0.15)' },
-      { name: 'Оборонный', value: country.militaryBudgetBn, fill: 'var(--color-tactical-primary)' },
+      { name: `Оборонный ${militaryShare.toFixed(1)}%`, value: country.militaryBudgetBn, fill: 'var(--color-tactical-primary)' },
       { name: 'Гражданский', value: country.gdpPppBn - country.militaryBudgetBn, fill: 'rgba(34,211,238,0.08)' },
     ];
   }, [country.gdpPppBn, country.militaryBudgetBn]);
@@ -501,7 +549,7 @@ export function EconomicsTab({ country, allCountries }: EconomicsTabProps) {
           <div className="h-px flex-1 bg-gradient-to-l from-tactical-primary/40 to-transparent" />
         </div>
 
-        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3">
+        <div className="rbp-auto-metric-grid">
           <MetricCard
             icon={DollarSign}
             label="ВВП (ППС)"
@@ -554,13 +602,13 @@ export function EconomicsTab({ country, allCountries }: EconomicsTabProps) {
       </section>
 
       {/* ─── SECTION: CHARTS ROW ─── */}
-      <section className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+      <section className="rbp-panel-grid">
         {/* Military Budget vs GDP */}
         <motion.div
           initial={{ opacity: 0, y: 16 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.3, duration: 0.4 }}
-          className="glass-panel rounded-lg p-5"
+          className="glass-panel rounded-xl p-4 overflow-hidden min-w-0"
         >
           <div className="flex items-center justify-between mb-4">
             <div className="flex items-center gap-2">
@@ -574,9 +622,9 @@ export function EconomicsTab({ country, allCountries }: EconomicsTabProps) {
             </span>
           </div>
 
-          <div className="h-52">
-            <ResponsiveContainer width="100%" height="100%">
-              <BarChart data={budgetVsGdpData} margin={{ top: 5, right: 10, left: 10, bottom: 5 }}>
+          <ChartViewport>
+            {({ width, height }) => (
+              <BarChart width={width} height={height} data={budgetVsGdpData} margin={{ top: 8, right: 8, left: 0, bottom: 8 }}>
                 <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.05)" vertical={false} />
                 <XAxis
                   dataKey="name"
@@ -589,6 +637,7 @@ export function EconomicsTab({ country, allCountries }: EconomicsTabProps) {
                   axisLine={false}
                   tickLine={false}
                   tickFormatter={(v: number) => fmtBn(v)}
+                  width={38}
                 />
                 <Tooltip content={<ChartTooltip />} cursor={{ fill: 'rgba(255,255,255,0.03)' }} />
                 <Bar dataKey="value" radius={[3, 3, 0, 0]} maxBarSize={60}>
@@ -597,8 +646,8 @@ export function EconomicsTab({ country, allCountries }: EconomicsTabProps) {
                   ))}
                 </Bar>
               </BarChart>
-            </ResponsiveContainer>
-          </div>
+            )}
+          </ChartViewport>
 
           {/* Proportion callout */}
           <div className="mt-3 flex items-center justify-between px-2 py-2 bg-white/[0.03] rounded border border-white/5">
@@ -614,7 +663,7 @@ export function EconomicsTab({ country, allCountries }: EconomicsTabProps) {
           initial={{ opacity: 0, y: 16 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.4, duration: 0.4 }}
-          className="glass-panel rounded-lg p-5"
+          className="glass-panel rounded-xl p-4 overflow-hidden min-w-0"
         >
           <div className="flex items-center justify-between mb-4">
             <div className="flex items-center gap-2">
@@ -642,9 +691,9 @@ export function EconomicsTab({ country, allCountries }: EconomicsTabProps) {
             </div>
           </div>
 
-          <div className="h-52">
-            <ResponsiveContainer width="100%" height="100%">
-              <AreaChart data={trendData} margin={{ top: 5, right: 10, left: 10, bottom: 5 }}>
+          <ChartViewport>
+            {({ width, height }) => (
+              <AreaChart width={width} height={height} data={trendData} margin={{ top: 8, right: 8, left: 0, bottom: 8 }}>
                 <defs>
                   <linearGradient id="budgetGradient" x1="0" y1="0" x2="0" y2="1">
                     <stop offset="5%" stopColor="var(--color-tactical-primary)" stopOpacity={0.3} />
@@ -663,6 +712,7 @@ export function EconomicsTab({ country, allCountries }: EconomicsTabProps) {
                   axisLine={false}
                   tickLine={false}
                   tickFormatter={(v: number) => `$${v}B`}
+                  width={38}
                 />
                 <Tooltip content={<ChartTooltip />} />
                 <Area
@@ -676,8 +726,8 @@ export function EconomicsTab({ country, allCountries }: EconomicsTabProps) {
                   activeDot={{ r: 5, fill: 'var(--color-tactical-primary)', stroke: '#0e1520', strokeWidth: 2 }}
                 />
               </AreaChart>
-            </ResponsiveContainer>
-          </div>
+            )}
+          </ChartViewport>
 
           {/* Year range */}
           <div className="mt-3 flex items-center justify-between px-2 py-2 bg-white/[0.03] rounded border border-white/5">
@@ -690,7 +740,7 @@ export function EconomicsTab({ country, allCountries }: EconomicsTabProps) {
       </section>
 
       {/* ─── SECTION: GAUGE + FISCAL ─── */}
-      <section className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+      <section className="rbp-panel-grid">
         {/* Economic Efficiency Gauge */}
         <motion.div
           initial={{ opacity: 0, y: 16 }}

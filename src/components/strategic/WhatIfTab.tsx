@@ -45,17 +45,7 @@ import {
   Atom,
   Ban,
   UsersRound,
-} from "lucide-react";
-import {
-  COMPARISON_BP_SHORT_LABELS,
-  COMPARISON_BP_COMPONENTS,
-  type ComparisonBPComponent,
-  type CountryCompareData,
-  isoToFlag,
-  formatLargeNumber,
-  getBPTierLabel,
-  getBPTierColor,
-} from "@/lib/comparison";
+} from "lucide-react";import { COMPARISON_BP_SHORT_LABELS, COMPARISON_BP_COMPONENTS, type ComparisonBPComponent, type CountryCompareData, isoToFlag, getBPTierLabel, getBPTierColor } from "@/lib/comparison";
 import {
   calculateWhatIf,
   DEFAULT_SCENARIO_PARAMS,
@@ -73,7 +63,6 @@ import {
   type ScenarioPreset,
 } from "@/lib/what-if-engine";
 import type { BPComponent, CountryRawData } from "@/lib/bp/types";
-import { BP_COMPONENTS } from "@/lib/bp/types";
 import { cn } from "@/lib/utils";
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -167,7 +156,9 @@ function SliderControl({
         : "bg-amber-400";
   const isNegative: boolean = value < 0;
   const displayValue: string =
-    value > 0 ? `+${Math.round(value * 100)}%` : `${Math.round(value * 100)}%`;
+    unit === "%"
+      ? (value > 0 ? `+${Math.round(value * 100)}%` : `${Math.round(value * 100)}%`)
+      : `${value.toFixed(step < 1 ? 2 : 0)}${unit}`;
 
   return (
     <div className="space-y-1.5">
@@ -342,10 +333,12 @@ export default function WhatIfTab({
   useEffect(() => {
     if (!isOpen) return;
     const decoded = decodeScenarioFromURL(window.location.search);
-    if (decoded) {
+    if (!decoded) return;
+    const timer = window.setTimeout(() => {
       setSelectedIso(decoded.isoCode);
       setParams(decoded.params);
-    }
+    }, 0);
+    return () => window.clearTimeout(timer);
   }, [isOpen]);
 
   // ─── Selected country data ──────────────────────────────────────────
@@ -443,9 +436,9 @@ export default function WhatIfTab({
   useEffect(() => {
     if (!selectedRawData || allRawData.length === 0) return;
 
-    setIsCalculating(true);
     // Debounce heavy calculation
     const timer = setTimeout(() => {
+      setIsCalculating(true);
       try {
         const scenarioResult: ScenarioResult = calculateWhatIf(
           selectedRawData,
@@ -978,7 +971,7 @@ export default function WhatIfTab({
                           <div className="text-[9px] font-mono text-slate-500 uppercase tracking-widest text-center">
                             Базовый Профиль
                           </div>
-                          <ResponsiveContainer width="100%" height={220}>
+                          <ResponsiveContainer width="100%" height={220} minWidth={0} minHeight={1}>
                             <RadarChart
                               data={radarData}
                               cx="50%"
@@ -1019,7 +1012,7 @@ export default function WhatIfTab({
                           <div className="text-[9px] font-mono text-cyan-400/70 uppercase tracking-widest text-center">
                             Сценарный Профиль
                           </div>
-                          <ResponsiveContainer width="100%" height={220}>
+                          <ResponsiveContainer width="100%" height={220} minWidth={0} minHeight={1}>
                             <RadarChart
                               data={radarData}
                               cx="50%"
@@ -1061,7 +1054,7 @@ export default function WhatIfTab({
                         <div className="text-[9px] font-mono text-slate-500 uppercase tracking-widest text-center mb-2">
                           Наложение
                         </div>
-                        <ResponsiveContainer width="100%" height={220}>
+                        <ResponsiveContainer width="100%" height={220} minWidth={0} minHeight={1}>
                           <RadarChart
                             data={radarData}
                             cx="50%"

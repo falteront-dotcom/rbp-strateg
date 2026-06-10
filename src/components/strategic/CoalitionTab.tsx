@@ -34,24 +34,7 @@ import {
   Ship,
   Crosshair,
 } from "lucide-react";
-import type { Country } from "@/db/schema";
-import {
-  COALITION_REGISTRY,
-  COALITION_NAMES,
-  COALITION_LABELS_RU,
-  BP_LABELS_RU,
-  getCountryCoalition,
-  getCoalitionMembers,
-  getCoalitionAggregateBP,
-  getCoalitionComparison,
-  simulateCoalitionSwitch,
-  isoToFlag,
-  formatLargeNumber,
-  getBPTierLabel,
-  getRankBadge,
-  type AggregateBP,
-  type SwitchScenario,
-} from "@/lib/coalition-analysis";
+import type { Country } from "@/db/schema";import { COALITION_REGISTRY, COALITION_NAMES, COALITION_LABELS_RU, BP_LABELS_RU, getCountryCoalition, getCoalitionMembers, getCoalitionAggregateBP, getCoalitionComparison, simulateCoalitionSwitch, isoToFlag, formatLargeNumber, getRankBadge, type AggregateBP } from "@/lib/coalition-analysis";
 import {
   COALITION_BP_COMPONENTS,
   type CoalitionBPComponent,
@@ -388,7 +371,7 @@ export function CoalitionTab({ country, allCountries }: CoalitionTabProps) {
       {/* ═══ 4. Coalition vs Coalition Comparison Bar Chart ════════════ */}
       <Section title="Сравнение Коалиций" icon={<Swords size={14} />}>
         <div className="w-full h-64">
-          <ResponsiveContainer width="100%" height="100%">
+          <ResponsiveContainer width="100%" height="100%" minWidth={0} minHeight={1}>
             <BarChart data={barData} margin={{ top: 8, right: 8, bottom: 8, left: 8 }}>
               <XAxis
                 dataKey="name"
@@ -463,7 +446,7 @@ export function CoalitionTab({ country, allCountries }: CoalitionTabProps) {
         </div>
 
         <div className="w-full h-72">
-          <ResponsiveContainer width="100%" height="100%">
+          <ResponsiveContainer width="100%" height="100%" minWidth={0} minHeight={1}>
             <RadarChart data={radarData} cx="50%" cy="50%" outerRadius="65%">
               <PolarGrid stroke="rgba(255,255,255,0.06)" strokeDasharray="2 4" />
               <PolarAngleAxis
@@ -506,7 +489,7 @@ export function CoalitionTab({ country, allCountries }: CoalitionTabProps) {
       {/* ═══ 6. Military Balance Stacked Bar Chart ═══════════════════════ */}
       <Section title="Военный Баланс" icon={<Ship size={14} />}>
         <div className="w-full h-64">
-          <ResponsiveContainer width="100%" height="100%">
+          <ResponsiveContainer width="100%" height="100%" minWidth={0} minHeight={1}>
             <BarChart data={militaryData} margin={{ top: 8, right: 8, bottom: 8, left: 8 }}>
               <XAxis
                 dataKey="name"

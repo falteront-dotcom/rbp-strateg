@@ -5,7 +5,13 @@
 // ─────────────────────────────────────────────────────────────────────────────
 
 import { NextRequest, NextResponse } from "next/server";
-import { getEquipmentByCountry, getEquipmentByCategory, getAllEquipment } from "@/lib/equipment-reference";
+import { getEquipmentByCountry, getEquipmentByCategory, getAllEquipment, type EquipmentSpec } from "@/lib/equipment-reference";
+
+const EQUIPMENT_CATEGORIES = ["mbt", "ifv", "artillery", "mlrs", "sam", "fighter", "bomber", "attack_heli", "transport", "carrier", "destroyer", "frigate", "corvette", "submarine_ssk", "submarine_ssn", "submarine_ssbn", "icbm", "slbm", "cruise_missile"] as const;
+
+function isEquipmentCategory(value: string): value is EquipmentSpec["category"] {
+  return EQUIPMENT_CATEGORIES.includes(value as EquipmentSpec["category"]);
+}
 
 export async function GET(request: NextRequest) {
   try {
@@ -25,7 +31,10 @@ export async function GET(request: NextRequest) {
         });
       }
     } else if (type) {
-      data = getEquipmentByCategory(type as any);
+      if (!isEquipmentCategory(type)) {
+        return NextResponse.json({ error: "Invalid equipment category", validCategories: EQUIPMENT_CATEGORIES }, { status: 400 });
+      }
+      data = getEquipmentByCategory(type);
     } else {
       data = getAllEquipment();
     }

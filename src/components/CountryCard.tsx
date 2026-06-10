@@ -8,7 +8,6 @@ import {
   PolarGrid,
   PolarAngleAxis,
   PolarRadiusAxis,
-  ResponsiveContainer,
 } from "recharts";
 import { X, GitCompareArrows, Shield, Users, Fuel, Radio, Landmark, BookOpen, AlertCircle, Mountain } from "lucide-react";
 
@@ -86,12 +85,20 @@ interface CountryCardProps {
 
 /** Convert ISO-3166-1 alpha-3 code to flag emoji */
 function isoToFlag(iso: string): string {
-  if (iso.length !== 3) return "🏳️";
+  const ISO3_TO_ISO2: Record<string, string> = {
+    USA: "US", RUS: "RU", CHN: "CN", IND: "IN", GBR: "GB", FRA: "FR", JPN: "JP", KOR: "KR",
+    ITA: "IT", DEU: "DE", TUR: "TR", BRA: "BR", PAK: "PK", EGY: "EG", ISR: "IL", IDN: "ID",
+    AUS: "AU", CAN: "CA", UKR: "UA", SAU: "SA", IRN: "IR", PRK: "KP", POL: "PL", ESP: "ES",
+    NLD: "NL", THA: "TH", VNM: "VN", TWN: "TW", SGP: "SG", MYS: "MY", PHI: "PH", NZL: "NZ",
+    NOR: "NO", SWE: "SE", FIN: "FI", GRC: "GR", CHE: "CH", AUT: "AT", BEL: "BE", CZE: "CZ",
+    PRT: "PT", ROU: "RO", HUN: "HU", BGR: "BG", SRB: "RS", HRV: "HR", SVK: "SK", SVN: "SI",
+    LTU: "LT", LVA: "LV", EST: "EE", BLR: "BY", ARM: "AM", KAZ: "KZ", KGZ: "KG", TJK: "TJ",
+    ZAF: "ZA", ETH: "ET", ARE: "AE",
+  };
+  const iso2 = ISO3_TO_ISO2[iso.toUpperCase()];
+  if (!iso2) return "🏳️";
   const base = 0x1f1e6;
-  const codePointA = 65;
-  const ch1 = iso.charCodeAt(0) - codePointA + base;
-  const ch2 = iso.charCodeAt(1) - codePointA + base;
-  return String.fromCodePoint(ch1, ch2);
+  return String.fromCodePoint(...iso2.split("").map((ch) => base + ch.charCodeAt(0) - 65));
 }
 
 /** Get BP tier color based on score */
@@ -198,7 +205,7 @@ export function CountryCard({ country, onClose, onCompare }: CountryCardProps) {
             </div>
             <button
               onClick={handleClose}
-              className="p-1.5 text-white/40 hover:text-tactical-primary transition-colors cursor-pointer"
+              className="rbp-interactive rounded-md p-1.5 text-white/40 hover:text-tactical-primary transition-colors cursor-pointer"
               aria-label="Close country card"
             >
               <X size={16} />
@@ -251,40 +258,38 @@ export function CountryCard({ country, onClose, onCompare }: CountryCardProps) {
           <div className="text-[9px] text-tactical-secondary/60 tracking-widest uppercase mb-2">
             Профиль Компонентов
           </div>
-          <div className="w-full h-56">
-            <ResponsiveContainer width="100%" height="100%">
-              <RadarChart data={radarData} cx="50%" cy="50%" outerRadius="70%">
-                <PolarGrid
-                  stroke="oklch(100% 0 0 / 8%)"
-                  strokeDasharray="2 4"
-                />
-                <PolarAngleAxis
-                  dataKey="component"
-                  tick={{
-                    fill: "oklch(75% 0.18 200 / 70%)",
-                    fontSize: 8,
-                    fontFamily: "var(--font-mono)",
-                  }}
-                />
-                <PolarRadiusAxis
-                  angle={90}
-                  domain={[0, 100]}
-                  tick={false}
-                  axisLine={false}
-                />
-                <Radar
-                  name="БП"
-                  dataKey="value"
-                  stroke="oklch(75% 0.18 200)"
-                  fill="oklch(75% 0.18 200 / 20%)"
-                  strokeWidth={1.5}
-                  dot={{
-                    r: 2,
-                    fill: "oklch(75% 0.18 200)",
-                  }}
-                />
-              </RadarChart>
-            </ResponsiveContainer>
+          <div className="flex h-56 w-full items-center justify-center overflow-hidden">
+            <RadarChart width={330} height={224} data={radarData} cx="50%" cy="50%" outerRadius="70%">
+              <PolarGrid
+                stroke="oklch(100% 0 0 / 8%)"
+                strokeDasharray="2 4"
+              />
+              <PolarAngleAxis
+                dataKey="component"
+                tick={{
+                  fill: "oklch(75% 0.18 200 / 70%)",
+                  fontSize: 8,
+                  fontFamily: "var(--font-mono)",
+                }}
+              />
+              <PolarRadiusAxis
+                angle={90}
+                domain={[0, 100]}
+                tick={false}
+                axisLine={false}
+              />
+              <Radar
+                name="БП"
+                dataKey="value"
+                stroke="oklch(75% 0.18 200)"
+                fill="oklch(75% 0.18 200 / 20%)"
+                strokeWidth={1.5}
+                dot={{
+                  r: 2,
+                  fill: "oklch(75% 0.18 200)",
+                }}
+              />
+            </RadarChart>
           </div>
         </div>
 
@@ -398,14 +403,14 @@ export function CountryCard({ country, onClose, onCompare }: CountryCardProps) {
         <div className="mt-auto p-4 flex gap-2">
           <button
             onClick={handleCompare}
-            className="flex-1 py-2.5 bg-tactical-accent/10 hover:bg-tactical-accent/20 border border-tactical-accent/30 text-tactical-accent font-bold tracking-widest text-[10px] rounded-md transition-all duration-200 flex items-center justify-center gap-2 cursor-pointer uppercase"
+            className="rbp-interactive flex-1 py-2.5 bg-tactical-accent/10 hover:bg-tactical-accent/20 border border-tactical-accent/30 text-tactical-accent font-bold tracking-widest text-[10px] rounded-md transition-all duration-200 flex items-center justify-center gap-2 cursor-pointer uppercase"
           >
             <GitCompareArrows size={14} />
             Сравнить
           </button>
           <button
             onClick={handleClose}
-            className="flex-1 py-2.5 bg-white/5 hover:bg-white/10 border border-white/10 text-white/60 hover:text-white font-bold tracking-widest text-[10px] rounded-md transition-all duration-200 cursor-pointer uppercase"
+            className="rbp-interactive flex-1 py-2.5 bg-white/5 hover:bg-white/10 border border-white/10 text-white/60 hover:text-white font-bold tracking-widest text-[10px] rounded-md transition-all duration-200 cursor-pointer uppercase"
           >
             Закрыть
           </button>

@@ -2,10 +2,11 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import MapGL from "react-map-gl/mapbox";
-import type { MapRef } from "react-map-gl/mapbox";
+import type { MapRef, ViewState as MapboxViewState } from "react-map-gl/mapbox";
+import type mapboxgl from "mapbox-gl";
 import { DeckGL } from "@deck.gl/react";
 import type { Layer, PickingInfo } from "@deck.gl/core";
-import type { Feature, FeatureCollection, Polygon, MultiPolygon } from "geojson";
+import type { Feature, MultiPolygon, Polygon } from "geojson";
 import { scaleSequential } from "d3-scale";
 import { MapErrorBoundary } from './MapErrorBoundary';
 import { GeoJsonLayer, ScatterplotLayer } from "@deck.gl/layers";
@@ -18,7 +19,6 @@ import { MapControls, MAP_STYLE_URLS } from "./MapControls";
 import type { MapStyle } from "./MapControls";
 import { CountryPopup } from "./CountryPopup";
 import { MapLegend } from "./MapLegend";
-import { LayerSelector } from "./LayerSelector";
 import type { AnalyticsLayerKey } from "./LayerSelector";
 import {
   loadCountryBoundaries,
@@ -26,6 +26,47 @@ import {
 } from "@/lib/geo/country-boundaries";
 import type { CountryCollection, CountryBPRecord } from "@/lib/geo/country-boundaries";
 import { getPosition } from "@/lib/geo/country-centroids";
+import {
+  createAllianceArcLayer,
+  createCountryOutlineLayer,
+  createMetricBubbleLayer,
+  createRiskHaloLayer,
+  createSelectedRingsLayer,
+  createTopCountryLabelsLayer,
+  getMapObjectTooltip,
+} from "@/lib/map/strategic-map-intelligence";
+import {
+  createAirReachLayers,
+  createMilitaryBaseLayers,
+} from "@/lib/map/military-bases";
+import {
+  createA2ADLayers,
+  createFlashpointLayers,
+  createMaritimeChokepointLayers,
+  createSupplyCorridorLayers,
+} from "@/lib/map/operational-intelligence";
+import {
+  createCountryNameLayer,
+  createGeographicDetailLayers,
+} from "@/lib/map/geographic-detail";
+
+type PatchedLngLatConstructor = typeof mapboxgl.LngLat & { _safePatched?: boolean };
+type MutableMapboxGl = typeof mapboxgl & { LngLat: PatchedLngLatConstructor };
+
+function createSafeLngLatConstructor(OrigLngLat: PatchedLngLatConstructor): PatchedLngLatConstructor {
+  class SafeLngLat extends OrigLngLat {
+    static _safePatched = true;
+    constructor(lng: number, lat: number) {
+      super(
+        typeof lng === "number" && isFinite(lng) ? lng : 0,
+        typeof lat === "number" && isFinite(lat) ? lat : 0,
+      );
+    }
+  }
+  Object.setPrototypeOf(SafeLngLat, OrigLngLat);
+  Object.assign(SafeLngLat, OrigLngLat);
+  return SafeLngLat as PatchedLngLatConstructor;
+}
 
 // ─── OKLCH → sRGB conversion (shared with AnalyticsLayers) ─────────────
 
@@ -180,24 +221,117 @@ export interface CountryMapData {
   isoCode: string;
   name: string;
   nameRu: string;
+  side?: string;
+  coalition?: string | null;
+  region?: string;
+  areaKm2?: number;
+  coastlineKm?: number;
+  gdpPppBn?: number;
   militaryBudgetBn: number;
+  defensePctGdp?: number;
+  populationM?: number;
+  activePersonnel?: number;
+  reservePersonnel?: number;
+  fitForServiceM?: number;
   totalTanks: number;
+  totalAfv?: number;
+  totalArtillery?: number;
+  totalMlrs?: number;
   totalAircraft: number;
+  totalHelicopters?: number;
   totalNavy: number;
+  submarines?: number;
+  aircraftCarriers?: number;
   nuclearWarheads: number;
+  ports?: number;
+  airfields?: number;
+  oilProductionKbd?: number;
+  merchantFleet?: number;
+  techLevel?: number;
+  moraleIndex?: number;
+  combatExperience?: number;
+  c2Capability?: number;
+  ewCapability?: number;
   bpTotal: number;
+  bpWeapon?: number;
+  bpManpower?: number;
+  bpLogistics?: number;
+  bpC2?: number;
+  bpEconomy?: number;
+  bpDoctrine?: number;
+  bpReadiness?: number;
+  bpTerrain?: number;
+  bpAdvanced?: number;
 }
 
 /** Default initial view state: centered on Eastern Europe */
-const INITIAL_VIEW = {
+type ViewState = Pick<MapboxViewState, "longitude" | "latitude" | "zoom" | "pitch" | "bearing" | "padding">;
+
+const INITIAL_VIEW: ViewState = {
   longitude: 30,
   latitude: 50,
   zoom: 3,
   pitch: 45,
   bearing: 0,
-} as const;
+  padding: { top: 0, bottom: 0, left: 0, right: 0 },
+};
 
-type ViewState = typeof INITIAL_VIEW;
+
+function tuneStrategicBaseMap(map: mapboxgl.Map): void {
+  const style = map.getStyle();
+  const layers = style.layers ?? [];
+  const mutableMap = map as unknown as {
+    setLayoutProperty: (id: string, property: string, value: string) => void;
+    setPaintProperty: (id: string, property: string, value: string | number) => void;
+  };
+  const safeLayout = (id: string, property: string, value: string) => {
+    try { mutableMap.setLayoutProperty(id, property, value); } catch { /* layer/style mismatch */ }
+  };
+  const safePaint = (id: string, property: string, value: string | number) => {
+    try { mutableMap.setPaintProperty(id, property, value); } catch { /* layer/style mismatch */ }
+  };
+
+  for (const layer of layers) {
+    const id = layer.id.toLowerCase();
+
+    // The application draws its own strategic labels. Hide Mapbox labels/POIs
+    // so roads/cities/countries do not merge visually with the custom HUD layer.
+    if (layer.type === "symbol") {
+      safeLayout(layer.id, "visibility", "none");
+      continue;
+    }
+
+    if (layer.type === "background") {
+      safePaint(layer.id, "background-color", "#030712");
+      continue;
+    }
+
+    if (layer.type === "fill") {
+      if (id.includes("water") || id.includes("ocean")) {
+        safePaint(layer.id, "fill-color", "#020817");
+        safePaint(layer.id, "fill-opacity", 0.86);
+      } else if (id.includes("land") || id.includes("landuse")) {
+        safePaint(layer.id, "fill-color", "#06111f");
+        safePaint(layer.id, "fill-opacity", 0.52);
+      }
+    }
+
+    if (layer.type === "line") {
+      if (id.includes("road") || id.includes("bridge") || id.includes("tunnel")) {
+        safePaint(layer.id, "line-opacity", 0.035);
+      } else if (id.includes("admin") || id.includes("boundary")) {
+        safePaint(layer.id, "line-color", "rgba(103,232,249,0.16)");
+        safePaint(layer.id, "line-opacity", 0.28);
+      } else {
+        safePaint(layer.id, "line-opacity", 0.12);
+      }
+    }
+  }
+
+  try {
+    map.setFog({ color: "#020617", "high-color": "#04111f", "horizon-blend": 0.02, "space-color": "#01030a", "star-intensity": 0.04 });
+  } catch { /* not available for all styles */ }
+}
 
 // ─── Props ────────────────────────────────────────────────────────────
 
@@ -344,133 +478,6 @@ function isTokenValid(token: string): boolean {
   return token.startsWith("pk.") && token.length > 20;
 }
 
-// ─── Fallback Component ────────────────────────────────────────────────
-
-function MapTokenFallback({ className }: { className?: string }) {
-  return (
-    <div
-      className={`relative w-full h-full overflow-hidden flex items-center justify-center ${className ?? ""}`}
-    >
-      {/* Tactical grid background */}
-      <div className="absolute inset-0 opacity-10" style={{
-        backgroundImage:
-          "linear-gradient(rgba(0,212,255,0.08) 1px, transparent 1px), linear-gradient(90deg, rgba(0,212,255,0.08) 1px, transparent 1px)",
-        backgroundSize: "40px 40px",
-      }} />
-
-      {/* Radial vignette */}
-      <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,transparent_30%,rgba(2,6,23,0.9)_100%)]" />
-
-      {/* Scan-line effect */}
-      <div className="absolute inset-0 opacity-[0.03] pointer-events-none" style={{
-        backgroundImage: "repeating-linear-gradient(0deg, transparent, transparent 2px, rgba(0,212,255,0.15) 2px, rgba(0,212,255,0.15) 4px)",
-        backgroundSize: "100% 4px",
-      }} />
-
-      {/* Main fallback panel */}
-      <div className="relative z-10 max-w-md w-full mx-4">
-        <div className="relative bg-slate-950/90 border border-tactical-primary/20 rounded-md overflow-hidden"
-          style={{
-            boxShadow: "0 0 40px rgba(0,212,255,0.08), inset 0 0 30px rgba(0,212,255,0.03)",
-          }}
-        >
-          {/* Tactical corners — top-left + top-right */}
-          <div className="absolute top-0 left-0 w-4 h-4 border-t-2 border-l-2 border-tactical-primary/60" />
-          <div className="absolute top-0 right-0 w-4 h-4 border-t-2 border-r-2 border-tactical-primary/60" />
-          {/* Tactical corners — bottom-left + bottom-right */}
-          <div className="absolute bottom-0 left-0 w-4 h-4 border-b-2 border-l-2 border-tactical-primary/60" />
-          <div className="absolute bottom-0 right-0 w-4 h-4 border-b-2 border-r-2 border-tactical-primary/60" />
-
-          {/* Header bar */}
-          <div className="px-4 py-2 border-b border-tactical-primary/15 flex items-center gap-2 bg-tactical-primary/[0.04]">
-            <div className="w-2 h-2 rounded-full bg-tactical-primary/60 animate-pulse" />
-            <span className="font-mono text-[9px] tracking-[0.2em] uppercase text-tactical-primary/50">
-              system.status
-            </span>
-            <span className="font-mono text-[9px] tracking-wider text-amber-500/70 ml-auto">
-              TOKEN_MISSING
-            </span>
-          </div>
-
-          {/* Body */}
-          <div className="px-5 py-5 space-y-4">
-            {/* Title */}
-            <div className="flex items-center gap-3">
-              <span className="text-2xl">🗺️</span>
-              <h2 className="font-mono text-sm font-bold tracking-wider text-tactical-primary">
-                Требуется токен Mapbox
-              </h2>
-            </div>
-
-            {/* Description */}
-            <p className="font-mono text-[11px] text-slate-400 leading-relaxed">
-              Для отображения стратегической карты необходим действующий токен Mapbox GL.
-              Бесплатный токен можно получить на сайте Mapbox.
-            </p>
-
-            {/* Instructions block */}
-            <div className="bg-slate-900/80 border border-white/5 rounded-sm p-3 space-y-2">
-              <div className="font-mono text-[9px] tracking-widest uppercase text-tactical-secondary/50 mb-1">
-                Инструкция
-              </div>
-              <ol className="font-mono text-[10px] text-slate-300 space-y-1.5 list-decimal list-inside">
-                <li>
-                  Перейдите на{" "}
-                  <a
-                    href="https://account.mapbox.com/auth/signup/"
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="text-tactical-primary hover:text-tactical-accent underline underline-offset-2 transition-colors"
-                  >
-                    account.mapbox.com
-                  </a>
-                </li>
-                <li>Зарегистрируйтесь (бесплатно)</li>
-                <li>Создайте токен в разделе Access Tokens</li>
-                <li>Добавьте токен в файл конфигурации</li>
-              </ol>
-            </div>
-
-            {/* Config file path */}
-            <div className="bg-slate-900/80 border border-white/5 rounded-sm p-3">
-              <div className="font-mono text-[9px] tracking-widest uppercase text-tactical-secondary/50 mb-1.5">
-                Файл конфигурации
-              </div>
-              <code className="font-mono text-[10px] text-amber-400/80 break-all">
-                .env.local
-              </code>
-              <div className="mt-2 bg-slate-950 border border-white/5 rounded-sm p-2">
-                <code className="font-mono text-[10px] text-tactical-primary/80">
-                  NEXT_PUBLIC_MAPBOX_TOKEN=pk.eyJ1Ijo...
-                </code>
-              </div>
-            </div>
-
-            {/* Footer note */}
-            <div className="flex items-start gap-2 pt-1">
-              <div className="w-1 h-1 rounded-full bg-amber-500/50 mt-1.5 shrink-0" />
-              <p className="font-mono text-[9px] text-slate-500 leading-relaxed">
-                Приложение работает без карты — список стран и аналитика доступны в боковой панели.
-                Перезапустите сервер после изменения .env.local.
-              </p>
-            </div>
-          </div>
-
-          {/* Bottom status bar */}
-          <div className="px-4 py-1.5 border-t border-tactical-primary/10 flex items-center justify-between bg-tactical-primary/[0.02]">
-            <span className="font-mono text-[8px] text-tactical-secondary/30 tracking-widest uppercase">
-              РБП Центр v2.0
-            </span>
-            <span className="font-mono text-[8px] text-tactical-secondary/30 tracking-wider">
-              map.disabled
-            </span>
-          </div>
-        </div>
-      </div>
-    </div>
-  );
-}
-
 // ─── Component ────────────────────────────────────────────────────────
 
 export function StrategicMap({
@@ -510,23 +517,10 @@ export function StrategicMap({
     (async () => {
       try {
         const mod = await import('mapbox-gl');
-        const mgl = mod.default || mod;
+        const mgl = (mod.default ?? mod) as MutableMapboxGl;
         const OrigLngLat = mgl.LngLat;
-        if (!OrigLngLat || (OrigLngLat as any)._safePatched) return;
-        class SafeLngLat extends OrigLngLat {
-          static _safePatched = true;
-          constructor(lng: number, lat: number) {
-            super(
-              typeof lng === 'number' && isFinite(lng) ? lng : 0,
-              typeof lat === 'number' && isFinite(lat) ? lat : 0
-            );
-          }
-        }
-        Object.setPrototypeOf(SafeLngLat, OrigLngLat);
-        Object.keys(OrigLngLat).forEach((key) => {
-          try { (SafeLngLat as any)[key] = (OrigLngLat as any)[key]; } catch (_) {}
-        });
-        mgl.LngLat = SafeLngLat as any;
+        if (!OrigLngLat || OrigLngLat._safePatched) return;
+        mgl.LngLat = createSafeLngLatConstructor(OrigLngLat);
         if (!cancelled) setMapPatched(true);
       } catch (e) {
         console.warn('[StrategicMap] Failed to patch mapbox-gl:', e);
@@ -648,11 +642,16 @@ export function StrategicMap({
         minBP,
         maxBP,
       });
-      return [layer];
+      const bpLayers: Layer[] = [layer, createCountryNameLayer(countriesRaw, viewState.zoom, false)];
+      const selectedRings = createSelectedRingsLayer(countriesRaw, selectedISO);
+      if (selectedRings) bpLayers.push(selectedRings);
+      return bpLayers;
     }
 
     // ─── Analytics Layers ──────────────────────────────────
     const layers: Layer[] = [];
+    const outlineLayer = createCountryOutlineLayer(geoJson, countriesRaw, selectedISO, handleCountryClick);
+    if (outlineLayer) layers.push(outlineLayer);
 
     switch (activeLayer) {
       case "budget": {
@@ -716,7 +715,80 @@ export function StrategicMap({
         );
         break;
       }
+      case "readiness": {
+        layers.push(createMetricBubbleLayer("analytics-readiness", countriesRaw, "readiness", "Боеготовность / темп", "green"));
+        break;
+      }
+      case "logistics": {
+        layers.push(createMetricBubbleLayer("analytics-logistics", countriesRaw, "logistics", "Логистический радиус", "blue"));
+        break;
+      }
+      case "economy": {
+        layers.push(createMetricBubbleLayer("analytics-economy", countriesRaw, "economy", "Военная экономика", "amber"));
+        break;
+      }
+      case "manpower": {
+        layers.push(createMetricBubbleLayer("analytics-manpower", countriesRaw, "manpower", "Мобилизационная глубина", "heat"));
+        break;
+      }
+      case "c2": {
+        layers.push(createMetricBubbleLayer("analytics-c2", countriesRaw, "c2", "C4ISR / РЭБ", "purple"));
+        break;
+      }
+      case "artillery": {
+        layers.push(createMetricBubbleLayer("analytics-artillery", countriesRaw, "artillery", "Артиллерийская масса", "amber"));
+        break;
+      }
+      case "projection": {
+        layers.push(createMetricBubbleLayer("analytics-projection", countriesRaw, "projection", "Проекция силы", "blue", { min: 28000, max: 310000 }));
+        break;
+      }
+      case "alliances": {
+        layers.push(createAllianceArcLayer(countriesRaw));
+        break;
+      }
+      case "bases": {
+        layers.push(...createMilitaryBaseLayers());
+        break;
+      }
+      case "airRange": {
+        layers.push(...createAirReachLayers(countriesRaw));
+        break;
+      }
+      case "geoDetails": {
+        layers.push(...createGeographicDetailLayers(countriesRaw, viewState.zoom));
+        break;
+      }
+      case "a2ad": {
+        layers.push(...createA2ADLayers(countriesRaw));
+        break;
+      }
+      case "chokepoints": {
+        layers.push(...createMaritimeChokepointLayers());
+        break;
+      }
+      case "corridors": {
+        layers.push(...createSupplyCorridorLayers());
+        break;
+      }
+      case "flashpoints": {
+        layers.push(...createFlashpointLayers(countriesRaw));
+        break;
+      }
+      case "density": {
+        layers.push(createMetricBubbleLayer("analytics-density", countriesRaw, "density", "Плотность БП / территория", "purple"));
+        break;
+      }
+      case "risk": {
+        layers.push(createRiskHaloLayer(countriesRaw));
+        layers.push(createMetricBubbleLayer("analytics-risk", countriesRaw, "risk", "Эскалационный риск", "heat", { min: 18000, max: 260000 }));
+        break;
+      }
     }
+
+    const selectedRings = createSelectedRingsLayer(countriesRaw, selectedISO);
+    if (selectedRings) layers.push(selectedRings);
+    if (countriesRaw.length > 0 && activeLayer !== "geoDetails") layers.push(createTopCountryLabelsLayer(countriesRaw, viewState.zoom));
 
     return layers;
   }, [
@@ -732,44 +804,34 @@ export function StrategicMap({
     handleCountryHover,
     handleCountryClick,
     countriesRaw,
+    viewState.zoom,
   ]);
+
+  const selectedCountryRaw = useMemo(
+    () => countriesRaw.find((country) => country.isoCode === selectedISO) ?? null,
+    [countriesRaw, selectedISO],
+  );
+
+  const renderDeckTooltip = useCallback((info: PickingInfo) => {
+    if (activeLayer === "bp") return null;
+    return getMapObjectTooltip(info.object);
+  }, [activeLayer]);
 
   // ─── Map control handlers ────────────────────────────────
   const handleZoomIn = useCallback(() => {
-    const map = mapRef.current?.getMap();
-    if (map) {
-      const currentZoom = map.getZoom();
-      map.easeTo({ zoom: currentZoom + 1, duration: 300 });
-    }
+    setViewState((prev) => ({ ...prev, zoom: Math.min(12, prev.zoom + 0.75) }));
   }, []);
 
   const handleZoomOut = useCallback(() => {
-    const map = mapRef.current?.getMap();
-    if (map) {
-      const currentZoom = map.getZoom();
-      map.easeTo({ zoom: Math.max(1, currentZoom - 1), duration: 300 });
-    }
+    setViewState((prev) => ({ ...prev, zoom: Math.max(1, prev.zoom - 0.75) }));
   }, []);
 
   const handleReset = useCallback(() => {
-    const map = mapRef.current?.getMap();
-    if (map) {
-      map.flyTo({
-        center: [INITIAL_VIEW.longitude, INITIAL_VIEW.latitude],
-        zoom: INITIAL_VIEW.zoom,
-        pitch: INITIAL_VIEW.pitch,
-        bearing: INITIAL_VIEW.bearing,
-        duration: 1200,
-      });
-    }
     setViewState(INITIAL_VIEW);
   }, []);
 
   const handleCompass = useCallback(() => {
-    const map = mapRef.current?.getMap();
-    if (map) {
-      map.easeTo({ bearing: 0, duration: 600 });
-    }
+    setViewState((prev) => ({ ...prev, bearing: 0 }));
   }, []);
 
   const handleStyleChange = useCallback((style: MapStyle) => {
@@ -782,6 +844,11 @@ export function StrategicMap({
 
   const handleToggleChoropleth = useCallback(() => {
     setChoroplethVisible((prev) => !prev);
+  }, []);
+
+  const handleBaseMapReady = useCallback(() => {
+    const map = mapRef.current?.getMap();
+    if (map) tuneStrategicBaseMap(map);
   }, []);
 
   // ─── Popup details handler ──────────────────────────────
@@ -807,10 +874,9 @@ export function StrategicMap({
 
   const styleUrl = MAP_STYLE_URLS[mapStyle];
 
-  // ─── Token check — render fallback if Mapbox token is missing/invalid ──
-  if (!tokenValid) {
-    return <MapTokenFallback className={className} />;
-  }
+  // Mapbox base layer requires a token, but the operational deck.gl layer
+  // below also works without it. In no-token mode we render a functional
+  // tactical map with country polygons instead of blocking the user.
 
   return (
     <div ref={containerRef} className={`relative w-full h-full overflow-hidden ${className ?? ""}`}>
@@ -828,16 +894,16 @@ export function StrategicMap({
           <div style={{ position: "absolute", zIndex: 0, width: `${pixelSize.w}px`, height: `${pixelSize.h}px`, top: 0, left: 0 }}>
             <MapGL
               ref={mapRef}
-              initialViewState={{
-                longitude: INITIAL_VIEW.longitude,
-                latitude: INITIAL_VIEW.latitude,
-                zoom: INITIAL_VIEW.zoom,
-              }}
+              viewState={{ ...viewState, width: pixelSize.w, height: pixelSize.h }}
               mapStyle={styleUrl}
               mapboxAccessToken={MAPBOX_TOKEN}
               style={{ width: `${pixelSize.w}px`, height: `${pixelSize.h}px` }}
               projection="mercator"
               antialias
+              interactive={false}
+              reuseMaps
+              onLoad={handleBaseMapReady}
+              onStyleData={handleBaseMapReady}
             >
               {/* Country hover popup — only in BP mode */}
               {activeLayer === "bp" && (
@@ -852,6 +918,7 @@ export function StrategicMap({
             </MapGL>
           </div>
           </MapErrorBoundary>
+          <div className="strategic-map-base-mask" />
 
           {/* DeckGL overlay — sibling above MapGL */}
           <DeckGL
@@ -874,15 +941,52 @@ export function StrategicMap({
             getCursor={({ isHovering }: { isHovering: boolean }) =>
               isHovering ? "pointer" : "default"
             }
+            getTooltip={renderDeckTooltip}
           />
         </>
-      ) : !tokenValid ? (
-        <MapTokenFallback className={className} />
+      ) : !tokenValid && pixelSize ? (
+        <>
+          <div
+            className="absolute inset-0 bg-slate-950"
+            style={{
+              backgroundImage:
+                "radial-gradient(circle at center, rgba(0,212,255,0.10) 0%, transparent 35%), linear-gradient(rgba(0,212,255,0.06) 1px, transparent 1px), linear-gradient(90deg, rgba(0,212,255,0.06) 1px, transparent 1px)",
+              backgroundSize: "100% 100%, 40px 40px, 40px 40px",
+            }}
+          />
+          <div className="absolute top-3 left-1/2 -translate-x-1/2 z-10 rounded-sm border border-amber-400/25 bg-slate-950/75 px-3 py-1 font-mono text-[9px] uppercase tracking-widest text-amber-300/80">
+            Mapbox token не задан — включена автономная карта
+          </div>
+          <DeckGL
+            viewState={viewState}
+            onViewStateChange={({ viewState: vs }) => {
+              const lng = (vs as Record<string, unknown>).longitude;
+              const lat = (vs as Record<string, unknown>).latitude;
+              const zm = (vs as Record<string, unknown>).zoom;
+              if (
+                typeof lng === 'number' && isFinite(lng) &&
+                typeof lat === 'number' && isFinite(lat) &&
+                typeof zm === 'number' && isFinite(zm)
+              ) {
+                setViewState(vs as ViewState);
+              }
+            }}
+            layers={deckLayers}
+            controller={true}
+            style={{ position: "absolute", width: `${pixelSize.w}px`, height: `${pixelSize.h}px`, top: "0", left: "0", zIndex: "1", pointerEvents: "auto" }}
+            getCursor={({ isHovering }: { isHovering: boolean }) =>
+              isHovering ? "pointer" : "default"
+            }
+            getTooltip={renderDeckTooltip}
+          />
+        </>
       ) : (
         <div className="w-full h-full bg-tactical-bg flex items-center justify-center text-tactical-primary font-mono text-sm">
           Загрузка карты...
         </div>
       )}
+
+      <div className="strategic-map-vignette" />
 
       {/* Map HUD controls */}
       <MapControls
@@ -901,6 +1005,36 @@ export function StrategicMap({
       {/* Legend — only in BP mode */}
       {activeLayer === "bp" && (
         <MapLegend minBP={minBP} maxBP={maxBP} visible={choroplethVisible} />
+      )}
+
+      {selectedCountryRaw && (
+        <div className="absolute left-4 bottom-4 z-20 w-72 rounded-md border border-tactical-primary/20 bg-slate-950/82 backdrop-blur-md p-3 font-mono shadow-[0_0_30px_rgba(34,211,238,0.10)] pointer-events-none">
+          <div className="flex items-center justify-between gap-3 mb-2">
+            <div className="text-[10px] tracking-[0.22em] uppercase text-tactical-primary/70">Selected AO</div>
+            <div className="text-[10px] text-slate-400">{selectedCountryRaw.isoCode}</div>
+          </div>
+          <div className="text-sm font-bold text-slate-100 truncate">{selectedCountryRaw.nameRu || selectedCountryRaw.name}</div>
+          <div className="mt-2 grid grid-cols-3 gap-2 text-[10px]">
+            <div className="rounded bg-white/[0.04] p-2">
+              <div className="text-slate-500 uppercase">BP</div>
+              <div className="text-tactical-primary font-bold">{((selectedCountryRaw.bpAdvanced ?? selectedCountryRaw.bpTotal) || 0).toFixed(1)}</div>
+            </div>
+            <div className="rounded bg-white/[0.04] p-2">
+              <div className="text-slate-500 uppercase">Бюджет</div>
+              <div className="text-emerald-300 font-bold">${(selectedCountryRaw.militaryBudgetBn || 0).toFixed(0)}B</div>
+            </div>
+            <div className="rounded bg-white/[0.04] p-2">
+              <div className="text-slate-500 uppercase">Сторона</div>
+              <div className="text-amber-300 font-bold truncate">{selectedCountryRaw.coalition || selectedCountryRaw.side || "—"}</div>
+            </div>
+          </div>
+          <div className="mt-2 grid grid-cols-4 gap-1 text-[9px] text-slate-400">
+            <span>✈ {selectedCountryRaw.totalAircraft ?? 0}</span>
+            <span>▣ {selectedCountryRaw.totalTanks ?? 0}</span>
+            <span>⚓ {selectedCountryRaw.totalNavy ?? 0}</span>
+            <span>☢ {selectedCountryRaw.nuclearWarheads ?? 0}</span>
+          </div>
+        </div>
       )}
 
       {/* Loading overlay */}

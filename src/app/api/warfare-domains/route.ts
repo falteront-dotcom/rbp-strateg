@@ -5,7 +5,13 @@
 // ─────────────────────────────────────────────────────────────────────────────
 
 import { NextRequest, NextResponse } from "next/server";
-import { getDomainProfile, getAllDomains, getCountryDomainStrength } from "@/lib/warfare-domains";
+import { getDomainProfile, getAllDomains, getCountryDomainStrength, type WarfareDomain } from "@/lib/warfare-domains";
+
+const WARFARE_DOMAINS = ["land", "sea", "air", "space", "cyber", "electronic", "information", "nuclear"] as const;
+
+function isWarfareDomain(value: string): value is WarfareDomain {
+  return WARFARE_DOMAINS.includes(value as WarfareDomain);
+}
 
 export async function GET(request: NextRequest) {
   try {
@@ -25,7 +31,10 @@ export async function GET(request: NextRequest) {
     }
 
     if (domain) {
-      const profile = getDomainProfile(domain as any);
+      if (!isWarfareDomain(domain)) {
+        return NextResponse.json({ error: "Invalid warfare domain", validDomains: WARFARE_DOMAINS }, { status: 400 });
+      }
+      const profile = getDomainProfile(domain);
       if (!profile) {
         return NextResponse.json({ error: "Domain not found" }, { status: 404 });
       }

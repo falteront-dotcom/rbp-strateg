@@ -5,22 +5,29 @@
 // ─────────────────────────────────────────────────────────────────────────────
 
 import { NextRequest, NextResponse } from "next/server";
+import { normalizeIsoCode, toExportRow } from "@/lib/db/country-row-mapper";
+
+const SUPPORTED_FORMATS = new Set(["csv", "json"]);
 
 export async function GET(request: NextRequest) {
   try {
     const { searchParams } = new URL(request.url);
-    const format = searchParams.get("format") ?? "csv";
-    const iso = searchParams.get("iso") ?? undefined;
+    const format = (searchParams.get("format") ?? "csv").toLowerCase();
+    const iso = normalizeIsoCode(searchParams.get("iso"));
     const components = searchParams.get("components") === "true"; // Include BP component details
+
+    if (!SUPPORTED_FORMATS.has(format)) {
+      return NextResponse.json({ error: "Unsupported format. Use csv or json." }, { status: 400 });
+    }
 
     const Database = (await import("better-sqlite3")).default;
     const db = new Database("sqlite.db", { readonly: true });
 
     let rows: Record<string, unknown>[];
     if (iso) {
-      rows = db.prepare("SELECT * FROM countries WHERE isoCode = ?").all(iso) as Record<string, unknown>[];
+      rows = db.prepare("SELECT * FROM countries WHERE iso_code = ?").all(iso) as Record<string, unknown>[];
     } else {
-      rows = db.prepare("SELECT * FROM countries ORDER BY bpTotal DESC").all() as Record<string, unknown>[];
+      rows = db.prepare("SELECT * FROM countries ORDER BY bp_total DESC").all() as Record<string, unknown>[];
     }
     db.close();
 
@@ -28,14 +35,15 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: "No data found" }, { status: 404 });
     }
 
+    const mappedRows = rows.map(toExportRow);
+
     // Filter columns if not requesting full component details
-    const exportRows = components ? rows : rows.map((row) => ({
+    const exportRows = components ? mappedRows : mappedRows.map((row) => ({
       isoCode: row.isoCode,
       name: row.name,
       nameRu: row.nameRu,
       side: row.side,
       coalition: row.coalition,
-      region: row.region,
       bpTotal: row.bpTotal,
       bpWeapon: row.bpWeapon,
       bpManpower: row.bpManpower,

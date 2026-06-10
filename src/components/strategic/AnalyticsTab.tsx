@@ -1,23 +1,8 @@
 "use client";
 
-import { useMemo, useState } from "react";
-import {
-  BarChart,
-  Bar,
-  XAxis,
-  YAxis,
-  CartesianGrid,
-  Tooltip,
-  ResponsiveContainer,
-  LineChart,
-  Line,
-  Area,
-  AreaChart,
-  Cell,
-} from "recharts";
+import { useMemo, useState } from "react";import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Line, Area, AreaChart, Cell } from "recharts";
 import { motion } from "framer-motion";
-import type { CountryCompareData } from "@/lib/comparison";
-import { isoToFlag, formatLargeNumber, getBPTierLabel, getBPTierColor } from "@/lib/comparison";
+import type { CountryCompareData } from "@/lib/comparison";import { isoToFlag, getBPTierColor } from "@/lib/comparison";
 
 // ─── Props ──────────────────────────────────────────────────────────────────
 interface AnalyticsTabProps {
@@ -156,7 +141,7 @@ export function AnalyticsTab({ countries, selectedISO }: AnalyticsTabProps) {
         <h3 className="text-xs font-bold text-tactical-primary tracking-widest uppercase mb-3">
           ◈ Распределение БП
         </h3>
-        <ResponsiveContainer width="100%" height={160}>
+        <ResponsiveContainer width="100%" height={160} minWidth={0} minHeight={1}>
           <BarChart data={distribution}>
             <CartesianGrid strokeDasharray="3 3" stroke="#1e293b" />
             <XAxis dataKey="range" tick={{ fill: "#94a3b8", fontSize: 10 }} />
@@ -185,7 +170,7 @@ export function AnalyticsTab({ countries, selectedISO }: AnalyticsTabProps) {
           <h3 className="text-xs font-bold text-tactical-primary tracking-widest uppercase mb-3">
             ◈ Тренд: {selected.nameRu}
           </h3>
-          <ResponsiveContainer width="100%" height={180}>
+          <ResponsiveContainer width="100%" height={180} minWidth={0} minHeight={1}>
             <AreaChart data={trendData}>
               <CartesianGrid strokeDasharray="3 3" stroke="#1e293b" />
               <XAxis dataKey="year" tick={{ fill: "#94a3b8", fontSize: 10 }} />

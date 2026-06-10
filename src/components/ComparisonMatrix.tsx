@@ -7,7 +7,6 @@ import { ARSENAL, UnitInfo, ParametricStats, applyModulesToUnit, ModuleType, sim
 import { getCombatCapabilities } from '@/lib/combat-engine';
 import { Radar, RadarChart, PolarGrid, PolarAngleAxis, PolarRadiusAxis, ResponsiveContainer } from 'recharts';
 import { cn } from '@/lib/utils';
-import { TRANSLATIONS } from '@/lib/i18n';
 import DuelSimulator from './DuelSimulator';
 
 interface ComparisonMatrixProps {
@@ -32,7 +31,6 @@ function getUnitStats(unit: UnitInfo): ParametricStats {
 }
 
 export default function ComparisonMatrix({ isOpen, onClose }: ComparisonMatrixProps) {
-    const t = TRANSLATIONS;
     const arsenalEntries = Object.entries(ARSENAL);
 
     const [unitAId, setUnitAId] = useState<string>(arsenalEntries[0]?.[0] || '');
@@ -79,12 +77,9 @@ export default function ComparisonMatrix({ isOpen, onClose }: ComparisonMatrixPr
     const renderStats = (stats: ParametricStats | null, compareStats: ParametricStats | null, rightAlign: boolean = false) => {
         if (!stats) return null;
 
-        // Only calculate diff deltas if both units share the same stat category
-        const canCompare = compareStats && typeof compareStats === 'object' && compareStats.type === stats.type;
-        const cStats = canCompare ? compareStats as any : null;
-        const s = stats as any;
-
         if (stats.type === 'ground') {
+            const cStats = compareStats?.type === 'ground' ? compareStats : null;
+            const s = stats;
             return (
                 <div className="space-y-3">
                     <StatRow label="Двигатель" valA={s.powerHP} valB={cStats?.powerHP} unit="HP" icon={<Zap size={14} className="text-blue-500" />} rightAlign={rightAlign} />
@@ -98,6 +93,8 @@ export default function ComparisonMatrix({ isOpen, onClose }: ComparisonMatrixPr
         }
 
         if (stats.type === 'aircraft') {
+            const cStats = compareStats?.type === 'aircraft' ? compareStats : null;
+            const s = stats;
             return (
                 <div className="space-y-3">
                     <StatRow label="Тяга Двигателей" valA={s.thrustKgf} valB={cStats?.thrustKgf} unit="кгс" icon={<Zap size={14} className="text-blue-500" />} rightAlign={rightAlign} />
@@ -111,6 +108,8 @@ export default function ComparisonMatrix({ isOpen, onClose }: ComparisonMatrixPr
         }
 
         if (stats.type === 'air_defense') {
+            const cStats = compareStats?.type === 'air_defense' ? compareStats : null;
+            const s = stats;
             return (
                 <div className="space-y-3">
                     <StatRow label="Дальн. Радара" valA={s.radarRangeKm} valB={cStats?.radarRangeKm} unit="км" icon={<Radio size={14} className="text-blue-500" />} rightAlign={rightAlign} />
@@ -289,7 +288,7 @@ export default function ComparisonMatrix({ isOpen, onClose }: ComparisonMatrixPr
                                 <div className="px-6 pb-2 shrink-0">
                                     <div className="w-full h-64 bg-slate-900/40 rounded-xl border border-tactical-accent/20 p-2 relative overflow-hidden">
                                         <div className="absolute inset-0 bg-blue-500/5 blur-3xl rounded-full" />
-                                        <ResponsiveContainer width="100%" height="100%">
+                                        <ResponsiveContainer width="100%" height="100%" minWidth={0} minHeight={1}>
                                             <RadarChart cx="50%" cy="50%" outerRadius="70%" data={radarData}>
                                                 <PolarGrid stroke="rgba(255,255,255,0.1)" />
                                                 <PolarAngleAxis dataKey="subject" tick={{ fill: 'rgba(255,255,255,0.6)', fontSize: 10, fontFamily: 'monospace', fontWeight: 'bold' }} />
@@ -435,6 +434,7 @@ function ModuleCheckbox({ id, label, desc, active, onChange }: { id: string, lab
         )}>
             <div className="flex items-center gap-1.5">
                 <input
+                    id={id}
                     type="checkbox"
                     checked={active}
                     onChange={(e) => onChange(e.target.checked)}

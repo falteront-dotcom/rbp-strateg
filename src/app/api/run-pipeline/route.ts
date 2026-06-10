@@ -1,6 +1,8 @@
-import { NextResponse } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
 import Database from "better-sqlite3";
 import path from "path";
+import { assertMaintenanceAccess } from "@/lib/api/route-guards";
+import { toCountryRawData } from "@/lib/db/country-row-mapper";
 
 /**
  * GET /api/run-pipeline
@@ -15,57 +17,24 @@ import path from "path";
  * 
  * This endpoint is idempotent — it drops and re-creates all data.
  */
-export async function GET(): Promise<NextResponse> {
+export async function GET(request: NextRequest): Promise<NextResponse> {
+  const blocked = assertMaintenanceAccess(request, "/api/run-pipeline");
+  if (blocked) return blocked;
+
+  const events: string[] = [];
+
   try {
-    console.log("[run-pipeline] Starting...");
+    events.push("Pipeline started");
 
     // Dynamic imports for tree-shaking
     const { runPipeline } = await import("@/scripts/data-pipeline/merge-validate");
     const { calculateAllCountriesBP } = await import("@/lib/bp");
-    type CountryRawData = import("@/lib/bp/types").CountryRawData;
-
     // 1. Run pipeline — merge all sources
     const { countries, conflicts, stats } = await runPipeline();
-    console.log(`[run-pipeline] Merged ${countries.length} countries, ${conflicts.length} conflicts`);
+    events.push(`Merged ${countries.length} countries, ${conflicts.length} conflicts`);
 
     // 2. Calculate BP for all countries
-    const rawData: import("@/lib/bp/types").CountryRawData[] = countries.map(c => ({
-      isoCode: c.isoCode,
-      name: c.name,
-      nameRu: c.nameRu,
-      side: c.side,
-      coalition: c.coalition,
-      areaKm2: c.areaKm2,
-      coastlineKm: c.coastlineKm,
-      climateZone: c.climateZone,
-      gdpPppBn: c.gdpPppBn,
-      militaryBudgetBn: c.militaryBudgetBn,
-      defensePctGdp: c.defensePctGdp,
-      populationM: c.populationM,
-      activePersonnel: c.activePersonnel,
-      reservePersonnel: c.reservePersonnel,
-      fitForServiceM: c.fitForServiceM,
-      totalTanks: c.totalTanks,
-      totalAfv: c.totalAfv,
-      totalArtillery: c.totalArtillery,
-      totalMlrs: c.totalMlrs,
-      totalAircraft: c.totalAircraft,
-      totalHelicopters: c.totalHelicopters,
-      totalNavy: c.totalNavy,
-      submarines: c.submarines,
-      aircraftCarriers: c.aircraftCarriers,
-      nuclearWarheads: c.nuclearWarheads,
-      ports: c.ports,
-      airfields: c.airfields,
-      oilProductionKbd: c.oilProductionKbd,
-      merchantFleet: c.merchantFleet,
-      techLevel: c.techLevel,
-      moraleIndex: c.moraleIndex,
-      combatExperience: c.combatExperience,
-      c2Capability: c.c2Capability,
-      ewCapability: c.ewCapability,
-      updatedAt: c.updatedAt,
-    }));
+    const rawData = countries.map((country) => toCountryRawData(country as unknown as Record<string, unknown>));
 
     const bpResults = calculateAllCountriesBP(rawData);
 
@@ -183,6 +152,7 @@ export async function GET(): Promise<NextResponse> {
 
     insertMany();
     sqlite.close();
+    events.push(`Wrote ${countries.length} countries to SQLite`);
 
     const top10 = bpResults.slice(0, 10).map(bp => ({
       rank: bp.rank,
@@ -198,11 +168,11 @@ export async function GET(): Promise<NextResponse> {
       bpCalculated: bpResults.length,
       conflicts: conflicts.length,
       conflictDetails: conflicts.slice(0, 10),
+      events,
       top10,
     });
   } catch (error: unknown) {
     const message = error instanceof Error ? error.message : "Unknown error";
-    console.error("[run-pipeline] Failed:", message);
-    return NextResponse.json({ ok: false, error: message }, { status: 500 });
+    return NextResponse.json({ ok: false, error: message, events }, { status: 500 });
   }
 }

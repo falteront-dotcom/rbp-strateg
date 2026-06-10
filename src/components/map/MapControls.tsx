@@ -137,7 +137,7 @@ export function MapControls({
             </div>
             {(
               [
-                { key: "dark-v11" as MapStyle, icon: Map, label: "Tactical Dark" },
+                { key: "dark-v11" as MapStyle, icon: Map, label: "Muted Strategic" },
                 { key: "satellite-v9" as MapStyle, icon: Satellite, label: "Satellite" },
                 { key: "dark-dem" as MapStyle, icon: Mountain, label: "Terrain" },
               ] as const

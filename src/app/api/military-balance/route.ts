@@ -4,14 +4,7 @@
 // РБП-Стратег 2.0
 // ─────────────────────────────────────────────────────────────────────────────
 
-import { NextRequest, NextResponse } from "next/server";
-import {
-  getGlobalMilitaryBalance,
-  getRegionalBalance,
-  getAllRegionalBalances,
-  getHighestConflictRisk,
-  getDominantPowers,
-} from "@/lib/military-balance";
+import { NextRequest, NextResponse } from "next/server";import { getGlobalMilitaryBalance, getRegionalBalance, getHighestConflictRisk, getDominantPowers } from "@/lib/military-balance";
 
 export async function GET(request: NextRequest) {
   try {

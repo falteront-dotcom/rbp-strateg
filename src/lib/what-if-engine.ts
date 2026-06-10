@@ -1,15 +1,4 @@
-// ─────────────────────────────────────────────────────────────────────────────
-// What-If Scenario Engine
-// Recalculates BP components under hypothetical parameter changes
-// Strict TS5, no `any`, explicit returns on every function
-// ─────────────────────────────────────────────────────────────────────────────
-
-import type {
-  CountryRawData,
-  CountryBP,
-  ComponentScore,
-  BPComponent,
-} from "@/lib/bp/types";
+import type { CountryRawData, CountryBP, BPComponent } from "@/lib/bp/types";
 import { BP_COMPONENTS } from "@/lib/bp/types";
 import { DEFAULT_WEIGHTS, type WeightsConfig } from "@/lib/bp/weights";
 import { calculateCountryBP, calculateAllCountriesBP } from "@/lib/bp";

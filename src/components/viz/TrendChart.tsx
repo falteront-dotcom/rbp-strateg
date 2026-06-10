@@ -1,18 +1,6 @@
 "use client";
 
-import { useMemo } from "react";
-import {
-  AreaChart,
-  Area,
-  LineChart,
-  Line,
-  XAxis,
-  YAxis,
-  CartesianGrid,
-  Tooltip,
-  ResponsiveContainer,
-  ReferenceLine,
-} from "recharts";
+import { useMemo } from "react";import { AreaChart, Area, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, ReferenceLine } from "recharts";
 import { motion } from "framer-motion";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
@@ -75,7 +63,7 @@ export function TrendChart({
           {label}
         </h3>
       )}
-      <ResponsiveContainer width="100%" height={height}>
+      <ResponsiveContainer width="100%" height={height} minWidth={0} minHeight={1}>
         <AreaChart data={combinedData}>
           <CartesianGrid strokeDasharray="3 3" stroke="#1e293b" />
           <XAxis dataKey="year" tick={{ fill: "#94a3b8", fontSize: 10 }} />

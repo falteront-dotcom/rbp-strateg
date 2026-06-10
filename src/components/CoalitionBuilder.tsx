@@ -1,8 +1,7 @@
 "use client";
 
 import { useState, useMemo, useCallback, useEffect } from "react";
-import { motion, AnimatePresence } from "framer-motion";
-import { Search, X, Plus, Minus, Users, Swords, GitCompareArrows, Loader2 } from "lucide-react";
+import { motion, AnimatePresence } from "framer-motion";import { Search, X, Plus, Minus, Users, Loader2 } from "lucide-react";
 import {
   PREDEFINED_COALITIONS,
   COALITION_BP_COMPONENTS,

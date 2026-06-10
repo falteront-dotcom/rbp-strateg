@@ -1,6 +1,7 @@
 "use client";
 
 import { motion } from "framer-motion";
+import { IntelLayerIcon } from "@/components/icons/StrategicIcons";
 
 /** Available analytics overlay layers */
 export type AnalyticsLayerKey =
@@ -9,23 +10,56 @@ export type AnalyticsLayerKey =
   | "fleet"
   | "aviation"
   | "tanks"
-  | "nukes";
+  | "nukes"
+  | "readiness"
+  | "logistics"
+  | "economy"
+  | "manpower"
+  | "c2"
+  | "artillery"
+  | "projection"
+  | "alliances"
+  | "bases"
+  | "airRange"
+  | "geoDetails"
+  | "a2ad"
+  | "chokepoints"
+  | "corridors"
+  | "flashpoints"
+  | "density"
+  | "risk";
 
 /** Layer metadata for the selector */
 interface LayerOption {
   key: AnalyticsLayerKey;
   label: string;
   shortLabel: string;
-  icon: string;
 }
 
 const LAYER_OPTIONS: LayerOption[] = [
-  { key: "bp",       label: "Combat Potential", shortLabel: "BP",   icon: "◎" },
-  { key: "budget",   label: "Military Budget",  shortLabel: "BGT",  icon: "$" },
-  { key: "fleet",    label: "Naval Fleet",       shortLabel: "FLEET", icon: "⚓" },
-  { key: "aviation", label: "Air Force",         shortLabel: "AIR",  icon: "✈" },
-  { key: "tanks",    label: "Armor Corps",       shortLabel: "TNK",  icon: "▣" },
-  { key: "nukes",    label: "Nuclear Arsenal",   shortLabel: "NUKE", icon: "☢" },
+  { key: "bp", label: "Combat Potential", shortLabel: "BP" },
+  { key: "budget", label: "Military Budget", shortLabel: "BGT" },
+  { key: "fleet", label: "Naval Fleet", shortLabel: "FLEET" },
+  { key: "aviation", label: "Air Force", shortLabel: "AIR" },
+  { key: "tanks", label: "Armor Corps", shortLabel: "TNK" },
+  { key: "nukes", label: "Nuclear Arsenal", shortLabel: "NUKE" },
+  { key: "readiness", label: "Readiness / Tempo", shortLabel: "RDY" },
+  { key: "logistics", label: "Logistics Reach", shortLabel: "LOG" },
+  { key: "economy", label: "War Economy", shortLabel: "ECO" },
+  { key: "manpower", label: "Mobilization Depth", shortLabel: "MOB" },
+  { key: "c2", label: "C4ISR / EW", shortLabel: "C2" },
+  { key: "artillery", label: "Artillery Mass", shortLabel: "ART" },
+  { key: "projection", label: "Power Projection", shortLabel: "PROJ" },
+  { key: "alliances", label: "Alliance Network", shortLabel: "ALLY" },
+  { key: "bases", label: "Military Bases", shortLabel: "BASE" },
+  { key: "airRange", label: "Aviation Combat Radius", shortLabel: "RNG" },
+  { key: "geoDetails", label: "Geography / Cities / Nodes", shortLabel: "GEO" },
+  { key: "a2ad", label: "A2/AD Denial Envelopes", shortLabel: "A2AD" },
+  { key: "chokepoints", label: "Maritime Choke Points", shortLabel: "CHOKE" },
+  { key: "corridors", label: "Supply Corridors", shortLabel: "SUP" },
+  { key: "flashpoints", label: "Crisis Flashpoints", shortLabel: "HOT" },
+  { key: "density", label: "BP Density", shortLabel: "DENS" },
+  { key: "risk", label: "Escalation Risk", shortLabel: "RISK" },
 ];
 
 interface LayerSelectorProps {
@@ -43,14 +77,13 @@ export function LayerSelector({
   className,
 }: LayerSelectorProps) {
   return (
-    <div className={`flex flex-col gap-1 ${className ?? ""}`}>
-      {/* Section header */}
-      <div className="text-[9px] tracking-[0.25em] text-tactical-primary/50 uppercase font-mono mb-1 px-1">
-        Intel Layer
+    <div className={`flex min-w-0 max-w-[60vw] items-center gap-2 ${className ?? ""}`}>
+      <div className="hidden 2xl:block shrink-0 text-[8px] tracking-[0.22em] text-tactical-primary/45 uppercase font-mono px-1">
+        Layer
       </div>
 
       {/* Layer buttons */}
-      <div className="flex flex-row flex-wrap gap-1">
+      <div className="custom-scrollbar flex min-w-0 flex-1 flex-row flex-nowrap gap-1 overflow-x-auto overflow-y-hidden pb-1 pr-1">
         {LAYER_OPTIONS.map((opt) => {
           const isActive = activeLayer === opt.key;
 
@@ -59,8 +92,8 @@ export function LayerSelector({
               key={opt.key}
               onClick={() => onLayerChange(opt.key)}
               className={`
-                group relative font-mono text-[10px] tracking-[0.12em] uppercase
-                px-2.5 py-1.5 rounded-sm border transition-colors duration-150
+                group relative shrink-0 font-mono text-[10px] tracking-[0.12em] uppercase
+                px-2.5 py-1.5 rounded-md border transition-colors duration-150
                 cursor-pointer select-none layer-btn-glow
                 ${
                   isActive
@@ -83,7 +116,7 @@ export function LayerSelector({
 
               {/* Icon + short label */}
               <span className="flex items-center gap-1">
-                <span className="text-[11px]">{opt.icon}</span>
+                <IntelLayerIcon name={opt.key} size={15} className="shrink-0" />
                 <span>{opt.shortLabel}</span>
               </span>
 

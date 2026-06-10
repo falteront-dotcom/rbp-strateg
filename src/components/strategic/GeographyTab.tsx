@@ -1,14 +1,15 @@
 "use client";
 
-import { useMemo } from "react";
-import {
-  PieChart, Pie, Cell, ResponsiveContainer, Tooltip,
-  BarChart, Bar, XAxis, YAxis, CartesianGrid,
-} from "recharts";
+import { useMemo } from "react";import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip } from "recharts";
 import { motion } from "framer-motion";
 import type { CountryCompareData } from "@/lib/comparison";
 import { calcTerrainRaw, normalizeTerrain } from "@/lib/bp/terrain-potential";
-import { logNormalize } from "@/lib/bp/normalize";
+
+type TerrainPotentialInput = Parameters<typeof calcTerrainRaw>[0];
+
+interface TerrainTooltipPayload {
+  payload?: { militaryImpact?: string };
+}
 
 // ─── Props ──────────────────────────────────────────────────────────────────
 interface GeographyTabProps {
@@ -218,8 +219,8 @@ export function GeographyTab({ country, allCountries = [] }: GeographyTabProps) 
   // Real terrain score from BP model
   const terrainScore = useMemo(() => {
     if (allCountries.length > 0) {
-      const rawResult = calcTerrainRaw(country as any);
-      const allRaws = allCountries.map(c => calcTerrainRaw(c as any).raw);
+      const rawResult = calcTerrainRaw(country as unknown as TerrainPotentialInput);
+      const allRaws = allCountries.map(c => calcTerrainRaw(c as unknown as TerrainPotentialInput).raw);
       return Math.round(normalizeTerrain(rawResult.raw, allRaws));
     }
     return null;
@@ -252,7 +253,7 @@ export function GeographyTab({ country, allCountries = [] }: GeographyTabProps) 
           ◈ Состав местности
         </h3>
         <div className="flex items-center gap-4">
-          <ResponsiveContainer width="45%" height={160}>
+          <ResponsiveContainer width="45%" height={160} minWidth={0} minHeight={1}>
             <PieChart>
               <Pie data={terrain} cx="50%" cy="50%" innerRadius={35} outerRadius={60} paddingAngle={2} dataKey="value">
                 {terrain.map((entry, idx) => (
@@ -267,7 +268,7 @@ export function GeographyTab({ country, allCountries = [] }: GeographyTabProps) 
                   fontSize: 10,
                   fontFamily: "monospace",
                 }}
-                formatter={((value: number, name: string, props: any) => [`${value}% — ${props.payload.militaryImpact}`]) as any}
+                formatter={(value: number | string | undefined, _name: string | undefined, props: TerrainTooltipPayload) => [`${value ?? 0}% — ${props.payload?.militaryImpact ?? ""}`]}
               />
             </PieChart>
           </ResponsiveContainer>

@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect, useCallback, useMemo } from "react";
+import type { ComponentProps } from "react";
 import {
   Radio,
   Map as MapIcon,
@@ -22,6 +23,7 @@ const StrategicMap = dynamic(
 import type { CountryBPData } from "@/components/map/ChoroplethLayer";
 import type { AnalyticsLayerKey, CountryMapData } from "@/components/map";
 import { LayerSelector } from "@/components/map/LayerSelector";
+import { StrategicTabIcon, type StrategicTabIconName } from "@/components/icons/StrategicIcons";
 import CountryCard from "@/components/CountryCard";
 import { CoalitionBuilder } from "@/components/CoalitionBuilder";
 import CountryComparison from "@/components/CountryComparison";
@@ -46,17 +48,17 @@ import {
 type AppMode = "strategic" | "tactical";
 type StrategicTab = "summary" | "bp" | "economics" | "military" | "coalition" | "comparison" | "analytics" | "whatif" | "doctrine" | "geography";
 
-const STRATEGIC_TABS: { key: StrategicTab; label: string; icon: string }[] = [
-  { key: "summary", label: "Сводка", icon: "◉" },
-  { key: "bp", label: "БП Модель", icon: "◈" },
-  { key: "economics", label: "Экономика", icon: "$" },
-  { key: "military", label: "Вооружение", icon: "⚔" },
-  { key: "coalition", label: "Коалиции", icon: "⊞" },
-  { key: "comparison", label: "Сравнение", icon: "⟺" },
-  { key: "analytics", label: "Аналитика", icon: "◈" },
-  { key: "whatif", label: "Что-Если", icon: "?" },
-  { key: "doctrine", label: "Доктрина", icon: "☆" },
-  { key: "geography", label: "География", icon: "◙" },
+const STRATEGIC_TABS: { key: StrategicTab; label: string; icon: StrategicTabIconName }[] = [
+  { key: "summary", label: "Сводка", icon: "summary" },
+  { key: "bp", label: "БП Модель", icon: "bp" },
+  { key: "economics", label: "Экономика", icon: "economics" },
+  { key: "military", label: "Вооружение", icon: "military" },
+  { key: "coalition", label: "Коалиции", icon: "coalition" },
+  { key: "comparison", label: "Сравнение", icon: "comparison" },
+  { key: "analytics", label: "Аналитика", icon: "analytics" },
+  { key: "whatif", label: "Что-Если", icon: "whatif" },
+  { key: "doctrine", label: "Доктрина", icon: "doctrine" },
+  { key: "geography", label: "География", icon: "geography" },
 ];
 
 function StrategicDetailPanel({
@@ -71,7 +73,18 @@ function StrategicDetailPanel({
   onCompare: (iso: string) => void;
 }) {
   const [activeTab, setActiveTab] = useState<StrategicTab>("summary");
-  const compareData = country as unknown as CountryCompareData;
+  const compareData: CountryCompareData = country;
+  const countryCardData = country as ComponentProps<typeof CountryCard>["country"];
+  const bpCountry = country as unknown as ComponentProps<typeof BPDetailTab>["country"];
+  const economicsCountry = country as unknown as ComponentProps<typeof EconomicsTab>["country"];
+  const militaryCountry = country as unknown as ComponentProps<typeof MilitaryHardwareTab>["country"];
+  const coalitionCountry = country as unknown as ComponentProps<typeof CoalitionTab>["country"];
+  const doctrineCountry = country as unknown as ComponentProps<typeof DoctrineTab>["country"];
+  const geographyCountry = country as unknown as ComponentProps<typeof GeographyTab>["country"];
+  const coalitionCountries = allCountries as unknown as ComponentProps<typeof CoalitionTab>["allCountries"];
+  const analyticsCountries = allCountries as unknown as ComponentProps<typeof AnalyticsTab>["countries"];
+  const whatIfCountries = allCountries as unknown as ComponentProps<typeof WhatIfTab>["allCountries"];
+  const geographyCountries = allCountries as unknown as ComponentProps<typeof GeographyTab>["allCountries"];
 
   return (
     <div className="flex flex-col h-full">
@@ -90,18 +103,21 @@ function StrategicDetailPanel({
       </div>
 
       {/* Tab bar */}
-      <div className="flex overflow-x-auto border-b border-white/5 custom-scrollbar px-1">
+      <div className="flex overflow-x-auto overflow-y-hidden border-b border-white/5 custom-scrollbar px-1">
         {STRATEGIC_TABS.map((tab) => (
           <button
             key={tab.key}
             onClick={() => setActiveTab(tab.key)}
-            className={`px-2 py-1.5 text-[9px] font-mono whitespace-nowrap border-b-2 transition-colors ${
+            className={`shrink-0 px-2.5 py-1.5 text-[9px] font-mono whitespace-nowrap border-b-2 transition-colors ${
               activeTab === tab.key
                 ? "border-tactical-primary text-tactical-primary"
                 : "border-transparent text-slate-500 hover:text-slate-300"
             }`}
           >
-            {tab.icon} {tab.label}
+            <span className="inline-flex items-center gap-1.5">
+              <StrategicTabIcon name={tab.icon} size={13} />
+              {tab.label}
+            </span>
           </button>
         ))}
       </div>
@@ -109,38 +125,38 @@ function StrategicDetailPanel({
       {/* Tab content */}
       <div className="flex-1 overflow-y-auto custom-scrollbar p-3">
         {activeTab === "summary" && (
-          <CountryCard country={country as any} onClose={() => {}} onCompare={(iso: string) => onCompare(iso)} />
+          <CountryCard country={countryCardData} onClose={() => {}} onCompare={(iso: string) => onCompare(iso)} />
         )}
         {activeTab === "bp" && (
-          <BPDetailTab country={compareData as any} />
+          <BPDetailTab country={bpCountry} />
         )}
         {activeTab === "economics" && (
-          <EconomicsTab country={compareData as any} />
+          <EconomicsTab country={economicsCountry} />
         )}
         {activeTab === "military" && (
-          <MilitaryHardwareTab country={compareData as any} />
+          <MilitaryHardwareTab country={militaryCountry} />
         )}
         {activeTab === "coalition" && (
-          <CoalitionTab country={compareData as any} allCountries={allCountries as any} />
+          <CoalitionTab country={coalitionCountry} allCountries={coalitionCountries} />
         )}
         {activeTab === "comparison" && (
           <ComparisonTab
             countries={[compareData]}
-            onRemoveCountry={(_iso: string) => {}}
-            onAddCountry={(_iso: string) => {}}
+            onRemoveCountry={() => undefined}
+            onAddCountry={() => undefined}
           />
         )}
         {activeTab === "analytics" && (
-          <AnalyticsTab countries={allCountries} selectedISO={country.isoCode} />
+          <AnalyticsTab countries={analyticsCountries} selectedISO={country.isoCode} />
         )}
         {activeTab === "whatif" && (
-          <WhatIfTab isOpen={true} onClose={() => {}} allCountries={allCountries} initialIsoCode={country.isoCode} />
+          <WhatIfTab isOpen={true} onClose={() => {}} allCountries={whatIfCountries} initialIsoCode={country.isoCode} />
         )}
         {activeTab === "doctrine" && (
-          <DoctrineTab country={compareData as any} />
+          <DoctrineTab country={doctrineCountry} />
         )}
         {activeTab === "geography" && (
-          <GeographyTab country={compareData as any} allCountries={allCountries} />
+          <GeographyTab country={geographyCountry} allCountries={geographyCountries} />
         )}
       </div>
     </div>
@@ -170,11 +186,11 @@ interface CountryData {
   totalTanks: number;
   totalAfv: number;
   totalArtillery: number;
-  totalMlrs?: number;
+  totalMlrs: number;
   totalAircraft: number;
   totalHelicopters: number;
   totalNavy: number;
-  aircraftCarriers?: number;
+  aircraftCarriers: number;
   submarines: number;
   nuclearWarheads: number;
 
@@ -183,7 +199,7 @@ interface CountryData {
   oilProductionKbd: number;
   merchantFleet: number;
 
-  fitForServiceM?: number;
+  fitForServiceM: number;
   techLevel: number;
   moraleIndex: number;
   combatExperience: number;
@@ -199,6 +215,14 @@ interface CountryData {
   bpDoctrine: number;
   bpReadiness: number;
   bpTerrain: number;
+  bpAdvanced?: number;
+  bpAdvancedConfidence?: number;
+  bpAdvancedSummary?: string;
+  bpAdvancedDomains?: Array<{ key: string; name: string; score: number; weight: number; confidence: number }>;
+  bpAdvancedModifiers?: Array<{ key: string; label: string; kind: string; value: number; explanation: string }>;
+  bpAdvancedRisks?: Array<{ key: string; label: string; severity: string; explanation: string }>;
+  bpAdvancedStrengths?: string[];
+  bpAdvancedWeaknesses?: string[];
   bpRank: number;
 }
 
@@ -212,6 +236,24 @@ const SIDE_COLORS: Record<string, string> = {
   CHINA: "text-tactical-china",
   NEUTRAL: "text-slate-400",
 };
+
+const ISO3_TO_ISO2: Record<string, string> = {
+  USA: "US", RUS: "RU", CHN: "CN", IND: "IN", GBR: "GB", FRA: "FR", JPN: "JP", KOR: "KR",
+  ITA: "IT", DEU: "DE", TUR: "TR", BRA: "BR", PAK: "PK", EGY: "EG", ISR: "IL", IDN: "ID",
+  AUS: "AU", CAN: "CA", UKR: "UA", SAU: "SA", IRN: "IR", PRK: "KP", POL: "PL", ESP: "ES",
+  NLD: "NL", THA: "TH", VNM: "VN", TWN: "TW", SGP: "SG", MYS: "MY", PHI: "PH", NZL: "NZ",
+  NOR: "NO", SWE: "SE", FIN: "FI", GRC: "GR", CHE: "CH", AUT: "AT", BEL: "BE", CZE: "CZ",
+  PRT: "PT", ROU: "RO", HUN: "HU", BGR: "BG", SRB: "RS", HRV: "HR", SVK: "SK", SVN: "SI",
+  LTU: "LT", LVA: "LV", EST: "EE", BLR: "BY", ARM: "AM", KAZ: "KZ", KGZ: "KG", TJK: "TJ",
+  ZAF: "ZA", ETH: "ET", ARE: "AE",
+};
+
+function isoToFlag(iso3: string): string {
+  const iso2 = ISO3_TO_ISO2[iso3.toUpperCase()];
+  if (!iso2) return "🏳️";
+  const base = 0x1f1e6;
+  return String.fromCodePoint(...iso2.split("").map((ch) => base + ch.charCodeAt(0) - 65));
+}
 
 const SIDE_DOT_COLORS: Record<string, string> = {
   NATO: "bg-tactical-nato",
@@ -227,6 +269,32 @@ const SIDE_BAR_COLORS: Record<string, string> = {
   CHINA: "side-bar-china",
   UKR: "side-bar-ukr",
   NEUTRAL: "side-bar-neutral",
+};
+
+const LAYER_BRIEF: Record<AnalyticsLayerKey, { label: string; signal: string; accent: string }> = {
+  bp: { label: "GLOBAL BP", signal: "Интегральная боевая мощь", accent: "text-tactical-primary" },
+  budget: { label: "WAR ECONOMY", signal: "Оборонные бюджеты и финансовая масса", accent: "text-emerald-300" },
+  fleet: { label: "SEA CONTROL", signal: "Флот, подлодки и морское давление", accent: "text-cyan-300" },
+  aviation: { label: "AIR ORDER", signal: "Авиационный парк и темп вылетов", accent: "text-sky-300" },
+  tanks: { label: "LAND MASS", signal: "Броня и наземный удар", accent: "text-amber-300" },
+  nukes: { label: "DETERRENCE", signal: "Ядерный порог и стратегическое сдерживание", accent: "text-red-300" },
+  readiness: { label: "READINESS", signal: "Готовность, опыт, мораль", accent: "text-green-300" },
+  logistics: { label: "LOGISTICS", signal: "Порты, аэродромы, топливо, снабжение", accent: "text-blue-300" },
+  economy: { label: "INDUSTRY", signal: "ВПК, ВВП, оборонное усилие", accent: "text-yellow-300" },
+  manpower: { label: "MOB DEPTH", signal: "Активные силы, резерв и демография", accent: "text-orange-300" },
+  c2: { label: "C4ISR/EW", signal: "Управление, связь, РЭБ, сенсоры", accent: "text-violet-300" },
+  artillery: { label: "FIRE MASS", signal: "Артиллерия и РСЗО", accent: "text-amber-300" },
+  projection: { label: "POWER PROJECTION", signal: "Дальняя проекция и expeditionary reach", accent: "text-sky-300" },
+  alliances: { label: "ALLIANCE NET", signal: "Блоки, совместимость и сетевые эффекты", accent: "text-indigo-300" },
+  bases: { label: "BASE NETWORK", signal: "Публичные стратегические базы и узлы", accent: "text-cyan-300" },
+  airRange: { label: "AIR REACH", signal: "Боевые и экспедиционные радиусы авиации", accent: "text-sky-300" },
+  geoDetails: { label: "GEO DETAIL", signal: "Государства, города, население, порты, аэродромы и логистика", accent: "text-teal-300" },
+  a2ad: { label: "A2/AD", signal: "Зоны запрета доступа: ПВО, РЭБ, C2, дальний удар", accent: "text-amber-300" },
+  chokepoints: { label: "CHOKEPOINTS", signal: "Проливы, каналы и sea lines of communication", accent: "text-cyan-300" },
+  corridors: { label: "SUPPLY LINES", signal: "Коридоры переброски, снабжения и уязвимости", accent: "text-purple-300" },
+  flashpoints: { label: "FLASHPOINTS", signal: "Кризисные зоны и потолок эскалации", accent: "text-rose-300" },
+  density: { label: "BP DENSITY", signal: "Концентрация силы на территорию", accent: "text-violet-300" },
+  risk: { label: "ESCALATION", signal: "Вероятность эскалации и системные риски", accent: "text-red-300" },
 };
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -299,12 +367,47 @@ export default function Home() {
         isoCode: c.isoCode,
         name: c.name,
         nameRu: c.nameRu,
+        side: c.side,
+        coalition: c.coalition,
+        region: c.region,
+        areaKm2: c.areaKm2,
+        coastlineKm: c.coastlineKm,
+        gdpPppBn: c.gdpPppBn,
         militaryBudgetBn: c.militaryBudgetBn,
+        defensePctGdp: c.defensePctGdp,
+        populationM: c.populationM,
+        activePersonnel: c.activePersonnel,
+        reservePersonnel: c.reservePersonnel,
+        fitForServiceM: c.fitForServiceM ?? 0,
         totalTanks: c.totalTanks,
+        totalAfv: c.totalAfv,
+        totalArtillery: c.totalArtillery,
+        totalMlrs: c.totalMlrs ?? 0,
         totalAircraft: c.totalAircraft,
+        totalHelicopters: c.totalHelicopters,
         totalNavy: c.totalNavy,
+        submarines: c.submarines,
+        aircraftCarriers: c.aircraftCarriers ?? 0,
         nuclearWarheads: c.nuclearWarheads,
+        ports: c.ports,
+        airfields: c.airfields,
+        oilProductionKbd: c.oilProductionKbd,
+        merchantFleet: c.merchantFleet,
+        techLevel: c.techLevel,
+        moraleIndex: c.moraleIndex,
+        combatExperience: c.combatExperience,
+        c2Capability: c.c2Capability,
+        ewCapability: c.ewCapability,
         bpTotal: c.bpTotal,
+        bpWeapon: c.bpWeapon,
+        bpManpower: c.bpManpower,
+        bpLogistics: c.bpLogistics,
+        bpC2: c.bpC2,
+        bpEconomy: c.bpEconomy,
+        bpDoctrine: c.bpDoctrine,
+        bpReadiness: c.bpReadiness,
+        bpTerrain: c.bpTerrain,
+        bpAdvanced: c.bpAdvanced ?? c.bpTotal,
       })),
     [countries],
   );
@@ -377,6 +480,28 @@ export default function Home() {
         c.isoCode.toLowerCase().includes(q),
     );
   }, [countries, searchQuery]);
+
+  const commandCenterStats = useMemo(() => {
+    const ranked = [...countries].sort((a, b) => (b.bpAdvanced ?? b.bpTotal) - (a.bpAdvanced ?? a.bpTotal));
+    const top = ranked[0] ?? null;
+    const totalBudget = countries.reduce((sum, c) => sum + (c.militaryBudgetBn || 0), 0);
+    const nuclearStates = countries.filter((c) => (c.nuclearWarheads || 0) > 0).length;
+    const natoCount = countries.filter((c) => c.side === "NATO" || c.coalition === "NATO").length;
+    const averageAdvanced = countries.length > 0
+      ? countries.reduce((sum, c) => sum + (c.bpAdvanced ?? c.bpTotal ?? 0), 0) / countries.length
+      : 0;
+    return {
+      topIso: top?.isoCode ?? "—",
+      topFlag: top ? isoToFlag(top.isoCode) : "🏳️",
+      topScore: top ? (top.bpAdvanced ?? top.bpTotal ?? 0) : 0,
+      totalBudget,
+      nuclearStates,
+      natoCount,
+      averageAdvanced,
+    };
+  }, [countries]);
+
+  const activeLayerBrief = LAYER_BRIEF[activeLayer];
 
   // ─── Handlers ──────────────────────────────────────────────────────────
   const handleCountryClick = useCallback((iso: string) => {
@@ -467,7 +592,7 @@ export default function Home() {
           {/* Mode Toggle */}
           <button
             onClick={handleModeToggle}
-            className="glass-panel rounded-md px-3 py-1.5 font-mono text-[9px] tracking-widest uppercase text-tactical-accent/80 hover:text-tactical-accent hover:border-tactical-accent/30 transition-all cursor-pointer flex items-center gap-1.5"
+            className="glass-panel rbp-interactive rounded-md px-3 py-1.5 font-mono text-[9px] tracking-widest uppercase text-tactical-accent/80 hover:text-tactical-accent hover:border-tactical-accent/30 transition-all cursor-pointer flex items-center gap-1.5"
           >
             <Crosshair size={12} />
             Тактический
@@ -503,7 +628,7 @@ export default function Home() {
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 placeholder="Поиск страны..."
-                className="w-full bg-slate-950/80 border border-white/10 text-[11px] p-2 pl-8 rounded-md outline-none focus:border-tactical-primary/50 transition-all text-slate-200 placeholder:text-slate-600"
+                className="w-full bg-slate-950/80 border border-white/10 text-[11px] p-2 pl-8 rounded-md outline-none focus:border-tactical-primary/50 focus:ring-2 focus:ring-tactical-primary/10 transition-all text-slate-200 placeholder:text-slate-600"
               />
               {searchQuery && (
                 <button
@@ -537,7 +662,7 @@ export default function Home() {
                       key={country.isoCode}
                       onClick={() => handleCountryClick(country.isoCode)}
                       className={`
-                        w-full flex items-center gap-3 px-3 py-2.5 text-left transition-all cursor-pointer
+                        rbp-interactive w-full flex items-center gap-3 px-3 py-2.5 text-left transition-all cursor-pointer
                         border-l-2 hover:bg-white/5
                         ${
                           isSelected
@@ -557,6 +682,11 @@ export default function Home() {
                           SIDE_DOT_COLORS[country.side] ?? SIDE_DOT_COLORS.NEUTRAL
                         }`}
                       />
+
+                      {/* Country flag */}
+                      <span className="text-base leading-none shrink-0" title={country.nameRu}>
+                        {isoToFlag(country.isoCode)}
+                      </span>
 
                       {/* Country name */}
                       <div className="flex-1 min-w-0">
@@ -670,6 +800,39 @@ export default function Home() {
             className="absolute inset-0"
           />
 
+          <div className="absolute top-4 left-4 z-20 w-[min(560px,calc(100%-2rem))] pointer-events-none">
+            <div className="rounded-lg border border-tactical-primary/20 bg-slate-950/78 backdrop-blur-md shadow-[0_0_38px_rgba(34,211,238,0.14)] overflow-hidden">
+              <div className="flex items-center justify-between gap-3 border-b border-white/10 px-3 py-2">
+                <div>
+                  <div className={`font-mono text-[10px] tracking-[0.24em] uppercase ${activeLayerBrief.accent}`}>{activeLayerBrief.label}</div>
+                  <div className="mt-0.5 text-[10px] text-slate-400 font-mono">{activeLayerBrief.signal}</div>
+                </div>
+                <div className="rounded border border-white/10 bg-white/[0.04] px-2 py-1 text-right font-mono">
+                  <div className="text-[8px] tracking-widest uppercase text-slate-500">TOP AO</div>
+                  <div className="text-xs text-slate-100">{commandCenterStats.topFlag} {commandCenterStats.topIso} <span className="text-tactical-primary">{commandCenterStats.topScore.toFixed(1)}</span></div>
+                </div>
+              </div>
+              <div className="grid grid-cols-4 divide-x divide-white/10 font-mono text-[10px]">
+                <div className="px-3 py-2">
+                  <div className="text-slate-500 uppercase tracking-wider">Avg BP</div>
+                  <div className="text-slate-100 font-bold">{commandCenterStats.averageAdvanced.toFixed(1)}</div>
+                </div>
+                <div className="px-3 py-2">
+                  <div className="text-slate-500 uppercase tracking-wider">Budget</div>
+                  <div className="text-emerald-300 font-bold">${commandCenterStats.totalBudget.toFixed(0)}B</div>
+                </div>
+                <div className="px-3 py-2">
+                  <div className="text-slate-500 uppercase tracking-wider">Nuclear</div>
+                  <div className="text-red-300 font-bold">{commandCenterStats.nuclearStates}</div>
+                </div>
+                <div className="px-3 py-2">
+                  <div className="text-slate-500 uppercase tracking-wider">NATO+</div>
+                  <div className="text-sky-300 font-bold">{commandCenterStats.natoCount}</div>
+                </div>
+              </div>
+            </div>
+          </div>
+
           {/* Loading overlay */}
           {isLoading && (
             <div className="absolute inset-0 flex items-center justify-center z-20 pointer-events-none bg-tactical-bg/80">
@@ -681,7 +844,7 @@ export default function Home() {
         </div>
 
         {/* ─── RIGHT SIDEBAR: Country Detail Panel with Tabs ─── */}
-        <aside className="w-96 glass-panel border-l border-white/5 shrink-0 z-30 overflow-y-auto custom-scrollbar country-panel-enter">
+        <aside className="w-[28rem] 2xl:w-[32rem] glass-panel border-l border-white/5 shrink-0 z-30 overflow-y-auto custom-scrollbar country-panel-enter">
           {selectedCountry ? (
             <StrategicDetailPanel
               country={selectedCountry}

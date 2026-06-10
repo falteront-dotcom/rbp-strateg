@@ -11,7 +11,9 @@ import {
   getAnomalies,
   getCorrelationMatrix,
   getTrendData,
+  type CountryData,
 } from "@/lib/analytics";
+import { toCountryApiData } from "@/lib/db/country-row-mapper";
 
 export async function GET(request: NextRequest) {
   try {
@@ -25,57 +27,78 @@ export async function GET(request: NextRequest) {
     const allRows = db.prepare("SELECT * FROM countries").all() as Record<string, unknown>[];
     db.close();
 
-    // Convert to analytics-compatible format
-    const countries = allRows.map((row) => ({
-      isoCode: row.isoCode as string,
-      name: row.name as string,
-      nameRu: row.nameRu as string,
-      side: row.side as string,
-      bpTotal: (row.bpTotal as number) ?? 0,
-      bpWeapon: (row.bpWeapon as number) ?? 0,
-      bpManpower: (row.bpManpower as number) ?? 0,
-      bpLogistics: (row.bpLogistics as number) ?? 0,
-      bpC2: (row.bpC2 as number) ?? 0,
-      bpEconomy: (row.bpEconomy as number) ?? 0,
-      bpDoctrine: (row.bpDoctrine as number) ?? 0,
-      bpReadiness: (row.bpReadiness as number) ?? 0,
-      bpTerrain: (row.bpTerrain as number) ?? 0,
-      gdpPppBn: (row.gdpPppBn as number) ?? 0,
-      militaryBudgetBn: (row.militaryBudgetBn as number) ?? 0,
-      defensePctGdp: (row.defensePctGdp as number) ?? 0,
-      totalTanks: (row.totalTanks as number) ?? 0,
-      totalAircraft: (row.totalAircraft as number) ?? 0,
-      totalNavy: (row.totalNavy as number) ?? 0,
-      activePersonnel: (row.activePersonnel as number) ?? 0,
-      oilProductionKbd: (row.oilProductionKbd as number) ?? 0,
-      populationM: (row.populationM as number) ?? 0,
-      areaKm2: (row.areaKm2 as number) ?? 0,
-    }));
+    // Convert DB snake_case rows to analytics-compatible camelCase data.
+    const countries: CountryData[] = allRows.map((row, index) => {
+      const api = toCountryApiData(row);
+      return {
+        isoCode: api.isoCode,
+        name: api.name,
+        nameRu: api.nameRu,
+        side: api.side,
+        coalition: api.coalition,
+        region: "global",
+        areaKm2: api.areaKm2,
+        coastlineKm: api.coastlineKm,
+        gdpPppBn: api.gdpPppBn,
+        militaryBudgetBn: api.militaryBudgetBn,
+        defensePctGdp: api.defensePctGdp,
+        populationM: api.populationM,
+        activePersonnel: api.activePersonnel,
+        reservePersonnel: api.reservePersonnel,
+        totalTanks: api.totalTanks,
+        totalAfv: api.totalAfv,
+        totalArtillery: api.totalArtillery,
+        totalAircraft: api.totalAircraft,
+        totalHelicopters: api.totalHelicopters,
+        totalNavy: api.totalNavy,
+        submarines: api.submarines,
+        nuclearWarheads: api.nuclearWarheads,
+        ports: api.ports,
+        airfields: api.airfields,
+        oilProductionKbd: api.oilProductionKbd,
+        merchantFleet: api.merchantFleet,
+        techLevel: api.techLevel,
+        moraleIndex: api.moraleIndex,
+        combatExperience: api.combatExperience,
+        c2Capability: api.c2Capability,
+        ewCapability: api.ewCapability,
+        bpTotal: api.bpTotal,
+        bpWeapon: api.bpWeapon,
+        bpManpower: api.bpManpower,
+        bpLogistics: api.bpLogistics,
+        bpC2: api.bpC2,
+        bpEconomy: api.bpEconomy,
+        bpDoctrine: api.bpDoctrine,
+        bpReadiness: api.bpReadiness,
+        bpTerrain: api.bpTerrain,
+        bpRank: index + 1,
+      };
+    });
 
     let data: unknown;
 
     switch (type) {
       case "ranking": {
-        data = getBPRanking(countries as any);
+        data = getBPRanking(countries);
         break;
       }
       case "distribution": {
-        data = getBPDistribution(countries as any);
+        data = getBPDistribution(countries);
         break;
       }
       case "anomalies": {
-        data = getAnomalies(countries as any);
+        data = getAnomalies(countries);
         break;
       }
       case "correlation": {
-        data = getCorrelationMatrix(countries as any);
+        data = getCorrelationMatrix(countries);
         break;
       }
       case "trend": {
         if (!iso) {
           return NextResponse.json({ error: "Missing iso parameter for trend" }, { status: 400 });
         }
-        data = getTrendData(iso, countries as any);
+        data = getTrendData(iso, countries);
         break;
       }
       default:

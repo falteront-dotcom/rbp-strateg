@@ -2,9 +2,10 @@ import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
   turbopack: {
-    root: ".",
+    root: process.cwd(),
   },
   reactStrictMode: false,
+  serverExternalPackages: ["better-sqlite3"],
 };
 
 export default nextConfig;

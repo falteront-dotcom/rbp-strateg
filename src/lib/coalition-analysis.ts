@@ -4,11 +4,7 @@
 // Strict TS5, no `any`, explicit returns on every function
 // ─────────────────────────────────────────────────────────────────────────────
 
-import type { Country } from "@/db/schema";
-import {
-  COALITION_BP_COMPONENTS,
-  type CoalitionBPComponent,
-} from "@/lib/coalitions";
+import type { Country } from "@/db/schema";import { type CoalitionBPComponent } from "@/lib/coalitions";
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Types
@@ -197,7 +193,7 @@ export function getCountryCoalition(
   side: string,
 ): CoalitionInfo {
   // Check explicit membership first
-  for (const [name, info] of COALITION_REGISTRY) {
+  for (const [, info] of COALITION_REGISTRY) {
     if (info.members.includes(iso)) {
       return info;
     }

@@ -1,8 +1,4 @@
-import { ARSENAL, MODIFIERS, Side, UnitInfo } from "./unit-database";
-import { LogisticsManager, LogisticsState, Terrain, VehicleState } from "./logistics";
-import { HeightMap, MobilityManager, VisibilityManager, VehicleSpecs, BoundingBox } from "./terrain";
-import { C2Manager, CommandNode } from "./c2";
-import { getCombatCapabilities, simulateEngagementAtDistance } from "./combat-engine";
+import { MODIFIERS, UnitInfo } from "./unit-database";import { LogisticsManager, Terrain, VehicleState } from "./logistics";
 
 export type UnitStateType = 'IDLE' | 'MOVING' | 'FORMATION' | 'ENGAGING';
 export type FormationType = 'LINE' | 'WEDGE' | 'COLUMN' | 'DIAMOND' | 'NONE';
@@ -40,7 +36,7 @@ export class RBPEngine {
         this.calculatePotentials();
     }
 
-    addUnit(unitInfo: any, lat: number, lon: number): string {
+    addUnit(unitInfo: UnitInfo, lat: number, lon: number): string {
         const id = Math.random().toString(36).substr(2, 9);
         const angle = Math.random() * Math.PI * 2;
         const speed = 0.02 + Math.random() * 0.03;
@@ -91,7 +87,7 @@ export class RBPEngine {
         if (units.length === 0) return;
 
         const airCount = units.filter(u => u.unit.category === 'aircraft').length;
-        let type: FormationType = forcedType ?? (airCount === units.length ? 'WEDGE' : units.length >= 4 ? 'DIAMOND' : 'LINE');
+        const type: FormationType = forcedType ?? (airCount === units.length ? 'WEDGE' : units.length >= 4 ? 'DIAMOND' : 'LINE');
         const spacing = 6;
         const slots = this.calculateFormationSlots(type, units.length, spacing);
 

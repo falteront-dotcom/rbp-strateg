@@ -1,18 +1,4 @@
-/**
- * Combat Engine — баллистическая модель боя с учётом дистанции
- *
- * Фаза 1 РБП: Модель боевого столкновения 1v1
- * 
- * Этапы боя:
- *   1. Обнаружение  (дальность видимости/радара)
- *   2. Идентификация (время на распознавание)
- *   3. Выстрел      (кто первый — дальность + скорость наведения)
- *   4. Полёт снаряда (время в пути)
- *   5. Поражение    (вероятность пробития/попадания)
- *   6. Повреждение  (критический урон)
- */
-
-import { UnitInfo, GroundStats, AirStats, AirDefenseStats, ModuleType } from './unit-database';
+import { UnitInfo, GroundStats, AirStats, AirDefenseStats } from './unit-database';
 
 // ============================================================================
 // Новые боевые параметры (добавлены в Phase 1)
@@ -154,15 +140,6 @@ function checkRicochet(angleDeg: number, shellType: string): boolean {
   return Math.random() < prob;
 }
 
-/**
- * De Marre simplified penetration power calculation.
- */
-function calculatePenetrationPower(massKg: number, diameterMm: number, velocityMps: number): number {
-  const K = 0.015; // Empirical constant
-  const diameterM = diameterMm / 1000;
-  const pen = K * (Math.sqrt(massKg) * velocityMps) / Math.pow(diameterM, 0.75);
-  return pen * 1000; // result in mm
-}
 
 // ============================================================================
 // Формулы баллистики
@@ -305,6 +282,7 @@ export function simulateEngagementAtDistance(
   ewFactor: number = 1.0,
   iterations: number = 1000
 ): EngagementResult {
+  const simulationConfidence = Math.max(0.2, Math.min(1, iterations / 1000));
   // Обнаружение
   const rcsA = unitA.stats?.type === 'aircraft' ? (unitA.stats as AirStats).rcs : 
                unitA.stats?.type === 'ground' ? 10 : 5; // Наземные ≈ 10 м²
@@ -383,6 +361,13 @@ export function simulateEngagementAtDistance(
   } else {
     winProbA = 0.5;
     winProbB = 0.5;
+  }
+
+  if (simulationConfidence < 1) {
+    const uncertainty = 1 - simulationConfidence;
+    winProbA = winProbA * simulationConfidence + 0.5 * uncertainty;
+    winProbB = winProbB * simulationConfidence + 0.5 * uncertainty;
+    mutual *= simulationConfidence;
   }
 
   return {

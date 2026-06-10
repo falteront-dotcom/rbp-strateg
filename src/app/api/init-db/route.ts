@@ -1,17 +1,20 @@
-import { NextResponse } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
 import Database from "better-sqlite3";
 import { drizzle } from "drizzle-orm/better-sqlite3";
-import { sql, eq } from "drizzle-orm";
 import { countries } from "@/db/schema";
 import { top20Countries } from "@/db/seed/top20-countries";
 import { extendedCountries } from "@/db/seed/extended-countries";
 import { additionalCountries } from "@/db/seed/additional-countries";
 import { calculateAllCountriesBP } from "@/lib/bp";
-import type { CountryRawData } from "@/lib/bp/types";
+import { assertMaintenanceAccess } from "@/lib/api/route-guards";
+import { toCountryRawData } from "@/lib/db/country-row-mapper";
 import path from "path";
 
 /** GET /api/init-db — Initialize database (create table, seed, calculate BP) */
-export async function GET(): Promise<NextResponse> {
+export async function GET(request: NextRequest): Promise<NextResponse> {
+  const blocked = assertMaintenanceAccess(request, "/api/init-db");
+  if (blocked) return blocked;
+
   try {
     const DB_PATH = path.resolve(process.cwd(), "sqlite.db");
     const sqlite = new Database(DB_PATH);
@@ -75,43 +78,7 @@ export async function GET(): Promise<NextResponse> {
 
     // 3. Calculate BP
     const allRows = db.select().from(countries).all();
-    const rawData: CountryRawData[] = allRows.map((row) => ({
-      isoCode: row.isoCode,
-      name: row.name,
-      nameRu: row.nameRu,
-      side: row.side as "NATO" | "RUS" | "CHINA" | "NEUTRAL",
-      coalition: (row.coalition ?? null) as "NATO" | "CSTO" | "AUKUS" | "BRICS" | null,
-      areaKm2: row.areaKm2,
-      coastlineKm: row.coastlineKm,
-      climateZone: row.climateZone,
-      gdpPppBn: row.gdpPppBn,
-      militaryBudgetBn: row.militaryBudgetBn,
-      defensePctGdp: row.defensePctGdp,
-      populationM: row.populationM,
-      activePersonnel: row.activePersonnel,
-      reservePersonnel: row.reservePersonnel,
-      fitForServiceM: row.fitForServiceM,
-      totalTanks: row.totalTanks,
-      totalAfv: row.totalAfv,
-      totalArtillery: row.totalArtillery,
-      totalMlrs: row.totalMlrs,
-      totalAircraft: row.totalAircraft,
-      totalHelicopters: row.totalHelicopters,
-      totalNavy: row.totalNavy,
-      submarines: row.submarines,
-      aircraftCarriers: row.aircraftCarriers,
-      nuclearWarheads: row.nuclearWarheads ?? 0,
-      ports: row.ports,
-      airfields: row.airfields,
-      oilProductionKbd: row.oilProductionKbd,
-      merchantFleet: row.merchantFleet,
-      techLevel: row.techLevel,
-      moraleIndex: row.moraleIndex,
-      combatExperience: row.combatExperience,
-      c2Capability: row.c2Capability,
-      ewCapability: row.ewCapability,
-      updatedAt: row.updatedAt,
-    }));
+    const rawData = allRows.map((row) => toCountryRawData(row as Record<string, unknown>));
 
     const bpResults = calculateAllCountriesBP(rawData);
 
@@ -123,7 +90,7 @@ export async function GET(): Promise<NextResponse> {
       WHERE iso_code = ?
     `);
 
-    const updateMany = sqlite.transaction((results: typeof bpResults) => {
+    const updateMany = sqlite.transaction(() => {
       for (const bp of bpResults) {
         updateStmt.run(
           bp.totalBP,
@@ -139,7 +106,7 @@ export async function GET(): Promise<NextResponse> {
         );
       }
     });
-    updateMany(bpResults);
+    updateMany();
 
     sqlite.close();
 

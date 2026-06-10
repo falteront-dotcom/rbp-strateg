@@ -1,9 +1,8 @@
-const { chromium } = require('playwright');
-const path = require('path');
-
 const brainDir = 'C:\\Users\\Semyon\\.gemini\\antigravity\\brain\\6e6347ed-df67-4e12-98ca-6c3e407b04fb';
 
 (async () => {
+    const { chromium } = await import('playwright');
+    const path = await import('node:path');
     const browser = await chromium.launch({ headless: true });
     const page = await browser.newPage();
 

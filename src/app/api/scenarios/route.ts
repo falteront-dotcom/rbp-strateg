@@ -11,7 +11,14 @@ import {
   getScenariosForCountry,
   getScenariosByImpact,
   getAllScenarios,
+  type ScenarioCategory,
 } from "@/lib/strategic-scenarios";
+
+const SCENARIO_CATEGORIES = ["regional_conflict", "nuclear_exchange", "coalition_shift", "technology_shock", "economic_collapse", "civil_war", "coup_detat", "arms_race"] as const;
+
+function isScenarioCategory(value: string): value is ScenarioCategory {
+  return SCENARIO_CATEGORIES.includes(value as ScenarioCategory);
+}
 
 export async function GET(request: NextRequest) {
   try {
@@ -30,7 +37,10 @@ export async function GET(request: NextRequest) {
     }
 
     if (category) {
-      const scenarios = getScenariosByCategory(category as any);
+      if (!isScenarioCategory(category)) {
+        return NextResponse.json({ error: "Invalid scenario category", validCategories: SCENARIO_CATEGORIES }, { status: 400 });
+      }
+      const scenarios = getScenariosByCategory(category);
       return NextResponse.json({ count: scenarios.length, scenarios });
     }
 

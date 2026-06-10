@@ -1,8 +1,8 @@
 "use client";
 
 import { GeoJsonLayer, ScatterplotLayer } from "@deck.gl/layers";
-import type { Layer, PickingInfo } from "@deck.gl/core";
-import type { Feature, FeatureCollection, Polygon, MultiPolygon } from "geojson";
+import type { Layer } from "@deck.gl/core";
+import type { Feature, FeatureCollection, Geometry, Polygon, MultiPolygon } from "geojson";
 import { scaleSequential } from "d3-scale";
 import { getPosition } from "@/lib/geo/country-centroids";
 import type { Country } from "@/db/schema";
@@ -182,15 +182,14 @@ function computeBounds(countries: ReadonlyArray<Country>, key: keyof Country): {
 
 // ─── 1. Military Budget Layer (GeoJsonLayer) ──────────────────────────
 
-interface BudgetFeature extends Feature<Polygon | MultiPolygon> {
-  properties: Feature<Polygon | MultiPolygon>["properties"] & {
-    iso: string;
-    name: string;
-    militaryBudgetBn: number;
-  };
+interface BudgetProperties {
+  iso: string;
+  name: string;
+  militaryBudgetBn: number;
 }
 
-type BudgetCollection = FeatureCollection<Polygon | MultiPolygon, BudgetFeature["properties"]>;
+type BudgetFeature = Feature<Geometry, BudgetProperties>;
+type BudgetCollection = FeatureCollection<Polygon | MultiPolygon, BudgetProperties>;
 
 export function createMilitaryBudgetLayer(
   data: BudgetCollection | null,
@@ -199,7 +198,7 @@ export function createMilitaryBudgetLayer(
   const range = bounds.max - bounds.min || 1;
   const colorScale = scaleSequential(budgetColorInterpolator).domain([bounds.min, bounds.max]);
 
-  return new GeoJsonLayer({
+  return new GeoJsonLayer<BudgetProperties>({
     id: "analytics-budget",
     data: data ?? undefined,
     visible: !!data,
@@ -215,12 +214,9 @@ export function createMilitaryBudgetLayer(
       if (budget <= 0) return [20, 30, 40, 80];
       const t = (budget - bounds.min) / range;
       return colorScale(t) as [number, number, number, number];
-    }) as any,
-    getLineColor: [0, 150, 180, 50] as any,
-    getLineWidth: 1 as any,
-    onHover: (info: PickingInfo) => {
-      // Hover handled by parent StrategicMap
-    },
+    }),
+    getLineColor: [0, 150, 180, 50],
+    getLineWidth: 1,
     updateTriggers: {
       getFillColor: [bounds.min, bounds.max, data],
     },
@@ -245,7 +241,7 @@ export function createNavyLayer(
       value: c.totalNavy,
     }));
 
-  return new ScatterplotLayer({
+  return new ScatterplotLayer<ScatterPoint>({
     id: "analytics-navy",
     data: points,
     pickable: true,
@@ -253,16 +249,16 @@ export function createNavyLayer(
     stroked: true,
     filled: true,
     lineWidthMinPixels: 1,
-    getPosition: ((d: ScatterPoint) => d.position) as any,
+    getPosition: ((d: ScatterPoint) => d.position),
     getRadius: ((d: ScatterPoint) => {
       const t = (d.value - min) / range;
       return 15000 + t * 180000;
-    }) as any,
+    }),
     getFillColor: ((d: ScatterPoint) => {
       const t = (d.value - min) / range;
       return colorScale(t) as [number, number, number, number];
-    }) as any,
-    getLineColor: [0, 180, 220, 120] as any,
+    }),
+    getLineColor: [0, 180, 220, 120],
     radiusUnits: "meters",
     radiusMinPixels: 3,
     radiusMaxPixels: 60,
@@ -291,7 +287,7 @@ export function createAircraftLayer(
       value: c.totalAircraft,
     }));
 
-  return new ScatterplotLayer({
+  return new ScatterplotLayer<ScatterPoint>({
     id: "analytics-aircraft",
     data: points,
     pickable: true,
@@ -299,16 +295,16 @@ export function createAircraftLayer(
     stroked: true,
     filled: true,
     lineWidthMinPixels: 1,
-    getPosition: ((d: ScatterPoint) => d.position) as any,
+    getPosition: ((d: ScatterPoint) => d.position),
     getRadius: ((d: ScatterPoint) => {
       const t = (d.value - min) / range;
       return 20000 + t * 200000;
-    }) as any,
+    }),
     getFillColor: ((d: ScatterPoint) => {
       const t = (d.value - min) / range;
       return colorScale(t) as [number, number, number, number];
-    }) as any,
-    getLineColor: [100, 130, 255, 120] as any,
+    }),
+    getLineColor: [100, 130, 255, 120],
     radiusUnits: "meters",
     radiusMinPixels: 3,
     radiusMaxPixels: 60,
@@ -337,7 +333,7 @@ export function createNukeLayer(
       value: c.nuclearWarheads,
     }))
 
-  return new ScatterplotLayer({
+  return new ScatterplotLayer<ScatterPoint>({
     id: "analytics-nukes",
     data: points,
     pickable: true,
@@ -345,16 +341,16 @@ export function createNukeLayer(
     stroked: true,
     filled: true,
     lineWidthMinPixels: 2,
-    getPosition: ((d: ScatterPoint) => d.position) as any,
+    getPosition: ((d: ScatterPoint) => d.position),
     getRadius: ((d: ScatterPoint) => {
       const t = (d.value - min) / range;
       return 30000 + t * 250000;
-    }) as any,
+    }),
     getFillColor: ((d: ScatterPoint) => {
       const t = (d.value - min) / range;
       return colorScale(t) as [number, number, number, number];
-    }) as any,
-    getLineColor: [255, 60, 60, 180] as any,
+    }),
+    getLineColor: [255, 60, 60, 180],
     radiusUnits: "meters",
     radiusMinPixels: 5,
     radiusMaxPixels: 70,
@@ -383,7 +379,7 @@ export function createTankLayer(
       value: c.totalTanks,
     }));
 
-  return new ScatterplotLayer({
+  return new ScatterplotLayer<ScatterPoint>({
     id: "analytics-tanks",
     data: points,
     pickable: true,
@@ -391,16 +387,16 @@ export function createTankLayer(
     stroked: true,
     filled: true,
     lineWidthMinPixels: 1,
-    getPosition: ((d: ScatterPoint) => d.position) as any,
+    getPosition: ((d: ScatterPoint) => d.position),
     getRadius: ((d: ScatterPoint) => {
       const t = (d.value - min) / range;
       return 18000 + t * 190000;
-    }) as any,
+    }),
     getFillColor: ((d: ScatterPoint) => {
       const t = (d.value - min) / range;
       return colorScale(t) as [number, number, number, number];
-    }) as any,
-    getLineColor: [200, 160, 60, 120] as any,
+    }),
+    getLineColor: [200, 160, 60, 120],
     radiusUnits: "meters",
     radiusMinPixels: 3,
     radiusMaxPixels: 60,

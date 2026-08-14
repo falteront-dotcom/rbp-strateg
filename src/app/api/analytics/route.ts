@@ -5,6 +5,8 @@
 // ─────────────────────────────────────────────────────────────────────────────
 
 import { NextRequest, NextResponse } from "next/server";
+import { openReadonlyDatabase } from "@/db/runtime";
+import { mapCountryRows, type RawCountryRow } from "@/db/country-mapper";
 import {
   getBPRanking,
   getBPDistribution,
@@ -19,63 +21,44 @@ export async function GET(request: NextRequest) {
     const type = searchParams.get("type") ?? "ranking";
     const iso = searchParams.get("iso") ?? undefined;
 
-    // Dynamic import for better-sqlite3
-    const Database = (await import("better-sqlite3")).default;
-    const db = new Database("sqlite.db", { readonly: true });
-    const allRows = db.prepare("SELECT * FROM countries").all() as Record<string, unknown>[];
-    db.close();
-
-    // Convert to analytics-compatible format
-    const countries = allRows.map((row) => ({
-      isoCode: row.isoCode as string,
-      name: row.name as string,
-      nameRu: row.nameRu as string,
-      side: row.side as string,
-      bpTotal: (row.bpTotal as number) ?? 0,
-      bpWeapon: (row.bpWeapon as number) ?? 0,
-      bpManpower: (row.bpManpower as number) ?? 0,
-      bpLogistics: (row.bpLogistics as number) ?? 0,
-      bpC2: (row.bpC2 as number) ?? 0,
-      bpEconomy: (row.bpEconomy as number) ?? 0,
-      bpDoctrine: (row.bpDoctrine as number) ?? 0,
-      bpReadiness: (row.bpReadiness as number) ?? 0,
-      bpTerrain: (row.bpTerrain as number) ?? 0,
-      gdpPppBn: (row.gdpPppBn as number) ?? 0,
-      militaryBudgetBn: (row.militaryBudgetBn as number) ?? 0,
-      defensePctGdp: (row.defensePctGdp as number) ?? 0,
-      totalTanks: (row.totalTanks as number) ?? 0,
-      totalAircraft: (row.totalAircraft as number) ?? 0,
-      totalNavy: (row.totalNavy as number) ?? 0,
-      activePersonnel: (row.activePersonnel as number) ?? 0,
-      oilProductionKbd: (row.oilProductionKbd as number) ?? 0,
-      populationM: (row.populationM as number) ?? 0,
-      areaKm2: (row.areaKm2 as number) ?? 0,
-    }));
+    // Read every country through the shared mapper so snake_case SQLite columns
+    // (e.g. bp_total, iso_code) become the camelCase shape the analytics library
+    // and the public API expect. `region` is derived, not read from SQL.
+    let countries;
+    {
+      const db = openReadonlyDatabase();
+      try {
+        const rows = db.prepare("SELECT * FROM countries").all() as RawCountryRow[];
+        countries = mapCountryRows(rows).map((c, i) => ({ ...c, bpRank: i + 1 }));
+      } finally {
+        db.close();
+      }
+    }
 
     let data: unknown;
 
     switch (type) {
       case "ranking": {
-        data = getBPRanking(countries as any);
+        data = getBPRanking(countries);
         break;
       }
       case "distribution": {
-        data = getBPDistribution(countries as any);
+        data = getBPDistribution(countries);
         break;
       }
       case "anomalies": {
-        data = getAnomalies(countries as any);
+        data = getAnomalies(countries);
         break;
       }
       case "correlation": {
-        data = getCorrelationMatrix(countries as any);
+        data = getCorrelationMatrix(countries);
         break;
       }
       case "trend": {
         if (!iso) {
           return NextResponse.json({ error: "Missing iso parameter for trend" }, { status: 400 });
         }
-        data = getTrendData(iso, countries as any);
+        data = getTrendData(iso, countries);
         break;
       }
       default:

@@ -5,6 +5,8 @@
 // ─────────────────────────────────────────────────────────────────────────────
 
 import { NextRequest, NextResponse } from "next/server";
+import { openReadonlyDatabase } from "@/db/runtime";
+import { mapCountryRow, type RawCountryRow } from "@/db/country-mapper";
 import {
   getAllDataSources,
   getDataSourceProfile,
@@ -21,28 +23,38 @@ export async function GET(request: NextRequest) {
     const field = searchParams.get("field") ?? undefined;
 
     if (iso) {
-      // Determine available sources and missing fields for this country
-      const Database = (await import("better-sqlite3")).default;
-      const db = new Database("sqlite.db", { readonly: true });
-      const row = db.prepare("SELECT * FROM countries WHERE isoCode = ?").get(iso) as Record<string, unknown> | undefined;
-      db.close();
+      // Determine available sources and missing fields for this country.
+      // Query the canonical snake_case primary key and map the row through the
+      // shared mapper so field names match what assessDataQuality expects.
+      const db = openReadonlyDatabase();
+      let report;
+      try {
+        const row = db
+          .prepare("SELECT * FROM countries WHERE iso_code = ?")
+          .get(iso) as RawCountryRow | undefined;
 
-      if (!row) {
-        return NextResponse.json({ error: "Country not found" }, { status: 404 });
+        if (!row) {
+          return NextResponse.json({ error: "Country not found" }, { status: 404 });
+        }
+
+        const country = mapCountryRow(row);
+
+        const availableSources: DataSourceType[] = [];
+        if (country.activePersonnel) availableSources.push("gfp");
+        if (country.gdpPppBn) availableSources.push("worldbank");
+        if (country.nuclearWarheads) availableSources.push("fas");
+        if (country.militaryBudgetBn) availableSources.push("sipri");
+        availableSources.push("cia"); // always available
+
+        const missingFields = Object.entries(country)
+          .filter(([, v]) => v === null || v === undefined || v === 0)
+          .map(([k]) => k);
+
+        report = assessDataQuality(iso, availableSources, missingFields);
+      } finally {
+        db.close();
       }
 
-      const availableSources: DataSourceType[] = [];
-      if (row.activePersonnel) availableSources.push("gfp");
-      if (row.gdpPppBn) availableSources.push("worldbank");
-      if (row.nuclearWarheads) availableSources.push("fas");
-      if (row.militaryBudgetBn) availableSources.push("sipri");
-      availableSources.push("cia"); // always available
-
-      const missingFields = Object.entries(row)
-        .filter(([_, v]) => v === null || v === undefined || v === 0)
-        .map(([k]) => k);
-
-      const report = assessDataQuality(iso, availableSources, missingFields);
       return NextResponse.json(report);
     }
 

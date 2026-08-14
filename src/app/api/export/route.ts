@@ -5,6 +5,8 @@
 // ─────────────────────────────────────────────────────────────────────────────
 
 import { NextRequest, NextResponse } from "next/server";
+import { openReadonlyDatabase } from "@/db/runtime";
+import { mapCountryRows, mapCountryRow, type RawCountryRow } from "@/db/country-mapper";
 
 export async function GET(request: NextRequest) {
   try {
@@ -13,48 +15,63 @@ export async function GET(request: NextRequest) {
     const iso = searchParams.get("iso") ?? undefined;
     const components = searchParams.get("components") === "true"; // Include BP component details
 
-    const Database = (await import("better-sqlite3")).default;
-    const db = new Database("sqlite.db", { readonly: true });
+    const db = openReadonlyDatabase();
+    let exportRows: Record<string, unknown>[];
+    try {
+      let rows: RawCountryRow[];
+      if (iso) {
+        const row = db
+          .prepare("SELECT * FROM countries WHERE iso_code = ?")
+          .get(iso) as RawCountryRow | undefined;
+        rows = row ? [row] : [];
+      } else {
+        rows = db
+          .prepare("SELECT * FROM countries ORDER BY bp_total DESC")
+          .all() as RawCountryRow[];
+      }
 
-    let rows: Record<string, unknown>[];
-    if (iso) {
-      rows = db.prepare("SELECT * FROM countries WHERE isoCode = ?").all(iso) as Record<string, unknown>[];
-    } else {
-      rows = db.prepare("SELECT * FROM countries ORDER BY bpTotal DESC").all() as Record<string, unknown>[];
+      if (rows.length === 0) {
+        return NextResponse.json({ error: "No data found" }, { status: 404 });
+      }
+
+      // Map snake_case SQLite rows to the public camelCase shape. `region` is
+      // derived by the mapper (it is not a stored column).
+      const mapped = iso
+        ? rows.map((r) => mapCountryRow(r))
+        : mapCountryRows(rows);
+
+      // Filter columns if not requesting full component details
+      exportRows = components
+        ? (mapped as unknown as Record<string, unknown>[])
+        : mapped.map((row) => ({
+            isoCode: row.isoCode,
+            name: row.name,
+            nameRu: row.nameRu,
+            side: row.side,
+            coalition: row.coalition,
+            region: row.region,
+            bpTotal: row.bpTotal,
+            bpWeapon: row.bpWeapon,
+            bpManpower: row.bpManpower,
+            bpLogistics: row.bpLogistics,
+            bpC2: row.bpC2,
+            bpEconomy: row.bpEconomy,
+            bpDoctrine: row.bpDoctrine,
+            bpReadiness: row.bpReadiness,
+            bpTerrain: row.bpTerrain,
+            gdpPppBn: row.gdpPppBn,
+            militaryBudgetBn: row.militaryBudgetBn,
+            defensePctGdp: row.defensePctGdp,
+            populationM: row.populationM,
+            activePersonnel: row.activePersonnel,
+            totalTanks: row.totalTanks,
+            totalAircraft: row.totalAircraft,
+            totalNavy: row.totalNavy,
+            nuclearWarheads: row.nuclearWarheads,
+          }));
+    } finally {
+      db.close();
     }
-    db.close();
-
-    if (rows.length === 0) {
-      return NextResponse.json({ error: "No data found" }, { status: 404 });
-    }
-
-    // Filter columns if not requesting full component details
-    const exportRows = components ? rows : rows.map((row) => ({
-      isoCode: row.isoCode,
-      name: row.name,
-      nameRu: row.nameRu,
-      side: row.side,
-      coalition: row.coalition,
-      region: row.region,
-      bpTotal: row.bpTotal,
-      bpWeapon: row.bpWeapon,
-      bpManpower: row.bpManpower,
-      bpLogistics: row.bpLogistics,
-      bpC2: row.bpC2,
-      bpEconomy: row.bpEconomy,
-      bpDoctrine: row.bpDoctrine,
-      bpReadiness: row.bpReadiness,
-      bpTerrain: row.bpTerrain,
-      gdpPppBn: row.gdpPppBn,
-      militaryBudgetBn: row.militaryBudgetBn,
-      defensePctGdp: row.defensePctGdp,
-      populationM: row.populationM,
-      activePersonnel: row.activePersonnel,
-      totalTanks: row.totalTanks,
-      totalAircraft: row.totalAircraft,
-      totalNavy: row.totalNavy,
-      nuclearWarheads: row.nuclearWarheads,
-    }));
 
     if (format === "json") {
       return NextResponse.json(exportRows, {

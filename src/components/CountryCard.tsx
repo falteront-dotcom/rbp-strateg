@@ -11,6 +11,7 @@ import {
   ResponsiveContainer,
 } from "recharts";
 import { X, GitCompareArrows, Shield, Users, Fuel, Radio, Landmark, BookOpen, AlertCircle, Mountain } from "lucide-react";
+import { getBPTierColor, getBPTierLabel } from "@/lib/bp/tiers";
 
 /** 8 BP components with Russian labels and icons */
 const BP_COMPONENTS_META: ReadonlyArray<{
@@ -94,23 +95,7 @@ function isoToFlag(iso: string): string {
   return String.fromCodePoint(ch1, ch2);
 }
 
-/** Get BP tier color based on score */
-function getBPTierColor(score: number): string {
-  if (score >= 80) return "text-red-400";
-  if (score >= 60) return "text-yellow-400";
-  if (score >= 40) return "text-teal-400";
-  if (score >= 20) return "text-cyan-400";
-  return "text-slate-400";
-}
-
-/** Get BP tier label */
-function getBPTierLabel(score: number): string {
-  if (score >= 80) return "КРИТИЧЕСКИЙ";
-  if (score >= 60) return "ВЫСОКИЙ";
-  if (score >= 40) return "СРЕДНИЙ";
-  if (score >= 20) return "НИЗКИЙ";
-  return "МИНИМАЛЬНЫЙ";
-}
+/** BP tier label/color come from the shared canonical tiers module. */
 
 /** Format large numbers with K/M/B suffixes */
 function formatLargeNumber(value: number): string {

@@ -10,12 +10,18 @@ import {
   Layers,
   Map,
   Satellite,
-  Mountain,
 } from "lucide-react";
 
 /** Available map styles */
 export type MapStyle = "dark-v11" | "satellite-v9" | "dark-dem";
 
+/**
+ * Map style URLs. `dark-dem` intentionally aliases `dark-v11`: a terrarium
+ * DEM source requires a Mapbox token, and the app ships a no-token fallback,
+ * so when no token is configured every mapbox:// URL falls back to the dark
+ * basemap regardless. Kept as a distinct MapStyle key so the active-style
+ * selection state can differ without a network change.
+ */
 export const MAP_STYLE_URLS: Record<MapStyle, string> = {
   "dark-v11": "mapbox://styles/mapbox/dark-v11",
   "satellite-v9": "mapbox://styles/mapbox/satellite-v9",
@@ -50,15 +56,20 @@ interface HUDButtonProps {
   active?: boolean;
   label: string;
   children: React.ReactNode;
+  /** True when the button opens a menu/panel (adds keyboard menu semantics). */
+  ariaExpanded?: boolean;
 }
 
-function HUDButton({ onClick, active, label, children }: HUDButtonProps) {
+function HUDButton({ onClick, active, label, children, ariaExpanded }: HUDButtonProps) {
   return (
     <motion.button
+      type="button"
       whileHover={{ scale: 1.08 }}
       whileTap={{ scale: 0.92 }}
       onClick={onClick}
       aria-label={label}
+      aria-expanded={ariaExpanded}
+      aria-haspopup={ariaExpanded ? "true" : undefined}
       className={`
         glass-panel rounded-md p-2 cursor-pointer
         transition-colors duration-150
@@ -119,6 +130,7 @@ export function MapControls({
           onClick={onToggleLayers}
           active={layerOpen}
           label="Map layers"
+          ariaExpanded={layerOpen}
         >
           <Layers size={18} />
         </HUDButton>
@@ -139,11 +151,12 @@ export function MapControls({
               [
                 { key: "dark-v11" as MapStyle, icon: Map, label: "Tactical Dark" },
                 { key: "satellite-v9" as MapStyle, icon: Satellite, label: "Satellite" },
-                { key: "dark-dem" as MapStyle, icon: Mountain, label: "Terrain" },
+                { key: "dark-dem" as MapStyle, icon: Map, label: "Dark (alt)" },
               ] as const
             ).map(({ key, icon: Icon, label }) => (
               <button
                 key={key}
+                type="button"
                 onClick={handleStyleSelect(key)}
                 className={`
                   w-full flex items-center gap-2 px-2 py-1.5 rounded text-xs transition-colors cursor-pointer
@@ -171,6 +184,8 @@ export function MapControls({
             </div>
             <button
               onClick={onToggleChoropleth}
+              type="button"
+              aria-pressed={choroplethVisible}
               className={`
                 w-full flex items-center gap-2 px-2 py-1.5 rounded text-xs transition-colors cursor-pointer
                 ${

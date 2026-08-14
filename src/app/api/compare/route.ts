@@ -157,10 +157,16 @@ export async function GET(request: Request): Promise<NextResponse> {
       sqlite.close();
     }
 
-    // Filter to the requested ISO codes, preserving request order
+    // Order-preserving, O(1) resolution of the 2–4 requested ISO codes.
+    // Building a single Map by isoCode (IDs are unique) is behavior-identical
+    // to the previous repeated `.find` scan: same objects, same request order,
+    // same skip-when-not-found. Behavior-preserving performance hardening only.
+    const byIso = new Map(
+      allCountries.map((c) => [c.isoCode, c] as const),
+    );
     const requestedCountries: CountryCompareData[] = [];
     for (const iso of isoCodes) {
-      const found = allCountries.find((c) => c.isoCode === iso.toUpperCase());
+      const found = byIso.get(iso.toUpperCase());
       if (found) {
         requestedCountries.push(found);
       }

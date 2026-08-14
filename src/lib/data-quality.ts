@@ -5,6 +5,8 @@
 // РБП-Стратег 2.0
 // ─────────────────────────────────────────────────────────────────────────────
 
+import type { RawCountryRow } from "@/db/country-mapper";
+
 export type DataSourceType = "gfp" | "worldbank" | "fas" | "sipri" | "iiss" | "cia" | "un" | "custom";
 
 export interface DataSourceProfile {
@@ -222,4 +224,73 @@ export function getAllDataSources(): DataSourceProfile[] {
 
 export function getSourcesForField(field: string): DataSourceProfile[] {
   return DATA_SOURCES.filter((s) => s.fields.includes(field));
+}
+
+// ─── Missing-field detection (zero is a valid value, not missing) ─────────────
+
+/**
+ * Per-field presence rule for the raw snake_case SQLite row.
+ *
+ * - `required-string`: a genuine required string, missing when empty/whitespace.
+ * - `nullable-number`: a numeric column that may genuinely be NULL; `null` /
+ *   `undefined` means the data is ABSENT (missing), while the numeric value
+ *   `0` is a legitimate, present measurement.
+ *
+ * NOT-NULL numeric columns (area, personnel, tanks, aircraft, ships,
+ * submarines, carriers, ports, airfields, ...) are intentionally absent from
+ * this list: their schema guarantees a value and a `0` is a real measurement
+ * (a country with 0 submarines/carriers is complete data, not a gap). The
+ * optional `coalition` membership (`null` = non-aligned) is also never
+ * reported as missing — being non-aligned is a valid state, not missing data.
+ */
+const FIELD_PRESENCE_RULES: ReadonlyArray<{
+  raw: keyof RawCountryRow;
+  camel: string;
+  kind: "required-string" | "nullable-number";
+}> = [
+  { raw: "iso_code", camel: "isoCode", kind: "required-string" },
+  { raw: "name", camel: "name", kind: "required-string" },
+  { raw: "name_ru", camel: "nameRu", kind: "required-string" },
+  { raw: "side", camel: "side", kind: "required-string" },
+  { raw: "climate_zone", camel: "climateZone", kind: "required-string" },
+  { raw: "updated_at", camel: "updatedAt", kind: "required-string" },
+  // Nullable numeric: NULL = genuinely absent, 0 = present-and-zero.
+  { raw: "nuclear_warheads", camel: "nuclearWarheads", kind: "nullable-number" },
+  { raw: "bp_total", camel: "bpTotal", kind: "nullable-number" },
+  { raw: "bp_weapon", camel: "bpWeapon", kind: "nullable-number" },
+  { raw: "bp_manpower", camel: "bpManpower", kind: "nullable-number" },
+  { raw: "bp_logistics", camel: "bpLogistics", kind: "nullable-number" },
+  { raw: "bp_c2", camel: "bpC2", kind: "nullable-number" },
+  { raw: "bp_economy", camel: "bpEconomy", kind: "nullable-number" },
+  { raw: "bp_doctrine", camel: "bpDoctrine", kind: "nullable-number" },
+  { raw: "bp_readiness", camel: "bpReadiness", kind: "nullable-number" },
+  { raw: "bp_terrain", camel: "bpTerrain", kind: "nullable-number" },
+];
+
+/**
+ * Compute the genuinely-missing data fields from a RAW snake_case country row.
+ *
+ * A numeric field is "missing" ONLY when it is `null`/`undefined` — a
+ * legitimate `0` (0 nuclear warheads, 0 aircraft carriers, 0 submarines, or a
+ * 0 BP component) is a valid, present value and is never reported missing.
+ * Required strings are missing only when empty/whitespace. The optional
+ * `coalition` membership is never missing. Returns the public camelCase field
+ * names so callers keep the existing public contract.
+ */
+export function computeMissingFields(row: RawCountryRow): string[] {
+  const missing: string[] = [];
+  for (const rule of FIELD_PRESENCE_RULES) {
+    const value = row[rule.raw];
+    if (rule.kind === "required-string") {
+      if (typeof value !== "string" || value.trim() === "") {
+        missing.push(rule.camel);
+      }
+    } else {
+      // nullable-number: missing only when absent; numeric zero is present.
+      if (value === null || value === undefined) {
+        missing.push(rule.camel);
+      }
+    }
+  }
+  return missing;
 }

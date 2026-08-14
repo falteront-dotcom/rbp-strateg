@@ -91,7 +91,7 @@ export class RBPEngine {
         if (units.length === 0) return;
 
         const airCount = units.filter(u => u.unit.category === 'aircraft').length;
-        let type: FormationType = forcedType ?? (airCount === units.length ? 'WEDGE' : units.length >= 4 ? 'DIAMOND' : 'LINE');
+        const type: FormationType = forcedType ?? (airCount === units.length ? 'WEDGE' : units.length >= 4 ? 'DIAMOND' : 'LINE');
         const spacing = 6;
         const slots = this.calculateFormationSlots(type, units.length, spacing);
 

@@ -5,6 +5,7 @@ import { Popup } from "react-map-gl/mapbox";
 import type { LngLatLike } from "mapbox-gl";
 import { motion, AnimatePresence } from "framer-motion";
 import type { CountryBPData } from "./ChoroplethLayer";
+import { getBPTierKey, BPTIER_BY_KEY } from "@/lib/bp/tiers";
 
 interface CountryPopupProps {
   /** Currently hovered country data */
@@ -26,13 +27,10 @@ function formatBP(score: number): string {
   });
 }
 
-/** Get BP tier label */
+/** Get BP tier label + tailwind color from the shared canonical tiers module. */
 function getBPTier(score: number): { label: string; color: string } {
-  if (score >= 80) return { label: "CRITICAL", color: "text-red-400" };
-  if (score >= 60) return { label: "HIGH", color: "text-yellow-400" };
-  if (score >= 40) return { label: "MODERATE", color: "text-teal-400" };
-  if (score >= 20) return { label: "LOW", color: "text-cyan-400" };
-  return { label: "MINIMAL", color: "text-slate-400" };
+  const info = BPTIER_BY_KEY[getBPTierKey(score)];
+  return { label: info.labelEn, color: info.colorClass };
 }
 
 export function CountryPopup({

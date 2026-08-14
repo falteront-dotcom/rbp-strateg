@@ -12,6 +12,10 @@
 
 # testing
 /coverage
+/test-results/
+/playwright-report/
+e2e/screenshots/
+e2e/*.png
 
 # next.js
 /.next/
@@ -43,11 +47,22 @@ next-env.d.ts
 # database (contains real data, too large for git)
 sqlite.db
 
-# playwright
-/test-results/
-/playwright-report/
-e2e/screenshots/
-e2e/*.png
+# database runtime artifacts
+sqlite.db-*
+
+# local runtime logs
+server.log
+dev.log
+
+# codebase analysis artifacts
+.codebase-memory/
+
+# temporary workflow/test helpers
+workflow-summary.txt
+playwright.config.pure.ts
+
+# generated screenshots
+/tests/screenshots/
 
 # IDE
 .idea/

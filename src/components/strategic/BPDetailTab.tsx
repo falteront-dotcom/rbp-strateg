@@ -14,6 +14,7 @@ import {
   Tooltip,
 } from "recharts";
 import { motion } from "framer-motion";
+import { getBPTierKey } from "@/lib/bp/tiers";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 interface CountryData {
@@ -90,12 +91,9 @@ const SIDE_COLORS: Record<string, string> = {
 };
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
+// Tier classification is delegated to the shared canonical tiers module.
 function getTier(score: number): keyof typeof TIER_MAP {
-  if (score >= 80) return "CRITICAL";
-  if (score >= 60) return "HIGH";
-  if (score >= 40) return "MODERATE";
-  if (score >= 20) return "LOW";
-  return "MINIMAL";
+  return getBPTierKey(score);
 }
 
 function scoreToColor(score: number): string {

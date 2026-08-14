@@ -247,11 +247,11 @@ export async function runPipeline(): Promise<{
     const gfpArea = (gfp as unknown as Record<string, unknown>)?.areaKm2 as number | undefined;
     const gfpCoast = (gfp as unknown as Record<string, unknown>)?.coastlineKm as number | undefined;
     
-    let gdpPppBn = wb?.gdpPppBn ?? 0;
+    const gdpPppBn = wb?.gdpPppBn ?? 0;
     let militaryBudgetBn = wb?.militaryBudgetBn ?? gfpBudget ?? 0;
     let defensePctGdp = wb?.defensePctGdp ?? 0;
-    let populationM = wb?.populationM ?? 0;
-    let areaKm2 = wb?.areaKm2 ?? gfpArea ?? 0;
+    const populationM = wb?.populationM ?? 0;
+    const areaKm2 = wb?.areaKm2 ?? gfpArea ?? 0;
 
     // Cross-validate budget between GFP and WB
     if (gfpBudget && wb?.militaryBudgetBn) {

@@ -3,6 +3,16 @@
 // Complete member lists for all recognized military coalitions
 // Based on 2024/2025 real-world alliance memberships
 // РБП-Стратег 2.0
+//
+// NOTE — reference-only metadata: this module is the richly-annotated
+// reference catalogue (founding year, type, article text, descriptions) used
+// for display/lookup. It is NOT the runtime aggregation registry: GET
+// /api/coalitions aggregates BP via `PREDEFINED_COALITIONS` in
+// `src/lib/coalitions.ts`, whose NATO list (26 members) matches the seeded
+// fixture. The whitelist-style member lists here (e.g. NATO with all 32
+// real-world members including non-seeded states) intentionally include
+// countries that may not exist in the local DB, so they are unsuitable as a
+// deterministic aggregation key.
 // ─────────────────────────────────────────────────────────────────────────────
 
 export interface CoalitionInfo {

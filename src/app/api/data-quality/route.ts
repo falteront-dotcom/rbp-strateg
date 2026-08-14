@@ -12,6 +12,7 @@ import {
   getDataSourceProfile,
   getSourcesForField,
   assessDataQuality,
+  computeMissingFields,
   type DataSourceType,
 } from "@/lib/data-quality";
 
@@ -46,10 +47,11 @@ export async function GET(request: NextRequest) {
         if (country.militaryBudgetBn) availableSources.push("sipri");
         availableSources.push("cia"); // always available
 
-        const missingFields = Object.entries(country)
-          .filter(([, v]) => v === null || v === undefined || v === 0)
-          .map(([k]) => k);
-
+        // Missing-field detection operates on the RAW snake_case row (not the
+        // mapped camelCase shape) so that TRUE absence (null/undefined) is
+        // distinguishable from a legitimate numeric zero: a country with 0
+        // warheads / 0 carriers / 0 submarines has complete data, not gaps.
+        const missingFields = computeMissingFields(row);
         report = assessDataQuality(iso, availableSources, missingFields);
       } finally {
         db.close();

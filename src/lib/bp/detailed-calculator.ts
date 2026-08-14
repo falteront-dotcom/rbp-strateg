@@ -44,6 +44,11 @@ import {
   normalizeTerrain,
 } from "@/lib/bp/terrain-potential";
 import { logNormalize, cappedNormalize, minMaxNormalize } from "@/lib/bp/normalize";
+import {
+  getBPTierKey,
+  getBPTierInfo,
+  type BPTierKey,
+} from "@/lib/bp/tiers";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 export interface DetailedComponentScore {
@@ -218,8 +223,13 @@ export function calculateDetailedBP(
   const subFactorScores: Record<string, SubFactorScore[]> = {};
 
   for (const comp of ALL_COMPONENT_SUB_FACTORS) {
-    const weightKey = comp.componentKey as keyof WeightsConfig;
-    const weight = (weights[weightKey] as number) ?? 0.1;
+    // `ALL_COMPONENT_SUB_FACTORS` keys carry a `Score` suffix ("weaponScore",
+    // "manpowerScore", ...) but `WeightsConfig` keys are the bare component
+    // names ("weapon", "manpower", ...). Strip the suffix so each weighted
+    // score uses its real calibrated weight instead of silently falling back
+    // to a flat 0.1 for every component.
+    const weightKey = comp.componentKey.replace(/Score$/, "") as keyof WeightsConfig;
+    const weight = weights[weightKey] as number;
 
     const detailed = calculateDetailedComponent(
       comp.componentKey,
@@ -313,13 +323,18 @@ export function findSubFactorStrengthsWeaknesses(
   };
 }
 
-// ─── Tier classification ──────────────────────────────────────────────────────
+// ─── Tier classification (canonical 80/60/40/20 via shared tiers module) ──────
+const TIER_DESCRIPTIONS: Record<BPTierKey, string> = {
+  CRITICAL: "Глобальная военная сверхдержава",
+  HIGH: "Региональная держава с глобальными амбициями",
+  MODERATE: "Региональная военная сила",
+  LOW: "Ограниченные военные возможности",
+  MINIMAL: "Символические вооружённые силы",
+};
+
 export function getBPTier(score: number): { tier: string; color: string; description: string } {
-  if (score >= 85) return { tier: "КРИТИЧЕСКИЙ", color: "#ef4444", description: "Глобальная военная сверхдержава" };
-  if (score >= 70) return { tier: "ВЫСОКИЙ", color: "#f59e0b", description: "Региональная держава с глобальными амбициями" };
-  if (score >= 50) return { tier: "СРЕДНИЙ", color: "#22d3ee", description: "Региональная военная сила" };
-  if (score >= 30) return { tier: "НИЗКИЙ", color: "#3b82f6", description: "Ограниченные военные возможности" };
-  return { tier: "МИНИМАЛЬНЫЙ", color: "#6b7280", description: "Символические вооружённые силы" };
+  const info = getBPTierInfo(score);
+  return { tier: info.labelRu, color: info.hex, description: TIER_DESCRIPTIONS[getBPTierKey(score)] };
 }
 
 // ─── Detailed comparison ──────────────────────────────────────────────────────

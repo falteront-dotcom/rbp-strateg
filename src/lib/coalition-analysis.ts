@@ -9,6 +9,7 @@ import {
   COALITION_BP_COMPONENTS,
   type CoalitionBPComponent,
 } from "@/lib/coalitions";
+import { getBPTierLabel as sharedBPTierLabel } from "@/lib/bp/tiers";
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Types
@@ -429,14 +430,10 @@ export function formatLargeNumber(value: number): string {
 }
 
 /**
- * Get BP tier label in Russian.
+ * Get BP tier label in Russian (canonical 80/60/40/20 thresholds).
  */
 export function getBPTierLabel(score: number): string {
-  if (score >= 80) return "КРИТИЧЕСКИЙ";
-  if (score >= 60) return "ВЫСОКИЙ";
-  if (score >= 40) return "СРЕДНИЙ";
-  if (score >= 20) return "НИЗКИЙ";
-  return "МИНИМАЛЬНЫЙ";
+  return sharedBPTierLabel(score);
 }
 
 /**

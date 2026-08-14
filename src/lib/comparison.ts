@@ -3,6 +3,8 @@
 // Strict TS5, no `any`, explicit returns on every function
 // ─────────────────────────────────────────────────────────────────────────────
 
+import { getBPTierLabel as sharedBPTierLabel, getBPTierColor as sharedBPTierColor } from "@/lib/bp/tiers";
+
 /** 8 BP component keys matching the DB schema */
 export const COMPARISON_BP_COMPONENTS = [
   "bpWeapon",
@@ -316,25 +318,17 @@ export function formatLargeNumber(value: number): string {
 }
 
 /**
- * Get BP tier label in Russian.
+ * Get BP tier label in Russian (canonical 80/60/40/20 thresholds).
  */
 export function getBPTierLabel(score: number): string {
-  if (score >= 80) return "КРИТИЧЕСКИЙ";
-  if (score >= 60) return "ВЫСОКИЙ";
-  if (score >= 40) return "СРЕДНИЙ";
-  if (score >= 20) return "НИЗКИЙ";
-  return "МИНИМАЛЬНЫЙ";
+  return sharedBPTierLabel(score);
 }
 
 /**
- * Get BP tier color class.
+ * Get BP tier color class (canonical 80/60/40/20 thresholds).
  */
 export function getBPTierColor(score: number): string {
-  if (score >= 80) return "text-red-400";
-  if (score >= 60) return "text-yellow-400";
-  if (score >= 40) return "text-teal-400";
-  if (score >= 20) return "text-cyan-400";
-  return "text-slate-400";
+  return sharedBPTierColor(score);
 }
 
 /**

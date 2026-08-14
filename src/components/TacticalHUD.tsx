@@ -106,9 +106,21 @@ const UnitMarker = React.memo(({ u, removeUnit, isSelected, onSelect, onDoubleCl
                 top: `${u.lat}%`
             }}
             className="absolute pointer-events-auto will-change-[left,top]"
+            role="button"
+            tabIndex={0}
+            aria-label={`${u.unit.country}, ${u.unit.displayName || u.unit.name}`}
             onClick={(e) => {
                 e.stopPropagation();
                 onSelect();
+            }}
+            onKeyDown={(e) => {
+                // Keyboard activation mirrors the click handler without changing
+                // pointer/double-click semantics. Enter or Space selects.
+                if (e.key === 'Enter' || e.key === ' ') {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    onSelect();
+                }
             }}
             onDoubleClick={(e) => {
                 e.stopPropagation();

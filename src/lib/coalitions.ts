@@ -82,7 +82,16 @@ export interface CoalitionComparison {
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Predefined Coalitions Map
-// Real-world membership as of 2025 — some members may not be in the DB
+//
+// CANONICAL RUNTIME REGISTRY: this `PREDEFINED_COALITIONS` map is the single
+// source of truth consumed by GET /api/coalitions. Its NATO list (26 members)
+// matches the seeded fixture, so e2e asserts a deterministic 26. Aggregation
+// semantics in `aggregateCoalitionBP` below are: `totalBP` = SUM of member
+// `bpTotal`; `componentScores` = AVERAGE of member component values; members
+// are sorted by `bpTotal` descending; members not present in the data are
+// silently skipped. `src/lib/bp/coalition-data.ts` holds richer reference
+// metadata (founding year, articles, descriptions) but is NOT the runtime
+// aggregation registry.
 // ─────────────────────────────────────────────────────────────────────────────
 
 export const PREDEFINED_COALITIONS: ReadonlyMap<string, readonly ISOCode[]> = new Map([

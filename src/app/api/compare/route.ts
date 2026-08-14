@@ -4,12 +4,11 @@
 // ─────────────────────────────────────────────────────────────────────────────
 
 import { NextResponse } from "next/server";
+import { openReadonlyDatabase } from "@/db/runtime";
+import { mapCountryRows, type RawCountryRow } from "@/db/country-mapper";
 import {
-  compareCountriesList,
   COMPARISON_BP_COMPONENTS,
-  COMPARISON_BP_LABELS,
   type CountryCompareData,
-  type ComparisonBPComponent,
 } from "@/lib/comparison";
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -35,54 +34,6 @@ interface CompareResponse {
   countries: CountryCompareData[];
   deltas: ComponentDelta[][];
   summary: ComparisonSummary;
-}
-
-/** Map a raw DB row (snake_case) to CountryCompareData (camelCase) */
-function rowToCountryData(row: Record<string, unknown>): CountryCompareData {
-  return {
-    isoCode: row.iso_code as string,
-    name: row.name as string,
-    nameRu: row.name_ru as string,
-    side: row.side as string,
-    coalition: (row.coalition as string) ?? null,
-    areaKm2: row.area_km2 as number,
-    coastlineKm: row.coastline_km as number,
-    gdpPppBn: row.gdp_ppp_bn as number,
-    militaryBudgetBn: row.military_budget_bn as number,
-    defensePctGdp: row.defense_pct_gdp as number,
-    populationM: row.population_m as number,
-    activePersonnel: row.active_personnel as number,
-    reservePersonnel: row.reserve_personnel as number,
-    totalTanks: row.total_tanks as number,
-    totalAfv: row.total_afv as number,
-    totalArtillery: row.total_artillery as number,
-    totalMlrs: (row.total_mlrs as number) ?? 0,
-    totalAircraft: row.total_aircraft as number,
-    totalHelicopters: row.total_helicopters as number,
-    totalNavy: row.total_navy as number,
-    aircraftCarriers: (row.aircraft_carriers as number) ?? 0,
-    submarines: row.submarines as number,
-    nuclearWarheads: (row.nuclear_warheads as number) ?? 0,
-    ports: row.ports as number,
-    airfields: row.airfields as number,
-    oilProductionKbd: row.oil_production_kbd as number,
-    merchantFleet: (row.merchant_fleet as number) ?? 0,
-    fitForServiceM: (row.fit_for_service_m as number) ?? (row.population_m as number * 0.3),
-    techLevel: row.tech_level as number,
-    moraleIndex: row.morale_index as number,
-    combatExperience: row.combat_experience as number,
-    c2Capability: row.c2_capability as number,
-    ewCapability: row.ew_capability as number,
-    bpTotal: (row.bp_total as number) ?? 0,
-    bpWeapon: (row.bp_weapon as number) ?? 0,
-    bpManpower: (row.bp_manpower as number) ?? 0,
-    bpLogistics: (row.bp_logistics as number) ?? 0,
-    bpC2: (row.bp_c2 as number) ?? 0,
-    bpEconomy: (row.bp_economy as number) ?? 0,
-    bpDoctrine: (row.bp_doctrine as number) ?? 0,
-    bpReadiness: (row.bp_readiness as number) ?? 0,
-    bpTerrain: (row.bp_terrain as number) ?? 0,
-  };
 }
 
 /**
@@ -197,17 +148,14 @@ export async function GET(request: Request): Promise<NextResponse> {
       );
     }
 
-    // Dynamic import for better-sqlite3
-    const Database = (await import("better-sqlite3")).default;
-    const path = (await import("path")).default;
-    const DB_PATH = path.resolve(process.cwd(), "sqlite.db");
-    const sqlite = new Database(DB_PATH);
-    sqlite.pragma("journal_mode = WAL");
-
-    const rows = sqlite.prepare("SELECT * FROM countries").all() as Record<string, unknown>[];
-    sqlite.close();
-
-    const allCountries = rows.map(rowToCountryData);
+    const sqlite = openReadonlyDatabase();
+    let allCountries: CountryCompareData[];
+    try {
+      const rows = sqlite.prepare("SELECT * FROM countries").all() as RawCountryRow[];
+      allCountries = mapCountryRows(rows) as CountryCompareData[];
+    } finally {
+      sqlite.close();
+    }
 
     // Filter to the requested ISO codes, preserving request order
     const requestedCountries: CountryCompareData[] = [];

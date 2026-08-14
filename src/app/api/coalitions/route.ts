@@ -1,44 +1,29 @@
 import { NextResponse } from "next/server";
+import { openReadonlyDatabase } from "@/db/runtime";
+import { mapCountryRows, type RawCountryRow } from "@/db/country-mapper";
 import {
   PREDEFINED_COALITIONS,
-  COALITION_BP_COMPONENTS,
   aggregateCoalitionBP,
   type CoalitionBP,
   type CoalitionMember,
-  type CoalitionBPComponent,
 } from "@/lib/coalitions";
 
-/** Map a raw DB row (snake_case) to a CoalitionMember (camelCase) */
-function rowToMember(row: Record<string, unknown>): CoalitionMember {
-  return {
-    isoCode: row.iso_code as string,
-    nameRu: row.name_ru as string,
-    side: row.side as string,
-    bpTotal: (row.bp_total as number) ?? 0,
-    bpWeapon: (row.bp_weapon as number) ?? 0,
-    bpManpower: (row.bp_manpower as number) ?? 0,
-    bpLogistics: (row.bp_logistics as number) ?? 0,
-    bpC2: (row.bp_c2 as number) ?? 0,
-    bpEconomy: (row.bp_economy as number) ?? 0,
-    bpDoctrine: (row.bp_doctrine as number) ?? 0,
-    bpReadiness: (row.bp_readiness as number) ?? 0,
-    bpTerrain: (row.bp_terrain as number) ?? 0,
-  };
+/** Load every country mapped through the shared mapper. */
+function loadMembers(db: ReturnType<typeof openReadonlyDatabase>): CoalitionMember[] {
+  const rows = db.prepare("SELECT * FROM countries").all() as RawCountryRow[];
+  return mapCountryRows(rows) as unknown as CoalitionMember[];
 }
 
 /** GET /api/coalitions — Returns all predefined coalitions with aggregated BP */
 export async function GET(): Promise<NextResponse> {
   try {
-    const Database = (await import("better-sqlite3")).default;
-    const path = (await import("path")).default;
-    const DB_PATH = path.resolve(process.cwd(), "sqlite.db");
-    const sqlite = new Database(DB_PATH);
-    sqlite.pragma("journal_mode = WAL");
-
-    const rows = sqlite.prepare("SELECT * FROM countries").all() as Record<string, unknown>[];
-    sqlite.close();
-
-    const allMembers: CoalitionMember[] = rows.map(rowToMember);
+    const sqlite = openReadonlyDatabase();
+    let allMembers: CoalitionMember[];
+    try {
+      allMembers = loadMembers(sqlite);
+    } finally {
+      sqlite.close();
+    }
 
     const results: CoalitionBP[] = [];
     for (const [name, isoCodes] of PREDEFINED_COALITIONS) {
@@ -78,16 +63,14 @@ export async function POST(request: Request): Promise<NextResponse> {
       );
     }
 
-    const Database = (await import("better-sqlite3")).default;
-    const path = (await import("path")).default;
-    const DB_PATH = path.resolve(process.cwd(), "sqlite.db");
-    const sqlite = new Database(DB_PATH);
-    sqlite.pragma("journal_mode = WAL");
+    const sqlite = openReadonlyDatabase();
+    let allMembers: CoalitionMember[];
+    try {
+      allMembers = loadMembers(sqlite);
+    } finally {
+      sqlite.close();
+    }
 
-    const rows = sqlite.prepare("SELECT * FROM countries").all() as Record<string, unknown>[];
-    sqlite.close();
-
-    const allMembers: CoalitionMember[] = rows.map(rowToMember);
     const aggregated = aggregateCoalitionBP(name, isoCodes, allMembers);
 
     return NextResponse.json(aggregated);

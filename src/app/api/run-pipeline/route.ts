@@ -1,10 +1,11 @@
 import { NextResponse } from "next/server";
-import Database from "better-sqlite3";
-import path from "path";
+import { openDatabase, isAuthorizedAdminRequest } from "@/db/runtime";
+import type { CountryRawData } from "@/lib/bp/types";
+import type { CountryBP } from "@/lib/bp/types";
 
 /**
- * GET /api/run-pipeline
- * 
+ * POST /api/run-pipeline
+ *
  * Runs the full multi-source data pipeline:
  * 1. Fetch World Bank API (GDP, population, military budget)
  * 2. Load GFP data (military hardware, personnel)
@@ -12,24 +13,39 @@ import path from "path";
  * 4. Merge with cross-validation
  * 5. Calculate BP for all countries
  * 6. Write to SQLite
- * 
- * This endpoint is idempotent — it drops and re-creates all data.
+ *
+ * Authenticated: requires `x-admin-token` equal to the server-side
+ * `RBP_ADMIN_TOKEN`. Unauthorized requests return 401 before any work or
+ * database access occurs. GET is not exported (405 Method Not Allowed).
+ *
+ * Atomic replacement of the country set: the merged countries and their BP
+ * scores are computed fully in memory first, then a single write transaction
+ * DELETEs the entire table and INSERTs only the new set — so source countries
+ * that have dropped out of the pipeline do not persist. On failure the
+ * transaction rolls back and the prior data is preserved. The connection is
+ * closed in `finally` even on failure paths.
  */
-export async function GET(): Promise<NextResponse> {
+export async function POST(request: Request): Promise<NextResponse> {
+  if (!isAuthorizedAdminRequest(request)) {
+    return NextResponse.json({ ok: false, error: "Unauthorized" }, { status: 401 });
+  }
+
+  let sqlite: ReturnType<typeof openDatabase> | undefined;
   try {
     console.log("[run-pipeline] Starting...");
 
-    // Dynamic imports for tree-shaking
+    // Heavy pipeline modules are imported only after the auth gate passes.
     const { runPipeline } = await import("@/scripts/data-pipeline/merge-validate");
     const { calculateAllCountriesBP } = await import("@/lib/bp");
-    type CountryRawData = import("@/lib/bp/types").CountryRawData;
 
-    // 1. Run pipeline — merge all sources
+    // 1. Run the merge pipeline (network) — produces the complete new set.
     const { countries, conflicts, stats } = await runPipeline();
-    console.log(`[run-pipeline] Merged ${countries.length} countries, ${conflicts.length} conflicts`);
+    console.log(
+      `[run-pipeline] Merged ${countries.length} countries, ${conflicts.length} conflicts`,
+    );
 
-    // 2. Calculate BP for all countries
-    const rawData: import("@/lib/bp/types").CountryRawData[] = countries.map(c => ({
+    // 2. Calculate BP for every country (pure, in memory).
+    const rawData: CountryRawData[] = countries.map((c) => ({
       isoCode: c.isoCode,
       name: c.name,
       nameRu: c.nameRu,
@@ -68,13 +84,12 @@ export async function GET(): Promise<NextResponse> {
     }));
 
     const bpResults = calculateAllCountriesBP(rawData);
+    // `calculateAllCountriesBP` sorts results by rank, so pair BP to countries
+    // by isoCode (not by index) to avoid assigning components to the wrong row.
+    const bpByIso = new Map<string, CountryBP>(bpResults.map((bp) => [bp.isoCode, bp]));
 
-    // 3. Write to SQLite
-    const DB_PATH = path.resolve(process.cwd(), "sqlite.db");
-    const sqlite = new Database(DB_PATH);
-    sqlite.pragma("journal_mode = WAL");
-
-    // Ensure table exists
+    // 3. Open the DB and replace the country set atomically.
+    sqlite = openDatabase();
     sqlite.exec(`
       CREATE TABLE IF NOT EXISTS countries (
         iso_code TEXT PRIMARY KEY,
@@ -124,9 +139,9 @@ export async function GET(): Promise<NextResponse> {
       );
     `);
 
-    // Insert/replace all countries
+    const deleteAll = sqlite.prepare("DELETE FROM countries");
     const insertStmt = sqlite.prepare(`
-      INSERT OR REPLACE INTO countries (
+      INSERT INTO countries (
         iso_code, name, name_ru, side, coalition,
         area_km2, coastline_km, climate_zone,
         gdp_ppp_bn, military_budget_bn, defense_pct_gdp,
@@ -153,10 +168,10 @@ export async function GET(): Promise<NextResponse> {
       )
     `);
 
-    const insertMany = sqlite.transaction(() => {
-      for (let i = 0; i < countries.length; i++) {
-        const c = countries[i];
-        const bp = bpResults[i];
+    sqlite.transaction(() => {
+      deleteAll.run();
+      for (const c of countries) {
+        const bp = bpByIso.get(c.isoCode);
         insertStmt.run(
           c.isoCode, c.name, c.nameRu, c.side, c.coalition,
           c.areaKm2, c.coastlineKm, c.climateZone,
@@ -167,24 +182,21 @@ export async function GET(): Promise<NextResponse> {
           c.totalNavy, c.submarines, c.aircraftCarriers, c.nuclearWarheads,
           c.ports, c.airfields, c.oilProductionKbd, c.merchantFleet,
           c.techLevel, c.moraleIndex, c.combatExperience, c.c2Capability, c.ewCapability,
-          bp.totalBP,
-          bp.components.weapon.normalizedValue,
-          bp.components.manpower.normalizedValue,
-          bp.components.logistics.normalizedValue,
-          bp.components.c2.normalizedValue,
-          bp.components.economy.normalizedValue,
-          bp.components.doctrine.normalizedValue,
-          bp.components.readiness.normalizedValue,
-          bp.components.terrain.normalizedValue,
+          bp?.totalBP ?? 0,
+          bp?.components.weapon.normalizedValue ?? 0,
+          bp?.components.manpower.normalizedValue ?? 0,
+          bp?.components.logistics.normalizedValue ?? 0,
+          bp?.components.c2.normalizedValue ?? 0,
+          bp?.components.economy.normalizedValue ?? 0,
+          bp?.components.doctrine.normalizedValue ?? 0,
+          bp?.components.readiness.normalizedValue ?? 0,
+          bp?.components.terrain.normalizedValue ?? 0,
           c.updatedAt,
         );
       }
-    });
+    })();
 
-    insertMany();
-    sqlite.close();
-
-    const top10 = bpResults.slice(0, 10).map(bp => ({
+    const top10 = bpResults.slice(0, 10).map((bp) => ({
       rank: bp.rank,
       iso: bp.isoCode,
       name: bp.name,
@@ -204,5 +216,7 @@ export async function GET(): Promise<NextResponse> {
     const message = error instanceof Error ? error.message : "Unknown error";
     console.error("[run-pipeline] Failed:", message);
     return NextResponse.json({ ok: false, error: message }, { status: 500 });
+  } finally {
+    sqlite?.close();
   }
 }

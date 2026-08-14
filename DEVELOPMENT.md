@@ -8,11 +8,11 @@
 
 | Метрика | Значение | Оценка |
 |---|---|---|
-| Строки кода | 30,011 | ✅ Цель достигнута |
-| TypeScript ошибки | 0 (3 legacy) | ⚠️ Legacy нужно починить или удалить |
-| E2E тесты | 7 | ⚠️ Мало — нужно 20+ |
+| Строки кода | Около 30 000 | ✅ Поддерживается в актуальном дереве |
+| TypeScript ошибки | Проверяются `npm run typecheck` | ✅ Production build/typecheck проходят |
+| E2E тесты | 8 spec-файлов | ✅ Contract/API/UI suite через `npm test` |
 | API маршрутов | 20 | ✅ Полный набор |
-| Стран в БД | 263 | ✅ Почти все признанные |
+| Стран в локальной БД | 59 | ✅ Seed fixture; pipeline обновляет набор |
 | Компоненты UI | 40+ | ✅ Полный набор |
 | Lib модули | 30+ | ✅ Полный набор |
 
@@ -20,21 +20,19 @@
 
 #### 🔴 КРИТИЧЕСКИЕ
 
-1. **3 Legacy файла с TS ошибками**
-   - `src/lib/combat-engine.ts` — старый движок боя
-   - `src/lib/rbp-engine.ts` — старый БП движок
-   - `src/lib/terrain.ts` — старая терренная система
-   - **Решение**: Либо починить, либо удалить. Новые замены уже существуют: `tactical-engine.ts`, `bp/calculate-bp.ts`
+1. **Legacy compatibility modules**
+   - `src/lib/combat-engine.ts`, `src/lib/rbp-engine.ts`, `src/lib/terrain.ts` сохраняются для тактической совместимости.
+   - Основные стратегические расчёты используют `src/lib/bp/` и `tactical-engine.ts`.
+   - Typecheck/build проходят; lint debt в legacy/UI-адаптерах отслеживается отдельно.
 
-2. **Нет `test` скрипта в package.json**
-   - Нет unit тестов вообще
-   - Только 7 E2E тестов
-   - **Решение**: Добавить Vitest + React Testing Library
+2. **Нет unit-тестов в отдельном runner-е**
+   - Contract/API/доменная проверка выполняется Playwright suite через `npm test`.
+   - UI и API тесты находятся в `e2e/`; старые standalone specs удалены из discovery.
 
-3. **БД — SQLite файл в корне проекта**
-   - `sqlite.db` (106KB) — не в .gitignore (теперь добавлен)
-   - Drizzle ORM схема не синхронизирована с реальной БД
-   - **Решение**: Использовать `drizzle-kit push` для синхронизации
+3. **База данных — локальный SQLite runtime**
+   - API использует единый слой `src/db/runtime.ts` и raw `better-sqlite3`.
+   - `sqlite.db` не коммитится; runtime-фрагменты `sqlite.db-*` игнорируются.
+   - Схема поддерживается безопасным ручным DDL в admin/pipeline коде; текущая orphaned Drizzle migration не является runtime source of truth.
 
 #### 🟡 СРЕДНИЕ
 
@@ -325,7 +323,7 @@ sqlite.db      → turso://... remote DB
 1. Установить `@libsql/client`
 2. Создать Turso DB: `turso db create rbp-strateg`
 3. Обновить `src/db/index.ts` для использования Turso client
-4. Schema migration через `drizzle-kit push`
+4. Schema/runtime maintenance is handled through the shared raw SQLite runtime. Do not run `drizzle-kit push` against this repository until the migration history is regenerated from the actual `countries` schema; the orphaned migration is not the runtime source of truth.
 5. Seed через API endpoint `/api/init-db`
 6. Deploy на Vercel: `vercel deploy`
 
@@ -413,13 +411,13 @@ export function CountryPanel({ country, onSelect }: Props) {
 
 | Источник | Покрытие | Точность | Свежесть | Поля |
 |---|---|---|---|---|
-| GFP 2025 | 145/263 (55%) | 75% | 2025 | Персонал, техника, бюджет |
-| World Bank | 217/263 (85%) | 90% | 2024 | ВВП, население, бюджет |
-| FAS Nuclear | 9/263 (3%) | 85% | 2025 | Боеголовки |
-| SIPRI | 170/263 (65%) | 85% | 2024 | Бюджет, экспорт оружия |
-| IISS MB | 180/263 (70%) | 90% | 2025 | ОШК, техника |
-| CIA Factbook | 240/263 (90%) | 80% | 2025 | Площадь, побережье, порты |
-| ООН | 250/263 (95%) | 85% | 2024 | Население, ВВП |
+| Статистическая база World Bank/GFP | Набор зависит от источника; локальный seed содержит 59 стран | 2024–2025 | Экономика и техника |
+| World Bank | Pipeline source; локальный seed содержит 59 стран | 2024 | ВВП, население, бюджет |
+| FAS Nuclear | 9 ядерных держав в reference data | 85% | 2025 | Боеголовки |
+| SIPRI | Pipeline/reference source; покрытие зависит от данных | 85% | 2024 | Бюджет, экспорт оружия |
+| IISS MB | Reference source; покрытие зависит от данных | 90% | 2025 | ОШК, техника |
+| CIA Factbook | Reference source; покрытие зависит от данных | 80% | 2025 | Площадь, побережье, порты |
+| ООН | Reference source; покрытие зависит от данных | 85% | 2024 | Население, ВВП |
 
 **Cross-validation**: GFP vs World Bank — ±20% threshold. Если расхождение >20% — пометка ⚠️ в UI.
 

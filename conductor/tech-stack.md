@@ -33,7 +33,7 @@
 
 | Зависимость | Назначение |
 |---|---|
-| `better-sqlite3` + `drizzle-orm` | База данных (миграция на Turso для продакшена) |
+| База данных | raw `better-sqlite3` + единый runtime/mapper | Локальная SQLite-БД; admin API и pipeline — authenticated POST |
 | `recharts` | Радарные диаграммы, графики |
 | `lucide-react` | Иконки |
 | `clsx` + `tailwind-merge` | Утилиты стилей |
@@ -45,7 +45,11 @@
 | `@playwright/test` | E2E тестирование |
 | `drizzle-kit` | Миграции БД |
 
-## Данные
+## Runtime database policy
+
+The application uses `src/db/runtime.ts` and `better-sqlite3` as the runtime database layer. Drizzle files remain only as type/schema history until regenerated safely; do not run `drizzle-kit push` against the current orphaned migration. Database-mutating endpoints are authenticated POST routes and require `RBP_ADMIN_TOKEN`/`x-admin-token`.
+
+
 
 | Источник | Тип | Обновляемость |
 |---|---|---|

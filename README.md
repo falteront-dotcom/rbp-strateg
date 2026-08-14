@@ -133,11 +133,11 @@ src/
 │   │   ├── country-centroids.ts
 │   │   └── country-names-ru.ts  # 195 ISO3 → русские названия
 │   ├── db/ → src/db/            # (aliased)
-│   ├── combat-engine.ts         # ⚠️ Legacy — TS ошибки
-│   ├── rbp-engine.ts            # ⚠️ Legacy — TS ошибки
-│   └── terrain.ts               # ⚠️ Legacy — TS ошибки
+│   ├── combat-engine.ts         # ⚠️ Legacy tactical compatibility module
+│   ├── rbp-engine.ts            # ⚠️ Legacy tactical compatibility module
+│   └── terrain.ts               # ⚠️ Legacy terrain compatibility module
 ├── db/
-│   ├── schema.ts                # Drizzle ORM схема (263 страны)
+│   ├── schema.ts                # Drizzle-типы; runtime API использует raw SQLite mapper
 │   ├── index.ts                 # Подключение к БД
 │   ├── queries.ts               # CRUD запросы
 │   └── seed/                    # Seed данные
@@ -155,12 +155,11 @@ src/
 
 ## 📈 Статистика проекта
 
-- **30,011 строк** TypeScript/TSX кода
-- **124 файла** (84 .ts + 37 .tsx + CSS/ICO)
+- **Около 30 000 строк** TypeScript/TSX кода
+- **153 исходных файлов** (135 TypeScript + 2 JavaScript + CSS/SQL/конфигурация)
 - **20 API маршрутов**
-- **263 страны** в БД
-- **0 TypeScript ошибок** (исключая 3 legacy файла)
-- **7 E2E тестов** (Playwright)
+- **59 стран** в локальной seed-БД; pipeline может расширить набор при обновлении
+- **8 Playwright spec-файлов**; contract и UI проверки запускаются через `npm test`
 
 ## 🚀 Запуск
 
@@ -202,7 +201,7 @@ curl -X POST http://localhost:3000/api/init-db
 2. **MapGL/DeckGL**: Рендерятся как siblings (не parent-child) с z-index; MapGL `pointerEvents: "none"`
 3. **Map SSR**: StrategicMap загружается через `dynamic(() => import(...), { ssr: false })`
 4. **NaN LngLat**: Известный баг Mapbox GL при dynamic/SSR-false; все практические guards на месте
-5. **Legacy файлы**: `combat-engine.ts`, `rbp-engine.ts`, `terrain.ts` — имеют TS ошибки, исключены из проверки
+5. **Legacy compatibility modules**: `combat-engine.ts`, `rbp-engine.ts`, and `terrain.ts` are retained for tactical compatibility. They are not part of the strategic BP API; lint warnings in legacy/UI adapters remain visible but do not block typecheck/build.
 
 ## 📋 Смотрите также
 

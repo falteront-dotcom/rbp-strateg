@@ -4,7 +4,17 @@ import { test, expect } from '@playwright/test';
 // E2E tests for RBP-Strateg 2.0 (РБП Командный Центр)
 // NOTE: Mapbox keeps WebSocket connections open, so `networkidle` never resolves.
 //       Use `domcontentloaded` + explicit waits instead.
+//
+// Determinism: the local dev database is the canonical seeded fixture
+// (top20 + extended + additional = 59 countries). API and UI assertions use the
+// known fixture contract (exact count, required ISO codes / Russian names, and
+// the seeded NATO membership of 26) rather than arbitrary thresholds.
 // ─────────────────────────────────────────────────────────────────────────────
+
+/** Canonical seeded fixture size used by the deterministic assertions. */
+const EXPECTED_COUNTRY_COUNT = 59;
+/** Seeded NATO coalition membership count. */
+const EXPECTED_NATO_MEMBERS = 26;
 
 test.describe('RBP-Strateg 2.0 — App Shell', () => {
   test('loads the app', async ({ page }) => {
@@ -25,35 +35,36 @@ test.describe('RBP-Strateg 2.0 — App Shell', () => {
     ).toBeVisible();
   });
 
-  test('country list is populated', async ({ page }) => {
+  test('country list is populated with the seeded fixture', async ({ page }) => {
     await page.goto('/');
     await page.waitForLoadState('domcontentloaded');
 
-    // Wait for countries data to load from /api/countries
-    // The loading indicator disappears when data arrives
+    // Wait for the full seeded country set to render from /api/countries.
     await page.waitForFunction(
-      () => {
-        const buttons = document.querySelectorAll('nav button');
-        return buttons.length >= 50;
-      },
+      (expected: number) => document.querySelectorAll('nav button').length >= expected,
+      EXPECTED_COUNTRY_COUNT,
       { timeout: 30000 }
     );
 
     const countryButtons = page.locator('nav button');
     const count = await countryButtons.count();
-    expect(count).toBeGreaterThanOrEqual(50);
+    // Deterministic floor: the fixture populates exactly 59 countries, so the
+    // nav must hold at least the full seeded set (extra controls only add).
+    expect(count).toBeGreaterThanOrEqual(EXPECTED_COUNTRY_COUNT);
+
+    // Required countries are present by their seeded Russian names.
+    await expect(countryButtons.filter({ hasText: 'США' }).first()).toBeVisible();
+    await expect(countryButtons.filter({ hasText: 'Россия' }).first()).toBeVisible();
   });
 
   test('search works', async ({ page }) => {
     await page.goto('/');
     await page.waitForLoadState('domcontentloaded');
 
-    // Wait for countries to load
+    // Wait for the full seeded fixture to load.
     await page.waitForFunction(
-      () => {
-        const buttons = document.querySelectorAll('nav button');
-        return buttons.length >= 50;
-      },
+      (expected: number) => document.querySelectorAll('nav button').length >= expected,
+      EXPECTED_COUNTRY_COUNT,
       { timeout: 30000 }
     );
 
@@ -65,11 +76,13 @@ test.describe('RBP-Strateg 2.0 — App Shell', () => {
     await searchInput.fill('Россия');
     await page.waitForTimeout(300);
 
-    // Verify Russia appears in filtered results
+    // Verify Russia survives the filter and the list narrowed.
     const russiaItem = page.locator('nav button').filter({
       hasText: 'Россия',
     });
     await expect(russiaItem.first()).toBeVisible();
+    const filteredCount = await page.locator('nav button').count();
+    expect(filteredCount).toBeLessThanOrEqual(EXPECTED_COUNTRY_COUNT);
   });
 
   test('layer selector renders', async ({ page }) => {
@@ -85,16 +98,17 @@ test.describe('RBP-Strateg 2.0 — App Shell', () => {
     await expect(mapArea.first()).toBeAttached({ timeout: 10000 });
   });
 
-  test('selecting a country shows detail panel without crashing', async ({ page }) => {
+  test('selecting a country shows detail panel without uncaught errors', async ({ page }) => {
     const pageErrors: string[] = [];
     page.on('pageerror', (err) => pageErrors.push(err.message));
 
     await page.goto('/');
     await page.waitForLoadState('domcontentloaded');
 
-    // Wait for countries to load
+    // Wait for the full seeded fixture to load.
     await page.waitForFunction(
-      () => document.querySelectorAll('nav button').length >= 50,
+      (expected: number) => document.querySelectorAll('nav button').length >= expected,
+      EXPECTED_COUNTRY_COUNT,
       { timeout: 30000 }
     );
 
@@ -109,9 +123,10 @@ test.describe('RBP-Strateg 2.0 — App Shell', () => {
       await page.waitForTimeout(500);
     }
 
-    // No JS errors should have occurred
-    const fatal = pageErrors.filter(e => !/NaN|LngLat|mapbox/.test(e));
-    expect(fatal.length).toBe(0);
+    // The SafeLngLat / no-token fallback path must keep the app error-free: no
+    // uncaught JS errors at all once a country detail tab is open. We no longer
+    // broadly tolerate NaN/LngLat/mapbox errors — their absence is the contract.
+    expect(pageErrors).toEqual([]);
   });
 });
 
@@ -120,34 +135,43 @@ test.describe('RBP-Strateg 2.0 — App Shell', () => {
 // ─────────────────────────────────────────────────────────────────────────────
 
 test.describe('RBP-Strateg 2.0 — API Endpoints', () => {
-  test('API /api/countries returns data', async ({ request }) => {
+  test('API /api/countries returns the seeded fixture', async ({ request }) => {
     const response = await request.get('/api/countries');
     expect(response.ok()).toBe(true);
 
     const countries = await response.json();
     expect(Array.isArray(countries)).toBe(true);
-    expect(countries.length).toBeGreaterThanOrEqual(200);
+    // Deterministic fixture contract: exactly the 59 seeded countries.
+    expect(countries.length).toBe(EXPECTED_COUNTRY_COUNT);
 
-    // Find USA and verify bpTotal > 90
-    const usa = countries.find(
-      (c: { isoCode: string }) => c.isoCode === 'USA'
-    );
+    // Required countries are present and mapped to camelCase.
+    const findByIso = (iso: string) =>
+      countries.find((c: { isoCode: string }) => c.isoCode === iso);
+    const usa = findByIso('USA');
+    const rus = findByIso('RUS');
+    const chn = findByIso('CHN');
     expect(usa).toBeDefined();
+    expect(rus).toBeDefined();
+    expect(chn).toBeDefined();
+
+    // USA BP comes from the seeded data (deterministic, > 90); exact value is
+    // pinned in the export CSV contract test.
     expect(usa.bpTotal).toBeGreaterThan(90);
   });
 
-  test('API /api/coalitions returns NATO', async ({ request }) => {
+  test('API /api/coalitions returns seeded NATO membership', async ({ request }) => {
     const response = await request.get('/api/coalitions');
     expect(response.ok()).toBe(true);
 
     const coalitions = await response.json();
     expect(Array.isArray(coalitions)).toBe(true);
 
-    // Find the NATO coalition
+    // Find the NATO coalition — the seeded fixture contributes exactly 26 members.
     const nato = coalitions.find(
       (c: { name: string }) => c.name === 'NATO'
     );
     expect(nato).toBeDefined();
-    expect(nato.members.length).toBeGreaterThanOrEqual(26);
+    expect(nato.memberCount).toBe(EXPECTED_NATO_MEMBERS);
+    expect(nato.members.length).toBe(EXPECTED_NATO_MEMBERS);
   });
 });

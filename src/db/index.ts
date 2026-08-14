@@ -1,15 +1,10 @@
-import Database from "better-sqlite3";
 import { drizzle } from "drizzle-orm/better-sqlite3";
 import * as schema from "./schema";
-import path from "path";
+import { openDatabase } from "./runtime";
 
-const DB_PATH = path.resolve(process.cwd(), "sqlite.db");
-
-const sqlite = new Database(DB_PATH);
-
-// WAL mode for better concurrent read performance
-sqlite.pragma("journal_mode = WAL");
-sqlite.pragma("foreign_keys = ON");
+// Shared DB path + pragmas (journal_mode = WAL, foreign_keys = ON) live in
+// ./runtime so every SQLite user resolves the same absolute path.
+const sqlite = openDatabase();
 
 export const db = drizzle(sqlite, { schema });
 export { sqlite };

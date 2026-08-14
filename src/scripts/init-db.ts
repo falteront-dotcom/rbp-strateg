@@ -2,7 +2,6 @@
  * Init script: creates countries table, seeds data, and calculates BP scores.
  * Run with: npx tsx src/scripts/init-db.ts
  */
-import Database from "better-sqlite3";
 import { drizzle } from "drizzle-orm/better-sqlite3";
 import { sql } from "drizzle-orm";
 import { countries } from "../db/schema";
@@ -10,17 +9,13 @@ import { top20Countries } from "../db/seed/top20-countries";
 import { extendedCountries } from "../db/seed/extended-countries";
 import { calculateAllCountriesBP } from "../lib/bp";
 import type { CountryRawData } from "../lib/bp/types";
-import path from "path";
-
-const DB_PATH = path.resolve(process.cwd(), "sqlite.db");
+import { openDatabase, DB_PATH } from "../db/runtime";
 
 function main(): void {
   console.log("🔧 Initializing RBP-Strateg database...");
   console.log(`   DB path: ${DB_PATH}`);
 
-  const sqlite = new Database(DB_PATH);
-  sqlite.pragma("journal_mode = WAL");
-  sqlite.pragma("foreign_keys = ON");
+  const sqlite = openDatabase();
   const db = drizzle(sqlite, { schema: { countries } });
 
   // 1. Create table

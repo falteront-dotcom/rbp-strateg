@@ -8,6 +8,10 @@ import { NextRequest, NextResponse } from "next/server";
 import { calculateWhatIf, type ScenarioParams, DEFAULT_SCENARIO_PARAMS } from "@/lib/what-if-engine";
 import { openReadonlyDatabase } from "@/db/runtime";
 import { mapCountryRow, mapCountryRows, type RawCountryRow } from "@/db/country-mapper";
+import { getDatasetHealth, getPublishedDataset } from "@/db/dataset-repository";
+import { computeMissingFields } from "@/lib/data-quality";
+import { buildConfidenceSummary, buildScenarioExplanation } from "@/lib/analysis/explainability";
+import type { ChangedInput } from "@/lib/analysis/types";
 
 export async function POST(request: NextRequest) {
   try {
@@ -38,8 +42,29 @@ export async function POST(request: NextRequest) {
       const allCountries = mapCountryRows(allRows);
 
       const result = calculateWhatIf(country, allCountries, params);
+      const dataset = getPublishedDataset(db);
+      const health = getDatasetHealth(db);
+      const confidence = buildConfidenceSummary(computeMissingFields(row), health.status);
+      const suppliedParams = body.params && typeof body.params === "object" ? body.params as Partial<ScenarioParams> : {};
+      const changedInputs: ChangedInput[] = Object.entries(suppliedParams)
+        .filter(([field, value]) => DEFAULT_SCENARIO_PARAMS[field as keyof ScenarioParams] !== value)
+        .map(([field, value]) => ({
+          field,
+          before: DEFAULT_SCENARIO_PARAMS[field as keyof ScenarioParams],
+          after: value,
+        }));
+      const explanation = buildScenarioExplanation(result, confidence, changedInputs);
+      const metadata = {
+        datasetVersion: dataset?.version ?? null,
+        formulaVersion: "bp-v2",
+        calculatedAt: new Date().toISOString(),
+        confidence,
+        warnings: confidence.warnings,
+      };
 
       return NextResponse.json({
+        metadata,
+        explanation,
         base: { isoCode: result.baseBP.isoCode, totalBP: result.baseBP.totalBP, rank: result.baseRank },
         scenario: {
           totalBP: result.scenarioBP.totalBP,

@@ -11,6 +11,10 @@ import { additionalCountries } from "../db/seed/additional-countries";
 import { calculateAllCountriesBP } from "../lib/bp";
 import type { CountryRawData } from "../lib/bp/types";
 import { openDatabase, DB_PATH } from "../db/runtime";
+import { ensureDatasetSchema } from "../db/dataset-schema";
+import { recordPublishedDataset } from "../db/dataset-repository";
+import { validateCountryDataset } from "../lib/dataset/validation";
+import type { RawCountryRow } from "../db/country-mapper";
 
 function main(): void {
   console.log("🔧 Initializing RBP-Strateg database...");
@@ -69,6 +73,7 @@ function main(): void {
       updated_at TEXT NOT NULL
     );
   `);
+  ensureDatasetSchema(sqlite);
 
   // 2. Clear and seed
   console.log("🌱 Seeding country data...");
@@ -156,6 +161,14 @@ function main(): void {
   });
 
   updateMany(bpResults);
+
+  const seededRows = sqlite.prepare("SELECT * FROM countries").all() as RawCountryRow[];
+  const validation = validateCountryDataset(seededRows);
+  if (!validation.ok) {
+    throw new Error(`Seed validation failed: ${validation.errors.map((issue) => issue.message).join('; ')}`);
+  }
+  const version = `seed-${allData.map((country) => country.updatedAt).sort().at(-1) ?? 'unknown'}`;
+  recordPublishedDataset(sqlite, version, validation, { source: 'local-seed', countryCount: allData.length });
 
   // 5. Print top 10
   console.log("\n🏆 Top 10 Countries by Combat Potential:");

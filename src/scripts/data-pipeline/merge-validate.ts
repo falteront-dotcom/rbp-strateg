@@ -19,7 +19,7 @@ import { getGFPData, GFP_RANKINGS_2025 } from "./scrape-gfp";
 import { getNuclearData } from "./nuclear-data";
 import { COUNTRY_NAMES_RU } from "@/lib/geo/country-names-ru";
 
-interface ConflictRecord {
+export interface ConflictRecord {
   iso3: string;
   field: string;
   gfpValue: number;
@@ -29,7 +29,20 @@ interface ConflictRecord {
   resolution: "gfp" | "wb" | "fas" | "average";
 }
 
-interface MergedCountry {
+export interface PipelineWorldBankData {
+  gdpPppBn: number | null;
+  populationM: number | null;
+  militaryBudgetBn: number | null;
+  defensePctGdp: number | null;
+  areaKm2: number | null;
+}
+
+export interface PipelineOptions {
+  /** Optional offline World Bank snapshot; skips network access when provided. */
+  worldBankData?: Map<string, PipelineWorldBankData>;
+}
+
+export interface MergedCountry {
   isoCode: string;
   name: string;
   nameRu: string;
@@ -135,6 +148,7 @@ export function deriveSide(iso3: string): CountrySide {
   return "NEUTRAL";
 }
 
+/** Derive the primary affiliation stored in the single coalition column. */
 export function deriveCoalition(iso3: string): "NATO" | "CSTO" | "AUKUS" | "BRICS" | null {
   if (NATO_MEMBERS.has(iso3)) return "NATO";
   if (CSTO_MEMBERS.has(iso3)) return "CSTO";
@@ -261,7 +275,7 @@ function deriveClimate(iso3: string): string {
  * 4. Merge with cross-validation
  * 5. Return merged countries + conflicts
  */
-export async function runPipeline(): Promise<{
+export async function runPipeline(options: PipelineOptions = {}): Promise<{
   countries: MergedCountry[];
   conflicts: ConflictRecord[];
   stats: { total: number; fromGFP: number; fromWB: number; fromFAS: number };
@@ -272,14 +286,19 @@ export async function runPipeline(): Promise<{
   const stats = { total: 0, fromGFP: 0, fromWB: 0, fromFAS: 0 };
 
   // 1. World Bank
-  let wbData: Map<string, { gdpPppBn: number | null; populationM: number | null; militaryBudgetBn: number | null; defensePctGdp: number | null; areaKm2: number | null }> = new Map();
-  try {
-    const { fetchWorldBankData } = await import("./fetch-worldbank");
-    wbData = await fetchWorldBankData();
+  let wbData: Map<string, PipelineWorldBankData> = options.worldBankData ?? new Map();
+  if (options.worldBankData) {
     stats.fromWB = wbData.size;
-    console.log(`  ✓ World Bank: ${wbData.size} countries`);
-  } catch (err) {
-    console.warn("  ⚠ World Bank fetch failed, using GFP-only:", err);
+    console.log(`  ✓ World Bank: using offline snapshot (${wbData.size} countries)`);
+  } else {
+    try {
+      const { fetchWorldBankData } = await import("./fetch-worldbank");
+      wbData = await fetchWorldBankData();
+      stats.fromWB = wbData.size;
+      console.log(`  ✓ World Bank: ${wbData.size} countries`);
+    } catch (err) {
+      console.warn("  ⚠ World Bank fetch failed, using GFP-only:", err);
+    }
   }
 
   // 2. GFP (fail loudly on duplicate iso3 rows before the Map hides them)

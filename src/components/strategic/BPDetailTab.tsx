@@ -14,7 +14,7 @@ import {
   Tooltip,
 } from "recharts";
 import { motion } from "framer-motion";
-import { getBPTierKey } from "@/lib/bp/tiers";
+import { getBPTierHex, getBPTierKey } from "@/lib/bp/tiers";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 interface CountryData {

@@ -7,6 +7,7 @@ import { sql } from "drizzle-orm";
 import { countries } from "../db/schema";
 import { top20Countries } from "../db/seed/top20-countries";
 import { extendedCountries } from "../db/seed/extended-countries";
+import { additionalCountries } from "../db/seed/additional-countries";
 import { calculateAllCountriesBP } from "../lib/bp";
 import type { CountryRawData } from "../lib/bp/types";
 import { openDatabase, DB_PATH } from "../db/runtime";
@@ -71,7 +72,7 @@ function main(): void {
 
   // 2. Clear and seed
   console.log("🌱 Seeding country data...");
-  const allData = [...top20Countries, ...extendedCountries];
+  const allData = [...top20Countries, ...extendedCountries, ...additionalCountries];
 
   db.delete(countries).run();
   db.insert(countries).values(allData).run();

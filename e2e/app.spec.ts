@@ -35,26 +35,14 @@ test.describe('RBP-Strateg 2.0 — App Shell', () => {
     ).toBeVisible();
   });
 
-  test('country list is populated with the seeded fixture', async ({ page }) => {
+  test('country list contains required seeded countries', async ({ page }) => {
     await page.goto('/');
-    await page.waitForLoadState('domcontentloaded');
 
-    // Wait for the full seeded country set to render from /api/countries.
-    await page.waitForFunction(
-      (expected: number) => document.querySelectorAll('nav button').length >= expected,
-      EXPECTED_COUNTRY_COUNT,
-      { timeout: 30000 }
-    );
-
-    const countryButtons = page.locator('nav button');
-    const count = await countryButtons.count();
-    // Deterministic floor: the fixture populates exactly 59 countries, so the
-    // nav must hold at least the full seeded set (extra controls only add).
-    expect(count).toBeGreaterThanOrEqual(EXPECTED_COUNTRY_COUNT);
-
-    // Required countries are present by their seeded Russian names.
-    await expect(countryButtons.filter({ hasText: 'США' }).first()).toBeVisible();
-    await expect(countryButtons.filter({ hasText: 'Россия' }).first()).toBeVisible();
+    // Deterministic seeded-fixture contract: the canonical fixture populates
+    // exactly 59 countries (top20 + extended + additional), and the required
+    // entries are present by their seeded Russian names.
+    await expect(page.getByText('США', { exact: false })).toBeVisible();
+    await expect(page.locator('[data-testid="country-list-item"]')).toHaveCount(59);
   });
 
   test('search works', async ({ page }) => {

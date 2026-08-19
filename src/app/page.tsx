@@ -535,6 +535,7 @@ export default function Home() {
                   return (
                     <button
                       key={country.isoCode}
+                      data-testid="country-list-item"
                       onClick={() => handleCountryClick(country.isoCode)}
                       className={`
                         w-full flex items-center gap-3 px-3 py-2.5 text-left transition-all cursor-pointer

@@ -61,6 +61,9 @@ dev.log
 workflow-summary.txt
 playwright.config.pure.ts
 
+# eslint cache
+.eslintcache
+
 # generated screenshots
 /tests/screenshots/
 

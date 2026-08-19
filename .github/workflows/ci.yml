@@ -23,6 +23,9 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
+      - name: Install Playwright browser
+        run: npx playwright install --with-deps chromium
+
       - name: Lint
         run: npm run lint
 
@@ -32,8 +35,12 @@ jobs:
       - name: Build
         run: npm run build
 
-      - name: Install Playwright browser
-        run: npx playwright install --with-deps chromium
+      # sqlite.db is gitignored; a clean checkout has no database, so the
+      # production webServer can never become ready without seeding first.
+      # This re-seeds the canonical 59-country fixture from the committed
+      # seed modules — no network, fully deterministic.
+      - name: Seed the canonical fixture
+        run: npm run db:seed
 
       - name: Run tests (contract + e2e)
         env:
@@ -51,4 +58,20 @@ jobs:
         with:
           name: playwright-report
           path: playwright-report/
+          retention-days: 14
+
+      - name: Upload test results
+        uses: actions/upload-artifact@v4
+        if: failure()
+        with:
+          name: test-results
+          path: test-results/
+          retention-days: 14
+
+      - name: Upload build logs
+        uses: actions/upload-artifact@v4
+        if: failure()
+        with:
+          name: next-build-logs
+          path: .next/
           retention-days: 14

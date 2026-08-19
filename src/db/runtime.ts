@@ -12,6 +12,7 @@ export const ADMIN_TOKEN_HEADER = "x-admin-token";
 export function openReadonlyDatabase(): Database.Database {
   const db = new Database(DB_PATH, { readonly: true });
   db.pragma("foreign_keys = ON");
+  db.pragma("busy_timeout = 5000");
   return db;
 }
 
@@ -20,6 +21,7 @@ export function openDatabase(): Database.Database {
   const db = new Database(DB_PATH);
   db.pragma("journal_mode = WAL");
   db.pragma("foreign_keys = ON");
+  db.pragma("busy_timeout = 5000");
   return db;
 }
 

@@ -20,7 +20,7 @@ import { getNuclearData } from "./nuclear-data";
 import { COUNTRY_NAMES_RU } from "@/lib/geo/country-names-ru";
 import type { NewCountry } from "@/db/schema";
 
-interface ConflictRecord {
+export interface ConflictRecord {
   iso3: string;
   field: string;
   gfpValue: number;
@@ -30,7 +30,20 @@ interface ConflictRecord {
   resolution: "gfp" | "wb" | "fas" | "average";
 }
 
-interface MergedCountry {
+export interface PipelineWorldBankData {
+  gdpPppBn: number | null;
+  populationM: number | null;
+  militaryBudgetBn: number | null;
+  defensePctGdp: number | null;
+  areaKm2: number | null;
+}
+
+export interface PipelineOptions {
+  /** Optional offline World Bank snapshot; skips network access when provided. */
+  worldBankData?: Map<string, PipelineWorldBankData>;
+}
+
+export interface MergedCountry {
   isoCode: string;
   name: string;
   nameRu: string;
@@ -100,20 +113,25 @@ const CSTO_MEMBERS = new Set(["RUS","BLR","ARM","KAZ","KGZ","TJK"]);
 const AUKUS_MEMBERS = new Set(["USA","AUS","GBR"]);
 
 /** BRICS members */
-const BRICS_MEMBERS = new Set(["CHN","RUS","IND","BRA","ZAF","SAU","IRN","UAE","EGY","ETH"]);
+const BRICS_MEMBERS = new Set(["CHN","RUS","IND","BRA","ZAF","SAU","IRN","ARE","EGY","ETH"]);
 
-/** Derive side from coalition membership */
-function deriveSide(iso3: string): "NATO" | "RUS" | "CHINA" | "UKR" | "NEUTRAL" {
+/** NATO-aligned partners represented as NATO-side in the strategic model. */
+const NATO_ALIGNED_PARTNERS = new Set(["JPN","KOR","ISR","AUS","TWN","SGP","PHL","NZL"]);
+
+/** Derive the strategic side independently from primary coalition membership. */
+export function deriveSide(iso3: string): "NATO" | "RUS" | "CHINA" | "UKR" | "NEUTRAL" {
   if (iso3 === "UKR") return "UKR";
-  if (NATO_MEMBERS.has(iso3)) return "NATO";
+  if (NATO_MEMBERS.has(iso3) || NATO_ALIGNED_PARTNERS.has(iso3)) return "NATO";
   if (CSTO_MEMBERS.has(iso3)) return "RUS";
   if (iso3 === "CHN" || iso3 === "PRK") return "CHINA";
   return "NEUTRAL";
 }
 
-function deriveCoalition(iso3: string): "NATO" | "CSTO" | "AUKUS" | "BRICS" | null {
+/** Derive the primary affiliation stored in the single coalition column. */
+export function deriveCoalition(iso3: string): "NATO" | "CSTO" | "AUKUS" | "BRICS" | null {
   if (NATO_MEMBERS.has(iso3)) return "NATO";
   if (CSTO_MEMBERS.has(iso3)) return "CSTO";
+  if (AUKUS_MEMBERS.has(iso3)) return "AUKUS";
   if (BRICS_MEMBERS.has(iso3)) return "BRICS";
   return null;
 }
@@ -194,7 +212,7 @@ function deriveClimate(iso3: string): string {
  * 4. Merge with cross-validation
  * 5. Return merged countries + conflicts
  */
-export async function runPipeline(): Promise<{
+export async function runPipeline(options: PipelineOptions = {}): Promise<{
   countries: MergedCountry[];
   conflicts: ConflictRecord[];
   stats: { total: number; fromGFP: number; fromWB: number; fromFAS: number };
@@ -205,14 +223,19 @@ export async function runPipeline(): Promise<{
   const stats = { total: 0, fromGFP: 0, fromWB: 0, fromFAS: 0 };
 
   // 1. World Bank
-  let wbData: Map<string, { gdpPppBn: number | null; populationM: number | null; militaryBudgetBn: number | null; defensePctGdp: number | null; areaKm2: number | null }> = new Map();
-  try {
-    const { fetchWorldBankData } = await import("./fetch-worldbank");
-    wbData = await fetchWorldBankData();
+  let wbData: Map<string, PipelineWorldBankData> = options.worldBankData ?? new Map();
+  if (options.worldBankData) {
     stats.fromWB = wbData.size;
-    console.log(`  ✓ World Bank: ${wbData.size} countries`);
-  } catch (err) {
-    console.warn("  ⚠ World Bank fetch failed, using GFP-only:", err);
+    console.log(`  ✓ World Bank: using offline snapshot (${wbData.size} countries)`);
+  } else {
+    try {
+      const { fetchWorldBankData } = await import("./fetch-worldbank");
+      wbData = await fetchWorldBankData();
+      stats.fromWB = wbData.size;
+      console.log(`  ✓ World Bank: ${wbData.size} countries`);
+    } catch (err) {
+      console.warn("  ⚠ World Bank fetch failed, using GFP-only:", err);
+    }
   }
 
   // 2. GFP

@@ -685,6 +685,7 @@ export default function Home() {
         <aside className="w-96 glass-panel border-l border-white/5 shrink-0 z-30 overflow-y-auto custom-scrollbar country-panel-enter">
           {selectedCountry ? (
             <StrategicDetailPanel
+              key={selectedCountry.isoCode}
               country={selectedCountry}
               allCountries={countriesCompareData}
               onClose={handleCloseCountryCard}

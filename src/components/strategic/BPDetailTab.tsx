@@ -14,7 +14,7 @@ import {
   Tooltip,
 } from "recharts";
 import { motion } from "framer-motion";
-import { getBPTierKey } from "@/lib/bp/tiers";
+import { getBPTierHex, getBPTierKey } from "@/lib/bp/tiers";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 interface CountryData {
@@ -96,17 +96,9 @@ function getTier(score: number): keyof typeof TIER_MAP {
   return getBPTierKey(score);
 }
 
-function scoreToColor(score: number): string {
-  if (score >= 80) return "#ef4444";
-  if (score >= 60) return "#f59e0b";
-  if (score >= 40) return "#22d3ee";
-  if (score >= 20) return "#3b82f6";
-  return "#64748b";
-}
-
 function scoreBarGradient(score: number): string {
   const pct = Math.min(100, Math.max(0, score));
-  return `linear-gradient(90deg, #0e1520 ${100 - pct}%, ${scoreToColor(score)} ${100 - pct}%)`;
+  return `linear-gradient(90deg, #0e1520 ${100 - pct}%, ${getBPTierHex(score)} ${100 - pct}%)`;
 }
 
 function getWeaponSubFactors(c: CountryData): { label: string; value: number }[] {
@@ -261,7 +253,7 @@ export function BPDetailTab({ country }: BPDetailTabProps) {
 
               {/* Score */}
               <div className="flex items-end gap-1">
-                <span className="text-lg font-bold" style={{ color: scoreToColor(score) }}>
+                <span className="text-lg font-bold" style={{ color: getBPTierHex(score) }}>
                   {score.toFixed(1)}
                 </span>
                 <span className="text-[10px] text-slate-500 pb-0.5">/100</span>
@@ -274,7 +266,7 @@ export function BPDetailTab({ country }: BPDetailTabProps) {
                   animate={{ width: `${Math.min(100, score)}%` }}
                   transition={{ duration: 0.8, delay: idx * 0.05 }}
                   className="h-full rounded-full"
-                  style={{ backgroundColor: scoreToColor(score) }}
+                  style={{ backgroundColor: getBPTierHex(score) }}
                 />
               </div>
 
@@ -411,7 +403,7 @@ export function BPDetailTab({ country }: BPDetailTabProps) {
                   </span>
                   <span
                     className="text-[11px] font-bold"
-                    style={{ color: scoreToColor(comp.score) }}
+                    style={{ color: getBPTierHex(comp.score) }}
                   >
                     {comp.score.toFixed(1)}
                   </span>
@@ -432,7 +424,7 @@ export function BPDetailTab({ country }: BPDetailTabProps) {
                   </span>
                   <span
                     className="text-[11px] font-bold"
-                    style={{ color: scoreToColor(comp.score) }}
+                    style={{ color: getBPTierHex(comp.score) }}
                   >
                     {comp.score.toFixed(1)}
                   </span>
@@ -448,11 +440,11 @@ export function BPDetailTab({ country }: BPDetailTabProps) {
             <span className="text-tactical-primary">{country.nameRu}</span> занимает{" "}
             <span className="text-white font-bold">#{country.bpRank}</span> место в мировом рейтинге БП.
             Наибольший вклад вносит компонент{" "}
-            <span style={{ color: scoreToColor(analysis.strengths[0].score) }}>
+            <span style={{ color: getBPTierHex(analysis.strengths[0].score) }}>
               {analysis.strengths[0].letter} ({analysis.strengths[0].name})
             </span>
             , а наименее развит —{" "}
-            <span style={{ color: scoreToColor(analysis.weaknesses[0].score) }}>
+            <span style={{ color: getBPTierHex(analysis.weaknesses[0].score) }}>
               {analysis.weaknesses[0].letter} ({analysis.weaknesses[0].name})
             </span>
             .

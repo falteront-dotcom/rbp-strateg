@@ -19,7 +19,11 @@ export default defineConfig({
     retries: process.env.CI ? 2 : 0,
     workers: process.env.CI ? 1 : undefined,
     timeout: 30_000,
-    reporter: 'html',
+    reporter: [
+      ['html', { outputFolder: 'playwright-report' }],
+      ['list'],
+    ],
+    outputDir: 'test-results',
     use: {
         baseURL: 'http://localhost:3000',
         trace: 'off',

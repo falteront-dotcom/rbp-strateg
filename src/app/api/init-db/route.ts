@@ -8,6 +8,10 @@ import { calculateAllCountriesBP } from "@/lib/bp";
 import type { CountryRawData } from "@/lib/bp/types";
 import type { NewCountry } from "@/db/schema";
 import { openDatabase, isAuthorizedAdminRequest } from "@/db/runtime";
+import { ensureDatasetSchema } from "@/db/dataset-schema";
+import { recordPublishedDataset } from "@/db/dataset-repository";
+import { validateCountryDataset } from "@/lib/dataset/validation";
+import type { RawCountryRow } from "@/db/country-mapper";
 
 /** Idempotent CREATE TABLE — mirrors the hand-written schema (source of truth). */
 const CREATE_TABLE_SQL = `
@@ -139,13 +143,15 @@ export async function POST(request: Request): Promise<NextResponse> {
     const bpResults = calculateAllCountriesBP(rawData);
 
     sqlite = openDatabase();
-    const db = drizzle(sqlite, { schema: { countries } });
-    sqlite.exec(CREATE_TABLE_SQL);
+    const database = sqlite;
+    const db = drizzle(database, { schema: { countries } });
+    database.exec(CREATE_TABLE_SQL);
+    ensureDatasetSchema(database);
 
-    const updateStmt = sqlite.prepare(UPDATE_BP_SQL);
+    const updateStmt = database.prepare(UPDATE_BP_SQL);
 
     // One write transaction: clear, re-seed, and write BP scores atomically.
-    sqlite.transaction(() => {
+    database.transaction(() => {
       db.delete(countries).run();
       db.insert(countries).values(allData).run();
       for (const bp of bpResults) {
@@ -162,6 +168,12 @@ export async function POST(request: Request): Promise<NextResponse> {
           bp.isoCode,
         );
       }
+
+      const seededRows = database.prepare("SELECT * FROM countries").all() as RawCountryRow[];
+      const validation = validateCountryDataset(seededRows);
+      if (!validation.ok) throw new Error(`Seed validation failed: ${validation.errors.map((issue) => issue.message).join('; ')}`);
+      const version = `seed-${allData.map((country) => country.updatedAt).sort().at(-1) ?? 'unknown'}`;
+      recordPublishedDataset(database, version, validation, { source: 'local-seed', countryCount: allData.length });
     })();
 
     const top10 = bpResults.slice(0, 10).map((bp) => ({

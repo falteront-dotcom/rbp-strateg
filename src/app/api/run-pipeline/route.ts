@@ -2,6 +2,10 @@ import { NextResponse } from "next/server";
 import { openDatabase, isAuthorizedAdminRequest } from "@/db/runtime";
 import type { CountryRawData } from "@/lib/bp/types";
 import type { CountryBP } from "@/lib/bp/types";
+import type { RawCountryRow } from "@/db/country-mapper";
+import { ensureDatasetSchema } from "@/db/dataset-schema";
+import { recordPublishedDataset } from "@/db/dataset-repository";
+import { validateCountryDataset } from "@/lib/dataset/validation";
 
 /**
  * POST /api/run-pipeline
@@ -90,7 +94,8 @@ export async function POST(request: Request): Promise<NextResponse> {
 
     // 3. Open the DB and replace the country set atomically.
     sqlite = openDatabase();
-    sqlite.exec(`
+    const database = sqlite;
+    database.exec(`
       CREATE TABLE IF NOT EXISTS countries (
         iso_code TEXT PRIMARY KEY,
         name TEXT NOT NULL,
@@ -139,8 +144,9 @@ export async function POST(request: Request): Promise<NextResponse> {
       );
     `);
 
-    const deleteAll = sqlite.prepare("DELETE FROM countries");
-    const insertStmt = sqlite.prepare(`
+    ensureDatasetSchema(database);
+    const deleteAll = database.prepare("DELETE FROM countries");
+    const insertStmt = database.prepare(`
       INSERT INTO countries (
         iso_code, name, name_ru, side, coalition,
         area_km2, coastline_km, climate_zone,
@@ -168,7 +174,7 @@ export async function POST(request: Request): Promise<NextResponse> {
       )
     `);
 
-    sqlite.transaction(() => {
+    const published = database.transaction(() => {
       deleteAll.run();
       for (const c of countries) {
         const bp = bpByIso.get(c.isoCode);
@@ -194,6 +200,18 @@ export async function POST(request: Request): Promise<NextResponse> {
           c.updatedAt,
         );
       }
+
+      const writtenRows = database.prepare("SELECT * FROM countries").all() as RawCountryRow[];
+      const validation = validateCountryDataset(writtenRows);
+      if (!validation.ok) {
+        throw new Error(`Pipeline validation failed: ${validation.errors.map((issue) => issue.message).join('; ')}`);
+      }
+      return recordPublishedDataset(
+        database,
+        `pipeline-${new Date().toISOString()}`,
+        validation,
+        { pipeline: stats, conflicts: conflicts.length },
+      );
     })();
 
     const top10 = bpResults.slice(0, 10).map((bp) => ({
@@ -210,6 +228,7 @@ export async function POST(request: Request): Promise<NextResponse> {
       bpCalculated: bpResults.length,
       conflicts: conflicts.length,
       conflictDetails: conflicts.slice(0, 10),
+      datasetVersion: published.version,
       top10,
     });
   } catch (error: unknown) {

@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import MapGL from "react-map-gl/maplibre";
-import type { MapRef } from "react-map-gl/maplibre";
+import type { MapRef, MapMouseEvent } from "react-map-gl/maplibre";
 import { DeckGL } from "@deck.gl/react";
 import type { Layer, PickingInfo } from "@deck.gl/core";
 import type { Feature, FeatureCollection, Polygon, MultiPolygon } from "geojson";
@@ -12,12 +12,12 @@ import { GeoJsonLayer, ScatterplotLayer } from "@deck.gl/layers";
 
 import "maplibre-gl/dist/maplibre-gl.css";
 
-import { ChoroplethLayer } from "./ChoroplethLayer";
 import type { CountryBPData } from "./ChoroplethLayer";
 import { MapControls, MAP_STYLE_URLS } from "./MapControls";
 import type { MapStyle } from "./MapControls";
 import { CountryPopup } from "./CountryPopup";
 import { MapLegend } from "./MapLegend";
+import { NativeMapLayers } from "./NativeMapLayers";
 import { LayerSelector } from "./LayerSelector";
 import type { AnalyticsLayerKey } from "./LayerSelector";
 import {
@@ -202,7 +202,16 @@ const INITIAL_VIEW = {
   height: 0,
 } as const;
 
-type ViewState = typeof INITIAL_VIEW;
+interface ViewState {
+  longitude: number;
+  latitude: number;
+  zoom: number;
+  pitch: number;
+  bearing: number;
+  padding: { top: number; bottom: number; left: number; right: number };
+  width: number;
+  height: number;
+}
 
 // ─── Props ────────────────────────────────────────────────────────────
 
@@ -719,6 +728,23 @@ export function StrategicMap({
     [onCountryClick],
   );
 
+  const handleNativeMapClick = useCallback((event: MapMouseEvent) => {
+    const feature = event.features?.[0];
+    if (!feature) return;
+    const properties = feature.properties as Record<string, unknown> | undefined;
+    const iso = properties?.ISO_A3 ?? properties?.ADM0_A3 ?? properties?.isoCode;
+    if (typeof iso === "string" && iso !== "-99" && iso !== "UNK") handleCountryClick(iso);
+  }, [handleCountryClick]);
+
+  const handleNativeMapHover = useCallback((event: MapMouseEvent) => {
+    const feature = event.features?.find((candidate) => candidate.layer.id === "rbp-country-fill");
+    const properties = feature?.properties as Record<string, unknown> | undefined;
+    const iso = properties?.ISO_A3 ?? properties?.ADM0_A3;
+    handleCountryHover(typeof iso === "string" && iso !== "-99" ? iso : null, {
+      coordinate: [event.lngLat.lng, event.lngLat.lat],
+    } as PickingInfo);
+  }, [handleCountryHover]);
+
   // ─── Deck.gl layers ─────────────────────────────────────
   const visibleStrategicObjects = useMemo(
     () => selectVisibleStrategicObjects(strategicObjects, viewState),
@@ -734,22 +760,10 @@ export function StrategicMap({
   }, [geoJson, onCountryClick]);
 
   const deckLayers = useMemo<Layer[]>(() => {
+    // BP mode is rendered by native MapLibre layers in the same canvas.
+    // DeckGL remains for the secondary metric modes until those are migrated.
+    if (activeLayer === "bp") return [];
     const objectLayer = showStrategicObjects ? [buildStrategicObjectsLayer(visibleStrategicObjects, handleStrategicObjectClick)] : [];
-    // ─── BP Choropleth (default) ────────────────────────────
-    if (activeLayer === "bp") {
-      if (!choroplethVisible || !enrichedGeoJson) return [];
-      const layer = ChoroplethLayer({
-        data: enrichedGeoJson,
-        countryBPData,
-        selectedISO,
-        hoveredISO: hover.iso,
-        onCountryHover: handleCountryHover,
-        onCountryClick: handleCountryClick,
-        minBP,
-        maxBP,
-      });
-      return [...objectLayer, layer];
-    }
 
     // ─── Analytics Layers ──────────────────────────────────
     const layers: Layer[] = [];
@@ -829,8 +843,6 @@ export function StrategicMap({
     choroplethVisible,
     minBP,
     maxBP,
-    handleCountryHover,
-    handleCountryClick,
     countriesRaw,
     handleStrategicObjectClick,
     showStrategicObjects,
@@ -926,17 +938,40 @@ export function StrategicMap({
           <div style={{ position: "absolute", zIndex: 0, width: `${pixelSize.w}px`, height: `${pixelSize.h}px`, top: 0, left: 0 }}>
             <MapGL
               ref={mapRef}
-              viewState={viewState}
+              initialViewState={{
+                longitude: INITIAL_VIEW.longitude,
+                latitude: INITIAL_VIEW.latitude,
+                zoom: INITIAL_VIEW.zoom,
+                pitch: INITIAL_VIEW.pitch,
+                bearing: INITIAL_VIEW.bearing,
+              }}
               onMove={(event) => {
                 const next = event.viewState;
-                if (Number.isFinite(next.longitude) && Number.isFinite(next.latitude) && Number.isFinite(next.zoom)) {
-                  setViewState(next as ViewState);
-                }
+                if (!Number.isFinite(next.longitude) || !Number.isFinite(next.latitude) || !Number.isFinite(next.zoom)) return;
+                setViewState((current) => {
+                  if (current.longitude === next.longitude && current.latitude === next.latitude && current.zoom === next.zoom && current.bearing === next.bearing && current.pitch === next.pitch) return current;
+                  return { ...current, longitude: next.longitude, latitude: next.latitude, zoom: next.zoom, bearing: next.bearing, pitch: next.pitch };
+                });
               }}
               mapStyle={styleUrl}
+              interactiveLayerIds={activeLayer === "bp" ? ["rbp-country-fill", "rbp-object-points", "rbp-object-clusters"] : []}
+              onClick={activeLayer === "bp" ? handleNativeMapClick : undefined}
+              onMouseMove={activeLayer === "bp" ? handleNativeMapHover : undefined}
               style={{ width: `${pixelSize.w}px`, height: `${pixelSize.h}px` }}
               projection="mercator"
             >
+              {activeLayer === "bp" && (
+                <NativeMapLayers
+                  countries={enrichedGeoJson}
+                  objects={visibleStrategicObjects}
+                  minBP={minBP}
+                  maxBP={maxBP}
+                  selectedISO={selectedISO}
+                  hoveredISO={hover.iso}
+                  visible={choroplethVisible}
+                  objectsVisible={showStrategicObjects}
+                />
+              )}
               {/* Country hover popup — only in BP mode */}
               {activeLayer === "bp" && (
                 <CountryPopup
@@ -951,8 +986,8 @@ export function StrategicMap({
           </div>
           </MapErrorBoundary>
 
-          {/* DeckGL overlay — sibling above MapGL */}
-          <DeckGL
+          {/* Secondary metric overlay. BP uses native MapLibre layers above. */}
+          {activeLayer !== "bp" && <DeckGL
             viewState={viewState as unknown as Parameters<typeof DeckGL>[0]["viewState"]}
             onViewStateChange={({ viewState: vs }) => {
               const lng = (vs as Record<string, unknown>).longitude;
@@ -972,7 +1007,7 @@ export function StrategicMap({
             getCursor={({ isHovering }: { isHovering: boolean }) =>
               isHovering ? "pointer" : "default"
             }
-          />
+          />}
         </>
       ) : (
         <div className="w-full h-full bg-tactical-bg flex items-center justify-center text-tactical-primary font-mono text-sm">

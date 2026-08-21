@@ -68,7 +68,7 @@ The first analytical-complex milestone is local-first: the last published datase
 
 ## Архитектурные решения
 
-1. **MapLibre GL + Deck.gl** вместо чистого Leaflet — tokenless OSM/OpenFreeMap basemap и высокая производительность аналитических слоёв; Mapbox остаётся опциональным.
+1. **MapLibre GL + native layers + Deck.gl** вместо чистого Leaflet — tokenless CARTO/OpenFreeMap basemap, нативные fill/line/cluster слои и высокая производительность вторичных аналитических слоёв; Mapbox остаётся опциональным.
 2. **react-map-gl** — официальный React-биндинг, поддержка MapRef для императивного управления
 3. **Deck.gl overlay** поверх Mapbox — для choropleth, heatmap, arc-слоёв (GPU-ускоренные)
 4. **@turf/turf** — для расчётов: буферы дальности ПВО, пересечения зон, расстояния

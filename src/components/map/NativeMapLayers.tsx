@@ -1,0 +1,253 @@
+"use client";
+
+import { Layer, Source } from "react-map-gl/maplibre";
+import type { FeatureCollection, Point } from "geojson";
+import type { ExpressionSpecification, FilterSpecification } from "maplibre-gl";
+import type { CountryCollection } from "@/lib/geo/country-boundaries";
+import type { StrategicObject } from "@/lib/geo/strategic-objects";
+
+interface NativeMapLayersProps {
+  countries: CountryCollection | null;
+  objects: readonly StrategicObject[];
+  minBP: number;
+  maxBP: number;
+  selectedISO: string | null;
+  hoveredISO: string | null;
+  visible: boolean;
+  objectsVisible: boolean;
+}
+
+function rgba(color: [number, number, number, number]): string {
+  return `rgba(${color[0]}, ${color[1]}, ${color[2]}, ${color[3] / 255})`;
+}
+
+function bpColor(t: number): string {
+  const clamped = Math.max(0, Math.min(1, t));
+  if (clamped <= 0.5) {
+    const s = clamped * 2;
+    return rgba([0, Math.round(205 + s * 35), Math.round(175 - s * 105), 220]);
+  }
+  const s = (clamped - 0.5) * 2;
+  return rgba([Math.round(s * 255), Math.round(240 - s * 90), Math.round(70 - s * 45), 225]);
+}
+
+function objectFeatures(objects: readonly StrategicObject[]): FeatureCollection<Point> {
+  return {
+    type: "FeatureCollection",
+    features: objects.map((object) => ({
+      type: "Feature",
+      geometry: { type: "Point", coordinates: [object.longitude, object.latitude] },
+      properties: {
+        id: object.id,
+        isoCode: object.isoCode,
+        name: object.name,
+        type: object.type,
+        confidence: object.confidence,
+        source: object.source,
+      },
+    })),
+  };
+}
+
+export function NativeMapLayers({
+  countries,
+  objects,
+  minBP,
+  maxBP,
+  selectedISO,
+  hoveredISO,
+  visible,
+  objectsVisible,
+}: NativeMapLayersProps) {
+  if (!countries) return null;
+
+  const range = Math.max(1, maxBP - minBP);
+  const low = bpColor(0);
+  const middle = bpColor(0.5);
+  const high = bpColor(1);
+  const fillColor = [
+    "case",
+    ["<=", ["coalesce", ["get", "bpScore"], 0], 0],
+    "rgba(29, 43, 52, 0.24)",
+    [
+      "interpolate",
+      ["linear"],
+      ["get", "bpScore"],
+      minBP,
+      low,
+      minBP + range / 2,
+      middle,
+      maxBP,
+      high,
+    ],
+  ] as unknown as ExpressionSpecification;
+  const lineColor = [
+    "case",
+    ["==", ["get", "ISO_A3"], selectedISO ?? "__none__"],
+    "#f5d76e",
+    ["==", ["get", "ISO_A3"], hoveredISO ?? "__none__"],
+    "#7de8ff",
+    "rgba(80, 135, 151, 0.68)",
+  ] as unknown as ExpressionSpecification;
+  const objectData = objectFeatures(objects);
+
+  return (
+    <>
+      <Source id="rbp-countries" type="geojson" data={countries}>
+        <Layer
+          id="rbp-country-fill"
+          type="fill"
+          paint={{
+            "fill-color": visible ? fillColor : "rgba(0, 0, 0, 0)",
+            "fill-opacity": [
+              "case",
+              ["==", ["get", "ISO_A3"], selectedISO ?? "__none__"],
+              0.82,
+              ["==", ["get", "ISO_A3"], hoveredISO ?? "__none__"],
+              0.72,
+              0.58,
+            ],
+          }}
+        />
+        <Layer
+          id="rbp-country-line"
+          type="line"
+          paint={{
+            "line-color": visible ? lineColor : "rgba(50, 85, 99, 0.42)",
+            "line-width": [
+              "case",
+              ["==", ["get", "ISO_A3"], selectedISO ?? "__none__"],
+              2.2,
+              ["==", ["get", "ISO_A3"], hoveredISO ?? "__none__"],
+              1.6,
+              0.7,
+            ],
+          }}
+        />
+      </Source>
+
+      <Source
+        id="rbp-strategic-objects"
+        type="geojson"
+        data={objectData}
+        cluster
+        clusterMaxZoom={5}
+        clusterRadius={42}
+      >
+        <Layer
+          id="rbp-object-clusters"
+          type="circle"
+          filter={["has", "point_count"]}
+          layout={{ visibility: objectsVisible ? "visible" : "none" }}
+          paint={{
+            "circle-color": [
+              "step",
+              ["get", "point_count"],
+              "#24b8c7",
+              20,
+              "#e7b948",
+              80,
+              "#ef785d",
+            ],
+            "circle-radius": [
+              "step",
+              ["get", "point_count"],
+              15,
+              20,
+              20,
+              80,
+              26,
+            ],
+            "circle-opacity": 0.88,
+            "circle-stroke-color": "#08141d",
+            "circle-stroke-width": 2,
+          }}
+        />
+        <Layer
+          id="rbp-object-cluster-count"
+          type="symbol"
+          filter={["has", "point_count"]}
+          layout={{
+            visibility: objectsVisible ? "visible" : "none",
+            "text-field": ["to-string", ["get", "point_count"]],
+            "text-size": 10,
+            "text-font": ["Open Sans Bold"],
+            "text-allow-overlap": true,
+          }}
+          paint={{
+            "text-color": "#071018",
+          }}
+        />
+        <Layer
+          id="rbp-object-points"
+          type="circle"
+          filter={["!", ["has", "point_count"]]}
+          layout={{ visibility: objectsVisible ? "visible" : "none" }}
+          paint={{
+            "circle-color": [
+              "match",
+              ["get", "type"],
+              "capital",
+              "#f5c85b",
+              "military-base",
+              "#e56b68",
+              "naval-base",
+              "#dc6be5",
+              "airport",
+              "#7bb7ff",
+              "port",
+              "#5bd4c8",
+              "#34b8cb",
+            ],
+            "circle-radius": [
+              "interpolate",
+              ["linear"],
+              ["zoom"],
+              2,
+              2.5,
+              5,
+              4,
+              10,
+              6,
+            ],
+            "circle-opacity": 0.92,
+            "circle-stroke-color": "#071018",
+            "circle-stroke-width": 1,
+          }}
+        />
+        <Layer
+          id="rbp-object-labels"
+          type="symbol"
+          filter={[
+            "all",
+            ["!", ["has", "point_count"]],
+            [
+              "any",
+              ["==", ["get", "type"], "capital"],
+              ["==", ["get", "type"], "military-base"],
+              ["==", ["get", "type"], "naval-base"],
+            ],
+          ] as unknown as FilterSpecification}
+          minzoom={3.5}
+          layout={{
+            visibility: objectsVisible ? "visible" : "none",
+            "text-field": ["get", "name"],
+            "text-size": ["interpolate", ["linear"], ["zoom"], 3.5, 8, 7, 10],
+            "text-font": ["Open Sans Regular"],
+            "text-offset": [0, 1.15],
+            "text-anchor": "top",
+            "text-max-width": 10,
+            "text-allow-overlap": false,
+            "text-ignore-placement": false,
+          }}
+          paint={{
+            "text-color": "#b9e5e8",
+            "text-halo-color": "#071018",
+            "text-halo-width": 1.2,
+            "text-opacity": 0.86,
+          }}
+        />
+      </Source>
+    </>
+  );
+}

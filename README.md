@@ -226,7 +226,7 @@ RBP_AUTO_REFRESH=true
 | Next.js | 16.1.6 | App Router, SSR/API routes |
 | React | 19.2.3 | UI framework |
 | TypeScript | 5.x | Strict mode |
-| MapLibre GL | 5.x | Tokenless OSM/OpenFreeMap basemap |
+| MapLibre GL | 5.x | Tokenless CARTO Dark Matter / OpenFreeMap basemaps |
 | Mapbox GL | 3.24 | Optional legacy dependency; not required for the default map |
 | Deck.gl | 9.3 | GPU-ускоренные слои |
 | Drizzle ORM | 0.45 | SQLite ORM |
@@ -241,7 +241,7 @@ RBP_AUTO_REFRESH=true
 1. **Turbopack CSS**: `oklch()` и `@keyframes` внутри `@theme {}` вызывают panic на Windows → используем hex colors
 2. **MapGL/DeckGL**: Рендерятся как siblings (не parent-child) с z-index; MapGL `pointerEvents: "none"`
 3. **Map SSR**: StrategicMap загружается через `dynamic(() => import(...), { ssr: false })`
-4. **MapLibre/DeckGL**: Default basemap uses public OpenFreeMap styles without a Mapbox token; country boundaries and documented public objects remain local/interactive.
+4. **MapLibre native layers**: Default BP mode uses a CARTO Dark Matter style and native MapLibre fill/line/cluster layers without a Mapbox token; country boundaries and documented public objects remain local/interactive. CARTO and OpenStreetMap attribution is rendered by the map.
 5. **Legacy compatibility modules**: `combat-engine.ts`, `rbp-engine.ts`, and `terrain.ts` are retained for tactical compatibility. They are not part of the strategic BP API; lint warnings in legacy/UI adapters remain visible but do not block typecheck/build.
 
 ## 📋 Смотрите также

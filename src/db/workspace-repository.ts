@@ -6,6 +6,7 @@ import type { ScenarioParams } from '@/lib/what-if-engine';
 
 interface WorkspaceRow { id: string; name: string; selected_country_iso: string; comparison_isos_json: string; notes: string; created_at: string; updated_at: string; }
 interface ScenarioRow { id: string; workspace_id: string; parent_scenario_id: string | null; name: string; params_json: string; created_at: string; updated_at: string; }
+export interface WorkspaceSnapshot { id: string; workspaceId: string; scenarioId: string | null; datasetVersion: string; formulaVersion: string; result: unknown; createdAt: string; }
 
 function parseIsos(json: string): string[] { try { const value: unknown = JSON.parse(json); return Array.isArray(value) ? value.filter((item): item is string => typeof item === 'string') : []; } catch { return []; } }
 function parseParams(json: string): ScenarioParams { try { return JSON.parse(json) as ScenarioParams; } catch { throw new Error('Stored scenario parameters are invalid'); } }
@@ -40,3 +41,9 @@ export function updateScenario(db: Database.Database, workspaceId: string, scena
   return getScenario(db, workspaceId, scenarioId);
 }
 export function deleteScenario(db: Database.Database, workspaceId: string, scenarioId: string): boolean { ensureWorkspaceSchema(db); return db.prepare('DELETE FROM workspace_scenarios WHERE workspace_id = ? AND id = ?').run(workspaceId, scenarioId).changes > 0; }
+
+export function createWorkspaceSnapshot(db: Database.Database, workspaceId: string, scenarioId: string | null, datasetVersion: string, formulaVersion: string, result: unknown): WorkspaceSnapshot {
+  ensureWorkspaceSchema(db); const id = randomUUID(); const createdAt = new Date().toISOString();
+  db.prepare('INSERT INTO workspace_snapshots (id, workspace_id, scenario_id, dataset_version, formula_version, result_json, created_at) VALUES (?, ?, ?, ?, ?, ?, ?)').run(id, workspaceId, scenarioId, datasetVersion, formulaVersion, JSON.stringify(result), createdAt);
+  return { id, workspaceId, scenarioId, datasetVersion, formulaVersion, result, createdAt };
+}

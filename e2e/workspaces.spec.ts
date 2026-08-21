@@ -54,6 +54,8 @@ test.describe('analytical workspaces', () => {
     expect(jsonBody.workspace.schemaVersion).toBe(1);
     expect(jsonBody.datasetVersion).toBeTruthy();
     expect(jsonBody.scenarios).toHaveLength(1);
+    expect(jsonBody.snapshots).toHaveLength(1);
+    expect(jsonBody.snapshots[0].result).toBeTruthy();
 
     const csvExport = await request.get(`/api/workspaces/${created.workspace.id}/export?format=csv`);
     expect(csvExport.ok()).toBe(true);
@@ -70,12 +72,22 @@ test.describe('analytical workspaces', () => {
   test('rejects invalid workspace and scenario commands', async ({ request }) => {
     expect((await request.post('/api/workspaces', { data: { name: '' } })).status()).toBe(400);
     expect((await request.post('/api/workspaces', { data: { name: 'x', comparisonIsos: ['USA', 'RUS', 'CHN', 'IND', 'GBR'] } })).status()).toBe(400);
+    expect((await request.post('/api/workspaces', { data: { name: 'Unknown country', selectedCountryIso: 'ZZZ' } })).status()).toBe(400);
 
     const created = await (await request.post('/api/workspaces', { data: { name: 'Validation case' } })).json();
     const invalidScenario = await request.post(`/api/workspaces/${created.workspace.id}/scenarios`, {
       data: { name: 'Bad', params: { budgetChange: Number.POSITIVE_INFINITY } },
     });
     expect(invalidScenario.status()).toBe(400);
+    const unsupportedScenario = await request.post(`/api/workspaces/${created.workspace.id}/scenarios`, { data: { name: 'Bad key', params: { unsupported: 1 } } });
+    expect(unsupportedScenario.status()).toBe(400);
+
+    const root = await (await request.post(`/api/workspaces/${created.workspace.id}/scenarios`, { data: { name: 'Root', params } })).json();
+    const child = await (await request.post(`/api/workspaces/${created.workspace.id}/scenarios`, { data: { name: 'Child', params, parentScenarioId: root.scenario.id } })).json();
+    const grandchild = await (await request.post(`/api/workspaces/${created.workspace.id}/scenarios`, { data: { name: 'Grandchild', params, parentScenarioId: child.scenario.id } })).json();
+    expect(grandchild.scenario.parentScenarioId).toBe(child.scenario.id);
+    const tooDeep = await request.post(`/api/workspaces/${created.workspace.id}/scenarios`, { data: { name: 'Too deep', params, parentScenarioId: grandchild.scenario.id } });
+    expect(tooDeep.status()).toBe(409);
     await request.delete(`/api/workspaces/${created.workspace.id}`);
   });
 });

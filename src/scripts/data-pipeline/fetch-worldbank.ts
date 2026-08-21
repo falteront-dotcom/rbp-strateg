@@ -200,19 +200,3 @@ export async function fetchWorldBankData(): Promise<Map<string, WBCountryData>> 
   console.log(`  ✓ World Bank: ${countryMap.size} countries`);
   return countryMap;
 }
-
-// Direct execution
-if (typeof require !== "undefined" && require.main === module) {
-  fetchWorldBankData()
-    .then((map) => {
-      const usa = map.get("USA");
-      console.log("\n🇺🇸 USA sample:", JSON.stringify(usa, null, 2));
-      const rus = map.get("RUS");
-      console.log("🇷🇺 RUS sample:", JSON.stringify(rus, null, 2));
-      process.exit(0);
-    })
-    .catch((err) => {
-      console.error("Failed:", err);
-      process.exit(1);
-    });
-}

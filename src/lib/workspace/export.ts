@@ -7,6 +7,7 @@ export interface WorkspaceExport {
   datasetVersion: string | null;
   formulaVersion: string;
   scenarios: Array<Record<string, unknown>>;
+  snapshots: Array<Record<string, unknown>>;
 }
 
 function csvCell(value: unknown): string {
@@ -18,11 +19,17 @@ export function exportWorkspaceJson(db: Database.Database, workspaceId: string):
   const workspace = getWorkspace(db, workspaceId);
   if (!workspace) return null;
   const scenarios = listScenarios(db, workspaceId);
+  const snapshots = (db.prepare('SELECT id, workspace_id AS workspaceId, scenario_id AS scenarioId, dataset_version AS datasetVersion, formula_version AS formulaVersion, result_json AS resultJson, created_at AS createdAt FROM workspace_snapshots WHERE workspace_id = ? ORDER BY created_at DESC').all(workspaceId) as Array<Record<string, unknown>>).map((snapshot) => {
+    let result: unknown = null;
+    try { result = JSON.parse(String(snapshot.resultJson)); } catch { result = null; }
+    return { ...snapshot, result };
+  });
   return {
     workspace: { ...workspace, schemaVersion: 1 },
     datasetVersion: getPublishedDataset(db)?.version ?? null,
     formulaVersion: 'bp-v2',
     scenarios: scenarios.map((scenario) => ({ ...scenario, params: scenario.params })),
+    snapshots,
   };
 }
 

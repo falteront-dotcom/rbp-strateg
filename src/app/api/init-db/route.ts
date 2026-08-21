@@ -8,61 +8,12 @@ import { calculateAllCountriesBP } from "@/lib/bp";
 import type { CountryRawData } from "@/lib/bp/types";
 import type { NewCountry } from "@/db/schema";
 import { openDatabase, isAuthorizedAdminRequest } from "@/db/runtime";
+import { ensureCountriesTable } from "@/db/countries-ddl";
 import { ensureDatasetSchema } from "@/db/dataset-schema";
 import { ensureWorkspaceSchema } from "@/db/workspace-schema";
 import { recordPublishedDataset } from "@/db/dataset-repository";
 import { validateCountryDataset } from "@/lib/dataset/validation";
 import type { RawCountryRow } from "@/db/country-mapper";
-
-/** Idempotent CREATE TABLE — mirrors the hand-written schema (source of truth). */
-const CREATE_TABLE_SQL = `
-  CREATE TABLE IF NOT EXISTS countries (
-    iso_code TEXT PRIMARY KEY,
-    name TEXT NOT NULL,
-    name_ru TEXT NOT NULL,
-    side TEXT NOT NULL,
-    coalition TEXT,
-    area_km2 INTEGER NOT NULL,
-    coastline_km INTEGER NOT NULL,
-    climate_zone TEXT NOT NULL,
-    gdp_ppp_bn REAL NOT NULL,
-    military_budget_bn REAL NOT NULL,
-    defense_pct_gdp REAL NOT NULL,
-    population_m REAL NOT NULL,
-    active_personnel INTEGER NOT NULL,
-    reserve_personnel INTEGER NOT NULL,
-    fit_for_service_m REAL NOT NULL,
-    total_tanks INTEGER NOT NULL,
-    total_afv INTEGER NOT NULL,
-    total_artillery INTEGER NOT NULL,
-    total_mlrs INTEGER NOT NULL,
-    total_aircraft INTEGER NOT NULL,
-    total_helicopters INTEGER NOT NULL,
-    total_navy INTEGER NOT NULL,
-    submarines INTEGER NOT NULL,
-    aircraft_carriers INTEGER NOT NULL,
-    nuclear_warheads INTEGER DEFAULT 0,
-    ports INTEGER NOT NULL,
-    airfields INTEGER NOT NULL,
-    oil_production_kbd INTEGER NOT NULL,
-    merchant_fleet INTEGER NOT NULL,
-    tech_level INTEGER NOT NULL,
-    morale_index INTEGER NOT NULL,
-    combat_experience INTEGER NOT NULL,
-    c2_capability INTEGER NOT NULL,
-    ew_capability INTEGER NOT NULL,
-    bp_total REAL DEFAULT 0,
-    bp_weapon REAL DEFAULT 0,
-    bp_manpower REAL DEFAULT 0,
-    bp_logistics REAL DEFAULT 0,
-    bp_c2 REAL DEFAULT 0,
-    bp_economy REAL DEFAULT 0,
-    bp_doctrine REAL DEFAULT 0,
-    bp_readiness REAL DEFAULT 0,
-    bp_terrain REAL DEFAULT 0,
-    updated_at TEXT NOT NULL
-  );
-`;
 
 const UPDATE_BP_SQL = `
   UPDATE countries SET
@@ -146,7 +97,7 @@ export async function POST(request: Request): Promise<NextResponse> {
     sqlite = openDatabase();
     const database = sqlite;
     const db = drizzle(database, { schema: { countries } });
-    database.exec(CREATE_TABLE_SQL);
+    ensureCountriesTable(database);
     ensureDatasetSchema(database);
     ensureWorkspaceSchema(database);
 

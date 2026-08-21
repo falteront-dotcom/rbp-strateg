@@ -1,9 +1,13 @@
 import { NextResponse } from "next/server";
 import { openReadonlyDatabase } from "@/db/runtime";
 import { mapCountryRows, type RawCountryRow } from "@/db/country-mapper";
+import { ensureDatasetRefreshScheduler } from "@/lib/dataset/server-refresh";
 
 /** GET /api/countries — Returns all countries with BP data, ranked by bp_total. */
+export const runtime = "nodejs";
+
 export async function GET(): Promise<NextResponse> {
+  ensureDatasetRefreshScheduler();
   const db = openReadonlyDatabase();
   try {
     const rows = db

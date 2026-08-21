@@ -9,9 +9,10 @@ interface WorkspacePanelProps {
   health: DatasetHealth | null;
   onOpen: (workspace: Workspace) => void;
   onCreate: (name: string) => Promise<void>;
+  onDelete: () => Promise<void>;
 }
 
-export function WorkspacePanel({ workspace, health, onOpen, onCreate }: WorkspacePanelProps): ReactElement {
+export function WorkspacePanel({ workspace, health, onOpen, onCreate, onDelete }: WorkspacePanelProps): ReactElement {
   const [workspaces, setWorkspaces] = useState<Workspace[]>([]);
   const [creating, setCreating] = useState(false);
   const [name, setName] = useState("");
@@ -42,6 +43,7 @@ export function WorkspacePanel({ workspace, health, onOpen, onCreate }: Workspac
       {health?.datasetVersion && <div className="text-[8px] font-mono text-slate-600">dataset {health.datasetVersion}</div>}
       <div className="flex gap-1.5">
         <button type="button" onClick={() => setCreating((value) => !value)} className="flex-1 rounded border border-cyan-400/20 px-2 py-1.5 text-[9px] font-mono text-cyan-300 hover:bg-cyan-400/10">Создать workspace</button>
+        {workspace && <button type="button" onClick={() => { if (window.confirm(`Удалить workspace «${workspace.name}»?`)) void onDelete(); }} className="rounded border border-red-400/20 px-2 text-[9px] font-mono text-red-300 hover:bg-red-400/10">Удалить</button>}
         {workspaces.length > 0 && (
           <select aria-label="Открыть workspace" value={workspace?.id ?? ""} onChange={(event) => { const selected = workspaces.find((item) => item.id === event.target.value); if (selected) onOpen(selected); }} className="min-w-0 flex-1 rounded border border-white/10 bg-slate-900 px-1 text-[9px] font-mono text-slate-300">
             <option value="">Открыть...</option>

@@ -363,21 +363,3 @@ export async function runPipeline(options: PipelineOptions = {}): Promise<{
 
   return { countries: mergedCountries, conflicts, stats };
 }
-
-// Direct execution
-if (typeof require !== "undefined" && require.main === module) {
-  runPipeline()
-    .then(({ countries, conflicts, stats }) => {
-      console.log("\n📊 Results:");
-      console.log(JSON.stringify(stats, null, 2));
-      console.log(`\nTop 5:`);
-      countries.slice(0, 5).forEach(c => {
-        console.log(`  ${c.isoCode} ${c.name} tanks=${c.totalTanks} budget=$${c.militaryBudgetBn}B nukes=${c.nuclearWarheads}`);
-      });
-      process.exit(0);
-    })
-    .catch(err => {
-      console.error("Pipeline failed:", err);
-      process.exit(1);
-    });
-}

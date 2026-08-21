@@ -50,6 +50,7 @@ jobs:
           # run-pipeline stays opted-out (no RBP_PIPELINE_E2E) to keep e2e
           # deterministic and free of live-network flakiness.
           RBP_ADMIN_TOKEN: ci-admin-token
+          RBP_PIPELINE_TEST_HOOK: '1'
         run: npm test
 
       - name: Upload Playwright report

@@ -214,6 +214,8 @@ NEXT_PUBLIC_MAPBOX_TOKEN=
 RBP_ADMIN_TOKEN=
 # optional, minimum 60000 ms
 RBP_DATA_REFRESH_INTERVAL_MS=21600000
+# optional: set false to disable startup/periodic background refresh
+RBP_AUTO_REFRESH=true
 ```
 
 ## 🔑 Ключевые технологии

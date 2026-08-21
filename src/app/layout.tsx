@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import { Inter, JetBrains_Mono } from "next/font/google";
-// mapbox-gl CSS is imported in StrategicMap.tsx — loaded only when the map component renders
+// MapLibre CSS is imported in StrategicMap.tsx — loaded only when the map component renders
 import "./globals.css";
 
 const inter = Inter({

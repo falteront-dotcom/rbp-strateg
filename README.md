@@ -28,7 +28,7 @@
 src/
 ├── app/                          # Next.js 16 App Router
 │   ├── page.tsx                  # Главная страница (724 строк)
-│   ├── layout.tsx                # Layout + Mapbox GL CSS
+│   ├── layout.tsx                # Layout + MapLibre CSS
 │   ├── globals.css               # Tailwind v4 theme (hex only)
 │   └── api/                      # 20 API маршрутов
 │       ├── countries/            # GET — список стран с БП
@@ -210,6 +210,7 @@ Analysis response содержит dataset/formula versions, calculation time, c
 ```env
 # optional: карта сохраняет no-token fallback
 NEXT_PUBLIC_MAPBOX_TOKEN=
+# optional legacy Mapbox mode; default map uses MapLibre without a token
 # required for destructive admin POST routes
 RBP_ADMIN_TOKEN=
 # optional, minimum 60000 ms
@@ -225,7 +226,8 @@ RBP_AUTO_REFRESH=true
 | Next.js | 16.1.6 | App Router, SSR/API routes |
 | React | 19.2.3 | UI framework |
 | TypeScript | 5.x | Strict mode |
-| Mapbox GL | 3.24 | Векторная карта |
+| MapLibre GL | 5.x | Tokenless OSM/OpenFreeMap basemap |
+| Mapbox GL | 3.24 | Optional legacy dependency; not required for the default map |
 | Deck.gl | 9.3 | GPU-ускоренные слои |
 | Drizzle ORM | 0.45 | SQLite ORM |
 | better-sqlite3 | 12.6 | Embedded DB |
@@ -239,7 +241,7 @@ RBP_AUTO_REFRESH=true
 1. **Turbopack CSS**: `oklch()` и `@keyframes` внутри `@theme {}` вызывают panic на Windows → используем hex colors
 2. **MapGL/DeckGL**: Рендерятся как siblings (не parent-child) с z-index; MapGL `pointerEvents: "none"`
 3. **Map SSR**: StrategicMap загружается через `dynamic(() => import(...), { ssr: false })`
-4. **NaN LngLat**: Известный баг Mapbox GL при dynamic/SSR-false; все практические guards на месте
+4. **MapLibre/DeckGL**: Default basemap uses public OpenFreeMap styles without a Mapbox token; country boundaries and documented public objects remain local/interactive.
 5. **Legacy compatibility modules**: `combat-engine.ts`, `rbp-engine.ts`, and `terrain.ts` are retained for tactical compatibility. They are not part of the strategic BP API; lint warnings in legacy/UI adapters remain visible but do not block typecheck/build.
 
 ## 📋 Смотрите также

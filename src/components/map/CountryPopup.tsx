@@ -1,8 +1,8 @@
 "use client";
 
 import { useCallback, useState } from "react";
-import { Popup } from "react-map-gl/mapbox";
-import type { LngLatLike } from "mapbox-gl";
+import { Popup } from "react-map-gl/maplibre";
+import type { LngLatLike } from "maplibre-gl";
 import { motion, AnimatePresence } from "framer-motion";
 import type { CountryBPData } from "./ChoroplethLayer";
 import { getBPTierKey, BPTIER_BY_KEY } from "@/lib/bp/tiers";

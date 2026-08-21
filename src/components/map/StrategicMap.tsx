@@ -1,8 +1,8 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import MapGL from "react-map-gl/mapbox";
-import type { MapRef } from "react-map-gl/mapbox";
+import MapGL from "react-map-gl/maplibre";
+import type { MapRef } from "react-map-gl/maplibre";
 import { DeckGL } from "@deck.gl/react";
 import type { Layer, PickingInfo } from "@deck.gl/core";
 import type { Feature, FeatureCollection, Polygon, MultiPolygon } from "geojson";
@@ -10,7 +10,7 @@ import { scaleSequential } from "d3-scale";
 import { MapErrorBoundary } from './MapErrorBoundary';
 import { GeoJsonLayer, ScatterplotLayer } from "@deck.gl/layers";
 
-import "mapbox-gl/dist/mapbox-gl.css";
+import "maplibre-gl/dist/maplibre-gl.css";
 
 import { ChoroplethLayer } from "./ChoroplethLayer";
 import type { CountryBPData } from "./ChoroplethLayer";
@@ -21,11 +21,13 @@ import { MapLegend } from "./MapLegend";
 import { LayerSelector } from "./LayerSelector";
 import type { AnalyticsLayerKey } from "./LayerSelector";
 import {
+  findISOFromCoords,
   loadCountryBoundaries,
   mergeWithBPData,
 } from "@/lib/geo/country-boundaries";
 import type { CountryCollection, CountryBPRecord } from "@/lib/geo/country-boundaries";
 import { getPosition } from "@/lib/geo/country-centroids";
+import { STRATEGIC_OBJECTS, type StrategicObject } from "@/lib/geo/strategic-objects";
 
 // ─── OKLCH → sRGB conversion (shared with AnalyticsLayers) ─────────────
 
@@ -190,10 +192,10 @@ export interface CountryMapData {
 
 /** Default initial view state: centered on Eastern Europe */
 const INITIAL_VIEW = {
-  longitude: 30,
-  latitude: 50,
-  zoom: 3,
-  pitch: 45,
+  longitude: 20,
+  latitude: 25,
+  zoom: 1.5,
+  pitch: 0,
   bearing: 0,
 } as const;
 
@@ -274,6 +276,27 @@ function buildBudgetGeoJsonLayer(
 }
 
 /** Build a ScatterplotLayer for a given metric */
+function buildStrategicObjectsLayer(objects: readonly StrategicObject[], onClick: (object: StrategicObject) => void): Layer {
+  return new ScatterplotLayer<StrategicObject>({
+    id: "strategic-objects",
+    data: objects,
+    pickable: true,
+    radiusUnits: "pixels",
+    radiusMinPixels: 4,
+    radiusMaxPixels: 10,
+    getPosition: (object) => [object.longitude, object.latitude],
+    getRadius: (object) => object.type === "capital" ? 7 : 4,
+    getFillColor: (object) => object.type === "capital" ? [255, 196, 64, 230] : [34, 211, 238, 210],
+    getLineColor: [2, 12, 24, 255],
+    lineWidthMinPixels: 1,
+    onClick: (info) => {
+      const object = info.object as StrategicObject | undefined;
+      if (object) onClick(object);
+    },
+    updateTriggers: { getRadius: objects.length, getFillColor: objects.length },
+  });
+}
+
 function buildScatterLayer(
   id: string,
   countriesRaw: ReadonlyArray<CountryMapData>,
@@ -333,16 +356,6 @@ function buildScatterLayer(
 }
 
 // ─── Token Validation ──────────────────────────────────────────────────
-
-const MAPBOX_TOKEN = process.env.NEXT_PUBLIC_MAPBOX_TOKEN || "";
-
-function isTokenValid(token: string): boolean {
-  if (!token || token.trim().length === 0) return false;
-  if (token.startsWith("pk.placeholder")) return false;
-  if (token === "pk.your_mapbox_token_here") return false;
-  // Valid Mapbox public tokens start with "pk." and are >20 chars
-  return token.startsWith("pk.") && token.length > 20;
-}
 
 // ─── Fallback Component ────────────────────────────────────────────────
 
@@ -471,6 +484,39 @@ function MapTokenFallback({ className }: { className?: string }) {
   );
 }
 
+interface TokenlessMapCanvasProps {
+  layers: Layer[];
+  viewState: ViewState;
+  onViewStateChange: (viewState: ViewState) => void;
+  pixelSize: { w: number; h: number } | null;
+}
+
+/** Local GeoJSON map used when Mapbox credentials are absent. */
+function TokenlessMapCanvas({ layers, viewState, onViewStateChange, pixelSize }: TokenlessMapCanvasProps) {
+  if (!pixelSize) {
+    return <div className="w-full h-full bg-[#07101b]" />;
+  }
+  return (
+    <div className="absolute inset-0 overflow-hidden bg-[#07101b]">
+      <div className="absolute inset-0 opacity-20" style={{ backgroundImage: "linear-gradient(rgba(34,211,238,0.08) 1px, transparent 1px), linear-gradient(90deg, rgba(34,211,238,0.08) 1px, transparent 1px)", backgroundSize: "48px 48px" }} />
+      <DeckGL
+        viewState={viewState}
+        onViewStateChange={({ viewState: next }) => {
+          const value = next as ViewState;
+          if (Number.isFinite(value.longitude) && Number.isFinite(value.latitude) && Number.isFinite(value.zoom)) onViewStateChange(value);
+        }}
+        layers={layers}
+        controller
+        style={{ position: "absolute", width: `${pixelSize.w}px`, height: `${pixelSize.h}px`, inset: "0", zIndex: 1 } as unknown as Partial<CSSStyleDeclaration>}
+        getCursor={({ isHovering }: { isHovering: boolean }) => isHovering ? "pointer" : "grab"}
+      />
+      <div className="absolute left-4 top-4 z-10 border border-cyan-400/20 bg-slate-950/70 px-3 py-2 font-mono text-[9px] uppercase tracking-widest text-cyan-300/70 backdrop-blur-sm">
+        Локальная карта · Mapbox token не требуется
+      </div>
+    </div>
+  );
+}
+
 // ─── Component ────────────────────────────────────────────────────────
 
 export function StrategicMap({
@@ -482,7 +528,6 @@ export function StrategicMap({
   countriesRaw = [],
 }: StrategicMapProps) {
   const mapRef = useRef<MapRef>(null);
-  const tokenValid = isTokenValid(MAPBOX_TOKEN);
 
   // ─── Pixel-dimension guard for Mapbox GL ────────────────────────
   // Mapbox GL throws "Invalid LngLat (NaN, 50)" when react-map-gl calls
@@ -500,41 +545,6 @@ export function StrategicMap({
   //
   const containerRef = useRef<HTMLDivElement>(null);
   const [pixelSize, setPixelSize] = useState<{ w: number; h: number } | null>(null);
-  const [mapPatched, setMapPatched] = useState(false);
-
-  // ─── Patch mapbox-gl LngLat dynamically before rendering MapGL ──
-  // We use dynamic import() instead of static import because Turbopack
-  // crashes on static `import mapbox-gl` in client components.
-  useEffect(() => {
-    let cancelled = false;
-    (async () => {
-      try {
-        const mod = await import('mapbox-gl');
-        const mgl = mod.default || mod;
-        const OrigLngLat = mgl.LngLat;
-        if (!OrigLngLat || (OrigLngLat as any)._safePatched) return;
-        class SafeLngLat extends OrigLngLat {
-          static _safePatched = true;
-          constructor(lng: number, lat: number) {
-            super(
-              typeof lng === 'number' && isFinite(lng) ? lng : 0,
-              typeof lat === 'number' && isFinite(lat) ? lat : 0
-            );
-          }
-        }
-        Object.setPrototypeOf(SafeLngLat, OrigLngLat);
-        Object.keys(OrigLngLat).forEach((key) => {
-          try { (SafeLngLat as any)[key] = (OrigLngLat as any)[key]; } catch (_) {}
-        });
-        mgl.LngLat = SafeLngLat as any;
-        if (!cancelled) setMapPatched(true);
-      } catch (e) {
-        console.warn('[StrategicMap] Failed to patch mapbox-gl:', e);
-        if (!cancelled) setMapPatched(true); // render anyway
-      }
-    })();
-    return () => { cancelled = true; };
-  }, []);
 
   useEffect(() => {
     const el = containerRef.current;
@@ -563,6 +573,8 @@ export function StrategicMap({
   const [mapStyle, setMapStyle] = useState<MapStyle>("dark-v11");
   const [layerOpen, setLayerOpen] = useState(false);
   const [choroplethVisible, setChoroplethVisible] = useState(true);
+  const [showStrategicObjects, setShowStrategicObjects] = useState(true);
+  const [strategicObjects, setStrategicObjects] = useState<StrategicObject[]>([...STRATEGIC_OBJECTS]);
   const [hover, setHover] = useState<HoverState>({
     iso: null,
     longitude: 0,
@@ -581,6 +593,52 @@ export function StrategicMap({
     }
     return { minBP: min, maxBP: max };
   }, [countryBPData]);
+
+  // ─── Load global capitals and major cities from the local Natural Earth cache ──
+  useEffect(() => {
+    let cancelled = false;
+    const regions = [-60, 0].flatMap((south) => [-180, -90, 0, 90].map((west) => ({ south, west, north: south + 60, east: west + 90 })));
+    Promise.all(regions.map((region) => {
+      const query = new URLSearchParams(Object.fromEntries(Object.entries({ ...region, zoom: 3 }).map(([key, value]) => [key, String(value)])));
+      return fetch(`/api/map/objects?${query}`).then((response) => response.ok ? response.json() as Promise<{ objects?: StrategicObject[] }> : { objects: [] }).catch(() => ({ objects: [] }));
+    })).then((responses) => {
+      if (cancelled) return;
+      setStrategicObjects((current) => {
+        const merged = new Map(current.map((object) => [object.id, object]));
+        for (const response of responses) for (const object of response.objects ?? []) merged.set(object.id, object);
+        return [...merged.values()];
+      });
+    });
+    return () => { cancelled = true; };
+  }, []);
+
+  // ─── Load public geospatial objects for the current viewport ────────
+  useEffect(() => {
+    if (viewState.zoom < 4) return;
+    let cancelled = false;
+    const lonSpan = Math.min(90, 360 / 2 ** (viewState.zoom - 1));
+    const latSpan = Math.min(45, 180 / 2 ** (viewState.zoom - 1));
+    const south = Math.max(-60, viewState.latitude - latSpan / 2);
+    const north = Math.min(80, viewState.latitude + latSpan / 2);
+    const west = Math.max(-180, viewState.longitude - lonSpan / 2);
+    const east = Math.min(180, viewState.longitude + lonSpan / 2);
+    if (north <= south || east <= west) return;
+    const timer = setTimeout(() => {
+      const query = new URLSearchParams({ south: String(south), west: String(west), north: String(north), east: String(east), zoom: String(Math.round(viewState.zoom)) });
+      fetch(`/api/map/objects?${query}`)
+        .then((response) => response.ok ? response.json() as Promise<{ objects?: StrategicObject[] }> : { objects: [] })
+        .then((response) => {
+          if (cancelled) return;
+          setStrategicObjects((current) => {
+            const merged = new Map(current.map((object) => [object.id, object]));
+            for (const object of response.objects ?? []) merged.set(object.id, object);
+            return [...merged.values()];
+          });
+        })
+        .catch(() => undefined);
+    }, 700);
+    return () => { cancelled = true; clearTimeout(timer); };
+  }, [viewState.latitude, viewState.longitude, viewState.zoom]);
 
   // ─── Load GeoJSON on mount ───────────────────────────────
   useEffect(() => {
@@ -634,7 +692,16 @@ export function StrategicMap({
   );
 
   // ─── Deck.gl layers ─────────────────────────────────────
+  const handleStrategicObjectClick = useCallback((object: StrategicObject) => {
+    if (!onCountryClick) return;
+    const iso = object.isoCode !== "UNK"
+      ? object.isoCode
+      : geoJson ? findISOFromCoords(geoJson, object.longitude, object.latitude) : null;
+    if (iso) onCountryClick(iso);
+  }, [geoJson, onCountryClick]);
+
   const deckLayers = useMemo<Layer[]>(() => {
+    const objectLayer = showStrategicObjects ? [buildStrategicObjectsLayer(strategicObjects, handleStrategicObjectClick)] : [];
     // ─── BP Choropleth (default) ────────────────────────────
     if (activeLayer === "bp") {
       if (!choroplethVisible || !enrichedGeoJson) return [];
@@ -648,7 +715,7 @@ export function StrategicMap({
         minBP,
         maxBP,
       });
-      return [layer];
+      return [...objectLayer, layer];
     }
 
     // ─── Analytics Layers ──────────────────────────────────
@@ -718,7 +785,7 @@ export function StrategicMap({
       }
     }
 
-    return layers;
+    return [...objectLayer, ...layers];
   }, [
     activeLayer,
     enrichedGeoJson,
@@ -732,6 +799,9 @@ export function StrategicMap({
     handleCountryHover,
     handleCountryClick,
     countriesRaw,
+    handleStrategicObjectClick,
+    showStrategicObjects,
+    strategicObjects,
   ]);
 
   // ─── Map control handlers ────────────────────────────────
@@ -807,15 +877,10 @@ export function StrategicMap({
 
   const styleUrl = MAP_STYLE_URLS[mapStyle];
 
-  // ─── Token check — render fallback if Mapbox token is missing/invalid ──
-  if (!tokenValid) {
-    return <MapTokenFallback className={className} />;
-  }
-
   return (
     <div ref={containerRef} className={`relative w-full h-full overflow-hidden ${className ?? ""}`}>
       {/* Only render map when we have exact pixel dimensions AND mapbox is patched */}
-      {pixelSize && mapPatched && tokenValid ? (
+      {pixelSize ? (
         <>
           {/* Mapbox base map — sibling below DeckGL */}
           <MapErrorBoundary
@@ -834,10 +899,8 @@ export function StrategicMap({
                 zoom: INITIAL_VIEW.zoom,
               }}
               mapStyle={styleUrl}
-              mapboxAccessToken={MAPBOX_TOKEN}
               style={{ width: `${pixelSize.w}px`, height: `${pixelSize.h}px` }}
               projection="mercator"
-              antialias
             >
               {/* Country hover popup — only in BP mode */}
               {activeLayer === "bp" && (
@@ -876,8 +939,6 @@ export function StrategicMap({
             }
           />
         </>
-      ) : !tokenValid ? (
-        <MapTokenFallback className={className} />
       ) : (
         <div className="w-full h-full bg-tactical-bg flex items-center justify-center text-tactical-primary font-mono text-sm">
           Загрузка карты...
@@ -897,6 +958,9 @@ export function StrategicMap({
         choroplethVisible={choroplethVisible}
         onToggleChoropleth={handleToggleChoropleth}
       />
+      <button type="button" aria-label="Переключить стратегические объекты" onClick={() => setShowStrategicObjects((visible) => !visible)} className="absolute right-4 top-4 z-20 rounded border border-cyan-400/20 bg-slate-950/70 px-3 py-2 font-mono text-[9px] uppercase tracking-widest text-cyan-300 backdrop-blur-sm">
+        Объекты {showStrategicObjects ? "ON" : "OFF"} · {strategicObjects.length}
+      </button>
 
       {/* Legend — only in BP mode */}
       {activeLayer === "bp" && (

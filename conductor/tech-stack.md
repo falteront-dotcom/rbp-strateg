@@ -14,7 +14,7 @@
 
 | Зависимость | Версия | Назначение |
 |---|---|---|
-| `react-map-gl` | ^7.x | React-обёртка для Mapbox GL |
+| `react-map-gl` | ^8.x | React-обёртка для MapLibre/Mapbox |
 | `mapbox-gl` | ^3.x | Векторная карта мира (WebGL) |
 | `deck.gl` | ^9.x | Аналитические слои (choropleth, arcs, heatmap) |
 | `@deck.gl/react` | ^9.x | React интеграция deck.gl |
@@ -68,7 +68,7 @@ The first analytical-complex milestone is local-first: the last published datase
 
 ## Архитектурные решения
 
-1. **Mapbox GL + Deck.gl** вместо чистого Leaflet — нужен 3D terrain + высокая производительность аналитических слоёв
+1. **MapLibre GL + Deck.gl** вместо чистого Leaflet — tokenless OSM/OpenFreeMap basemap и высокая производительность аналитических слоёв; Mapbox остаётся опциональным.
 2. **react-map-gl** — официальный React-биндинг, поддержка MapRef для императивного управления
 3. **Deck.gl overlay** поверх Mapbox — для choropleth, heatmap, arc-слоёв (GPU-ускоренные)
 4. **@turf/turf** — для расчётов: буферы дальности ПВО, пересечения зон, расстояния

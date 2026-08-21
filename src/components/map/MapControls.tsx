@@ -16,16 +16,13 @@ import {
 export type MapStyle = "dark-v11" | "satellite-v9" | "dark-dem";
 
 /**
- * Map style URLs. `dark-dem` intentionally aliases `dark-v11`: a terrarium
- * DEM source requires a Mapbox token, and the app ships a no-token fallback,
- * so when no token is configured every mapbox:// URL falls back to the dark
- * basemap regardless. Kept as a distinct MapStyle key so the active-style
- * selection state can differ without a network change.
+ * MapLibre/OpenFreeMap styles. They are public and require no Mapbox token.
+ * The style keys remain stable for the existing toolbar and scenario state.
  */
 export const MAP_STYLE_URLS: Record<MapStyle, string> = {
-  "dark-v11": "mapbox://styles/mapbox/dark-v11",
-  "satellite-v9": "mapbox://styles/mapbox/satellite-v9",
-  "dark-dem": "mapbox://styles/mapbox/dark-v11",
+  "dark-v11": "https://tiles.openfreemap.org/styles/liberty",
+  "satellite-v9": "https://tiles.openfreemap.org/styles/liberty",
+  "dark-dem": "https://tiles.openfreemap.org/styles/liberty",
 };
 
 interface MapControlsProps {

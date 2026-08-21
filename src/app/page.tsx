@@ -37,6 +37,7 @@ import {
   WhatIfTab,
   DoctrineTab,
   GeographyTab,
+  ScenarioLab,
 } from "@/components/strategic";
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -64,11 +65,13 @@ function StrategicDetailPanel({
   allCountries,
   onClose,
   onCompare,
+  onOpenScenarioLab,
 }: {
   country: CountryData;
   allCountries: CountryCompareData[];
   onClose: () => void;
   onCompare: (iso: string) => void;
+  onOpenScenarioLab: () => void;
 }) {
   const [activeTab, setActiveTab] = useState<StrategicTab>("summary");
   const compareData = country as unknown as CountryCompareData;
@@ -84,9 +87,14 @@ function StrategicDetailPanel({
           <span className="text-xs font-bold text-tactical-primary truncate">{country.nameRu || country.name}</span>
           <span className="text-[9px] text-slate-500 flex-shrink-0">{country.isoCode}</span>
         </div>
-        <button onClick={() => onCompare(country.isoCode)} className="text-[9px] text-slate-400 hover:text-tactical-primary border border-white/10 rounded px-1.5 py-0.5 transition-colors flex-shrink-0">
-          Сравнить
-        </button>
+        <div className="flex items-center gap-1">
+          <button onClick={onOpenScenarioLab} className="text-[9px] text-cyan-300 hover:text-cyan-100 border border-cyan-400/20 rounded px-1.5 py-0.5 transition-colors flex-shrink-0">
+            Сценарная лаборатория
+          </button>
+          <button onClick={() => onCompare(country.isoCode)} className="text-[9px] text-slate-400 hover:text-tactical-primary border border-white/10 rounded px-1.5 py-0.5 transition-colors flex-shrink-0">
+            Сравнить
+          </button>
+        </div>
       </div>
 
       {/* Tab bar */}
@@ -247,6 +255,7 @@ export default function Home() {
   const [comparisonOpen, setComparisonOpen] = useState(false);
   const [compareInitialIsos, setCompareInitialIsos] = useState<string[]>([]);
   const [activeLayer, setActiveLayer] = useState<AnalyticsLayerKey>("bp");
+  const [scenarioLabOpen, setScenarioLabOpen] = useState(false);
 
   // ─── Clock tick — mount-only to avoid hydration mismatch ───────────────
   useEffect(() => {
@@ -690,6 +699,7 @@ export default function Home() {
               allCountries={countriesCompareData}
               onClose={handleCloseCountryCard}
               onCompare={handleCompare}
+              onOpenScenarioLab={() => setScenarioLabOpen(true)}
             />
           ) : (
             <div className="h-full flex flex-col items-center justify-center text-center px-6">
@@ -724,6 +734,16 @@ export default function Home() {
         allCountries={countriesCompareData}
         initialIsoCodes={compareInitialIsos}
       />
+
+      {scenarioLabOpen && (
+        <ScenarioLab
+          allCountries={countriesCompareData}
+          selectedIso={selectedISO}
+          onWorkspaceChange={(id) => {
+            if (id === null) setScenarioLabOpen(false);
+          }}
+        />
+      )}
     </main>
   );
 }

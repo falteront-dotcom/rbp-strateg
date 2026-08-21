@@ -3,7 +3,7 @@ import Database from 'better-sqlite3';
 import type { CountryBP } from '@/lib/bp/types';
 import type { MergedCountry } from '@/scripts/data-pipeline/merge-validate';
 import { getPublishedDataset } from '@/db/dataset-repository';
-import { isDatasetRefreshDue, publishPipelineCandidate, runRefreshSingleFlight } from '@/lib/dataset/updater';
+import { isDatasetRefreshDue, publishPipelineCandidate, refreshDatasetIfDue, runRefreshSingleFlight } from '@/lib/dataset/updater';
 
 function country(isoCode: string): MergedCountry {
   return {
@@ -57,6 +57,11 @@ test.describe('refresh coordinator', () => {
     expect(calls).toBe(1);
     release();
     await expect(Promise.all([first, second])).resolves.toEqual(['ok', 'ok']);
+
+    const skipped = await refreshDatasetIfDue({ lastCheck: new Date().toISOString(), operation: async () => 'not-called' });
+    expect(skipped).toMatchObject({ attempted: false, ok: true });
+    const refreshed = await refreshDatasetIfDue({ lastCheck: null, operation: async () => 'refreshed' });
+    expect(refreshed).toMatchObject({ attempted: true, ok: true, value: 'refreshed' });
   });
 });
 

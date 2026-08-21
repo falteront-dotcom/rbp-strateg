@@ -164,19 +164,56 @@ src/
 ## 🚀 Запуск
 
 ```bash
-# 1. Установить зависимости
 npm install
+npm run db:seed       # локальная детерминированная fixture: 59 стран
+npm run dev           # http://localhost:3000
+```
 
-# 2. Создать .env.local с Mapbox токеном
-echo "NEXT_PUBLIC_MAPBOX_TOKEN=pk.eyJ1Ijoi..." > .env.local
+Карта работает и без `NEXT_PUBLIC_MAPBOX_TOKEN`: включается no-token fallback. Токен, если он нужен, задаётся только локально в `.env.local` и не коммитится.
 
-# 3. Запустить dev-сервер
-npm run dev
+Production quality gates:
 
-# 4. Инициализировать БД (первый запуск)
-curl -X POST http://localhost:3000/api/init-db
+```bash
+npm run lint
+npm run typecheck
+npm test              # Playwright API + UI contracts
+npm run build
+CI=1 npm test         # fresh production server, serial CI workers
+```
 
-# 5. Открыть http://localhost:3000
+## 🗃️ Local-first dataset lifecycle
+
+SQLite `sqlite.db` — runtime source of truth. При старте/seed создаются dataset metadata и workspace tables. Текущая published version доступна через:
+
+- `GET /api/dataset/health` — статус, версия, число стран и warning/error counters;
+- `GET /api/dataset/versions` — история версий без raw payloads;
+- `POST /api/init-db` и `POST /api/run-pipeline` — destructive admin operations, только с `x-admin-token` и серверным `RBP_ADMIN_TOKEN`.
+
+Pipeline сначала рассчитывается в памяти, затем публикуется одной транзакцией. Ошибка валидации сохраняет предыдущие страны и active dataset pointer. Для внешнего refresh используется bounded single-flight coordinator; offline режим продолжает работать на последней valid published version. Интервал можно настроить через `RBP_DATA_REFRESH_INTERVAL_MS` (по умолчанию 6 часов).
+
+## 🧪 Workspaces и Scenario Lab
+
+Workspace и ветви сценариев хранятся локально, а BP всегда пересчитывается на активном dataset:
+
+- `GET/POST /api/workspaces`;
+- `GET/PATCH/DELETE /api/workspaces/:workspaceId`;
+- `GET/POST /api/workspaces/:workspaceId/scenarios`;
+- `GET/PATCH/DELETE /api/workspaces/:workspaceId/scenarios/:scenarioId`;
+- `GET /api/workspaces/:workspaceId/analysis?scenarioId=...`;
+- `POST /api/workspaces/:workspaceId/analysis/snapshot`;
+- `GET /api/workspaces/:workspaceId/export?format=json|csv`.
+
+Analysis response содержит dataset/formula versions, calculation time, confidence, warnings, все 8 component deltas и top drivers. `ScenarioLab` доступна из country detail и поддерживает две сохраняемые ветви.
+
+## 🔐 Configuration
+
+```env
+# optional: карта сохраняет no-token fallback
+NEXT_PUBLIC_MAPBOX_TOKEN=
+# required for destructive admin POST routes
+RBP_ADMIN_TOKEN=
+# optional, minimum 60000 ms
+RBP_DATA_REFRESH_INTERVAL_MS=21600000
 ```
 
 ## 🔑 Ключевые технологии

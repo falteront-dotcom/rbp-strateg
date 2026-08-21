@@ -1,47 +1,56 @@
 # Tracks — РБП-Стратег 2.0
 
-## Active Tracks
-
-### Track 1: `map-foundation` — Реальная карта мира
-**Priority:** P0 | **Status:** `[ ]` pending | **Phase:** 1
-
-Заменить HolographicMap на Mapbox GL + Deck.gl. Базовая карта мира, стилизация под военный HUD, choropleth-слой для раскраски стран.
-
-### Track 2: `bp-model` — 8-компонентная модель боевого потенциала
-**Priority:** P0 | **Status:** `[ ]` pending | **Phase:** 1
-
-Спроектировать и реализовать модель БП по военной науке: W (Оружие), M (Люди), L (Логистика), C2 (Управление), E (Экономика), D (Доктрина), R (Боеготовность), T (География). Формулы расчёта, веса, нормализация.
-
-### Track 3: `country-database` — База данных 145+ стран
-**Priority:** P0 | **Status:** `[ ]` pending | **Phase:** 1
-
-Drizzle ORM схема для стран. Импорт данных из Global Firepower, SIPRI, CIA Factbook, World Bank. Seed-скрипт.
-
-### Track 4: `country-card` — Карточка государства
-**Priority:** P1 | **Status:** `[ ]` pending | **Phase:** 1
-
-Детальная карточка страны при клике на карте: радарная диаграмма 8 компонент, декомпозиция, ключевые метрики.
-
-### Track 5: `analytics-layers` — Аналитические слои
-**Priority:** P1 | **Status:** `[ ]` pending | **Phase:** 2
-
-Deck.gl слои: военный бюджет, численность ВС, ЯО, флот, авиация, ВПК. Переключение слоёв, легенда.
-
-### Track 6: `country-comparison` — Сравнение стран
-**Priority:** P1 | **Status:** `[ ]` pending | **Phase:** 2
-
-Параллельный анализ до 4 стран. Радарные диаграммы, дельта-метрики, таблица сравнения.
-
-### Track 7: `coalition-analysis` — Коалиционный анализ
-**Priority:** P2 | **Status:** `[ ]` pending | **Phase:** 2
-
-Конструктор коалиций. Суммарный потенциал альянсов. НАТО, ОДКБ, АУКЮС, кастомные.
-
-### Track 8: `tactical-map` — Тактический симулятор на реальной карте
-**Priority:** P1 | **Status:** `[ ]` pending | **Phase:** 3
-
-Миграция TacticalHUD на Mapbox. Юниты как маркеры, зоны поражения, логистические линии.
-
 ## Completed Tracks
 
-(none yet)
+### Track 1: `map-foundation` — Реальная карта мира
+**Priority:** P0 | **Status:** `[x]` complete | **Phase:** 1
+
+Mapbox GL + Deck.gl strategic map integrated with SafeLngLat guards and no-token fallback.
+
+### Track 2: `bp-model` — 8-компонентная модель боевого потенциала
+**Priority:** P0 | **Status:** `[x]` complete | **Phase:** 1
+
+Canonical BP formulas, calibrated weights, tier boundaries and regression contracts are active. Formula changes remain out of scope without new evidence.
+
+### Track 3: `country-database` — Локальная база стран
+**Priority:** P0 | **Status:** `[x]` complete for milestone | **Phase:** 1
+
+Raw better-sqlite3 runtime, deterministic 59-country fixture, mapped API contracts and dataset version/health metadata are active. External pipeline refresh remains bounded and rollback-safe.
+
+### Track 4: `country-card` — Карточка государства
+**Priority:** P1 | **Status:** `[x]` complete | **Phase:** 1
+
+Strategic country detail panel with BP decomposition and compatible tabs.
+
+### Track 5: `analytics-layers` — Аналитические слои
+**Priority:** P1 | **Status:** `[x]` complete | **Phase:** 2
+
+Budget, equipment, personnel, nuclear and BP map layers are available through the existing selector.
+
+### Track 6: `country-comparison` — Сравнение стран
+**Priority:** P1 | **Status:** `[x]` complete | **Phase:** 2
+
+Country comparison and coalition analysis contracts are covered by the existing API/UI suite.
+
+### Track 7: `coalition-analysis` — Коалиционный анализ
+**Priority:** P2 | **Status:** `[x]` complete | **Phase:** 2
+
+NATO/CSTO/AUKUS/BRICS precedence and aggregation semantics are regression-tested.
+
+### Track 8: `analytical-complex` — Dataset, workspaces, Scenario Lab
+**Priority:** P0 | **Status:** `[x]` milestone complete | **Phase:** 1–2
+
+Versioned dataset health, atomic publication/rollback, confidence and explainability, local workspaces, two scenario branches, JSON/CSV export, immutable snapshots and local operational documentation are implemented.
+
+### Track 9: `tactical-map` — Тактический симулятор
+**Priority:** P1 | **Status:** `[ ]` pending | **Phase:** 3
+
+Tactical compatibility remains preserved. Full strategic-to-tactical handoff is deferred.
+
+## Deferred Follow-up
+
+- sensitivity/breakpoint engine;
+- uncertainty bands and field-level provenance;
+- printable PDF/reporting;
+- always-on Windows Task Scheduler updater;
+- team mode and authorization beyond local admin operations.

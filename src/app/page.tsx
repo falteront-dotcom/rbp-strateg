@@ -21,6 +21,7 @@ const StrategicMap = dynamic(
 );
 import type { CountryBPData } from "@/components/map/ChoroplethLayer";
 import type { AnalyticsLayerKey, CountryMapData } from "@/components/map";
+import type { DatasetHealth } from "@/lib/dataset/types";
 import { LayerSelector } from "@/components/map/LayerSelector";
 import CountryCard from "@/components/CountryCard";
 import { CoalitionBuilder } from "@/components/CoalitionBuilder";
@@ -256,12 +257,29 @@ export default function Home() {
   const [compareInitialIsos, setCompareInitialIsos] = useState<string[]>([]);
   const [activeLayer, setActiveLayer] = useState<AnalyticsLayerKey>("bp");
   const [scenarioLabOpen, setScenarioLabOpen] = useState(false);
+  const [datasetHealth, setDatasetHealth] = useState<DatasetHealth | null>(null);
 
   // ─── Clock tick — mount-only to avoid hydration mismatch ───────────────
   useEffect(() => {
     setClock(new Date()); // set on mount (client-only)
     const timer = setInterval(() => setClock(new Date()), 1000);
     return () => clearInterval(timer);
+  }, []);
+
+  // ─── Poll dataset health without blocking the local dataset ─────────────
+  useEffect(() => {
+    let cancelled = false;
+    const refreshHealth = async (): Promise<void> => {
+      try {
+        const response = await fetch("/api/dataset/health");
+        if (response.ok && !cancelled) setDatasetHealth(await response.json() as DatasetHealth);
+      } catch {
+        // The last local country dataset remains usable when health is offline.
+      }
+    };
+    void refreshHealth();
+    const timer = setInterval(() => { void refreshHealth(); }, 5 * 60 * 1000);
+    return () => { cancelled = true; clearInterval(timer); };
   }, []);
 
   // ─── Fetch countries from API ───────────────────────────────────────────
@@ -462,6 +480,9 @@ export default function Home() {
             <span className="live-dot" />
             <span className="text-[8px] font-black tracking-[0.2em] text-red-400/90 uppercase">LIVE</span>
           </div>
+          <span data-testid="dataset-health-indicator" className={`text-[8px] font-mono uppercase ${datasetHealth?.status === "OPERATIONAL" ? "text-emerald-400" : "text-amber-400"}`}>
+            DATA {datasetHealth?.status ?? "CHECKING"}
+          </span>
         </div>
 
         <div className="flex items-center gap-4">

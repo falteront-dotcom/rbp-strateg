@@ -49,6 +49,8 @@
 
 The application uses `src/db/runtime.ts` and `better-sqlite3` as the runtime database layer. Drizzle files remain only as type/schema history until regenerated safely; do not run `drizzle-kit push` against the current orphaned migration. Database-mutating endpoints are authenticated POST routes and require `RBP_ADMIN_TOKEN`/`x-admin-token`.
 
+The first analytical-complex milestone is local-first: the last published dataset remains usable without network, metadata is versioned, pipeline publication is atomic, and workspace/scenario state is local SQLite. `NEXT_PUBLIC_MAPBOX_TOKEN` is optional; no-token fallback must remain available.
+
 
 
 | Источник | Тип | Обновляемость |
@@ -62,8 +64,7 @@ The application uses `src/db/runtime.ts` and `better-sqlite3` as the runtime dat
 
 ## Ключ mapbox
 
-Требуется `NEXT_PUBLIC_MAPBOX_TOKEN` — access token для Mapbox GL JS.
-Карта будет работать с бесплатным тарифом (50,000 загрузок/мес).
+`NEXT_PUBLIC_MAPBOX_TOKEN` опционален. При отсутствии токена карта использует безопасный no-token fallback; credentials не должны попадать в git.
 
 ## Архитектурные решения
 

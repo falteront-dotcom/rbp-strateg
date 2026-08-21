@@ -2,6 +2,7 @@ import type Database from 'better-sqlite3';
 import type { CountryBP } from '@/lib/bp/types';
 import type { RawCountryRow } from '@/db/country-mapper';
 import type { MergedCountry } from '@/scripts/data-pipeline/merge-validate';
+import { openDatabase } from '@/db/runtime';
 import { ensureCountriesTable } from '@/db/countries-ddl';
 import { ensureDatasetSchema } from '@/db/dataset-schema';
 import { recordPublishedDataset } from '@/db/dataset-repository';
@@ -17,6 +18,46 @@ export interface PipelineCandidate {
 export interface PublishPipelineResult {
   dataset: DatasetVersion;
   countriesWritten: number;
+}
+
+function countryToRawData(country: MergedCountry) {
+  return {
+    isoCode: country.isoCode, name: country.name, nameRu: country.nameRu,
+    side: country.side, coalition: country.coalition, areaKm2: country.areaKm2,
+    coastlineKm: country.coastlineKm, climateZone: country.climateZone,
+    gdpPppBn: country.gdpPppBn, militaryBudgetBn: country.militaryBudgetBn,
+    defensePctGdp: country.defensePctGdp, populationM: country.populationM,
+    activePersonnel: country.activePersonnel, reservePersonnel: country.reservePersonnel,
+    fitForServiceM: country.fitForServiceM, totalTanks: country.totalTanks,
+    totalAfv: country.totalAfv, totalArtillery: country.totalArtillery,
+    totalMlrs: country.totalMlrs, totalAircraft: country.totalAircraft,
+    totalHelicopters: country.totalHelicopters, totalNavy: country.totalNavy,
+    submarines: country.submarines, aircraftCarriers: country.aircraftCarriers,
+    nuclearWarheads: country.nuclearWarheads, ports: country.ports,
+    airfields: country.airfields, oilProductionKbd: country.oilProductionKbd,
+    merchantFleet: country.merchantFleet, techLevel: country.techLevel,
+    moraleIndex: country.moraleIndex, combatExperience: country.combatExperience,
+    c2Capability: country.c2Capability, ewCapability: country.ewCapability,
+    updatedAt: country.updatedAt,
+  };
+}
+
+export async function refreshDatasetFromSources(): Promise<PublishPipelineResult> {
+  const { runPipeline } = await import('@/scripts/data-pipeline/merge-validate');
+  const { calculateAllCountriesBP } = await import('@/lib/bp');
+  const pipeline = await runPipeline();
+  const bpResults = calculateAllCountriesBP(pipeline.countries.map(countryToRawData));
+  const bpByIso = new Map(bpResults.map((bp) => [bp.isoCode, bp]));
+  const db = openDatabase();
+  try {
+    return publishPipelineCandidate(db, {
+      countries: pipeline.countries,
+      bpByIso,
+      sourceSummary: { source: 'automatic-pipeline', pipeline: pipeline.stats, conflicts: pipeline.conflicts.length },
+    }, `pipeline-${new Date().toISOString()}`);
+  } finally {
+    db.close();
+  }
 }
 
 const INSERT_COUNTRY_SQL = `
@@ -98,4 +139,27 @@ export function runRefreshSingleFlight<T>(operation: () => Promise<T>): Promise<
     inFlightRefresh = null;
   });
   return inFlightRefresh as Promise<T>;
+}
+
+export interface RefreshOutcome<T> {
+  attempted: boolean;
+  ok: boolean;
+  value?: T;
+  error?: string;
+}
+
+export interface RefreshOptions<T> {
+  lastCheck: string | null;
+  operation: () => Promise<T>;
+  now?: number;
+}
+
+export async function refreshDatasetIfDue<T>(options: RefreshOptions<T>): Promise<RefreshOutcome<T>> {
+  if (!isDatasetRefreshDue(options.lastCheck, options.now)) return { attempted: false, ok: true };
+  try {
+    const value = await runRefreshSingleFlight(options.operation);
+    return { attempted: true, ok: true, value };
+  } catch (error: unknown) {
+    return { attempted: true, ok: false, error: error instanceof Error ? error.message : 'Dataset refresh failed' };
+  }
 }

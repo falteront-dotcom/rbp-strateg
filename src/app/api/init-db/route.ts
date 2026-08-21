@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { initializeDatabase } from "@/db/bootstrap";
 import { isAuthorizedAdminRequest, openDatabase } from "@/db/runtime";
 import { ensureDatasetSchema } from "@/db/dataset-schema";
+import { ensureWorkspaceSchema } from "@/db/workspace-schema";
 import { recordPublishedDataset } from "@/db/dataset-repository";
 import { validateCountryDataset } from "@/lib/dataset/validation";
 import type { RawCountryRow } from "@/db/country-mapper";
@@ -31,6 +32,7 @@ export async function POST(request: Request): Promise<NextResponse> {
     const sqlite = openDatabase();
     try {
       ensureDatasetSchema(sqlite);
+      ensureWorkspaceSchema(sqlite);
       const rows = sqlite.prepare("SELECT * FROM countries").all() as RawCountryRow[];
       const validation = validateCountryDataset(rows);
       if (!validation.ok) {

@@ -12,6 +12,7 @@ import { calculateAllCountriesBP } from "../lib/bp";
 import type { CountryRawData } from "../lib/bp/types";
 import { openDatabase, DB_PATH } from "../db/runtime";
 import { ensureDatasetSchema } from "../db/dataset-schema";
+import { ensureWorkspaceSchema } from "../db/workspace-schema";
 import { recordPublishedDataset } from "../db/dataset-repository";
 import { validateCountryDataset } from "../lib/dataset/validation";
 import type { RawCountryRow } from "../db/country-mapper";
@@ -74,6 +75,7 @@ function main(): void {
     );
   `);
   ensureDatasetSchema(sqlite);
+  ensureWorkspaceSchema(sqlite);
 
   // 2. Clear and seed
   console.log("🌱 Seeding country data...");

@@ -19,6 +19,7 @@ interface NativeMapLayersProps {
   hoveredISO: string | null;
   visible: boolean;
   objectsVisible: boolean;
+  objectTypes: ReadonlySet<string>;
 }
 
 function rgba(color: [number, number, number, number]): string {
@@ -48,6 +49,11 @@ function objectFeatures(objects: readonly StrategicObject[]): FeatureCollection<
         type: object.type,
         confidence: object.confidence,
         source: object.source,
+        sourceUrl: object.sourceUrl ?? "",
+        sourceDate: object.sourceDate,
+        operator: object.operator ?? "",
+        designation: object.designation ?? "",
+        military: object.military === true,
       },
     })),
   };
@@ -64,6 +70,7 @@ export function NativeMapLayers({
   hoveredISO,
   visible,
   objectsVisible,
+  objectTypes,
 }: NativeMapLayersProps) {
   const range = Math.max(1, maxBP - minBP);
   const low = bpColor(0);
@@ -107,7 +114,7 @@ export function NativeMapLayers({
       return { ...feature, properties: { ...feature.properties, ...country } };
     }),
   }) : null, [countries, metricByIso]);
-  const objectData = useMemo(() => objectFeatures(objects), [objects]);
+  const objectData = useMemo(() => objectFeatures(objects.filter((object) => objectTypes.has(object.type))), [objectTypes, objects]);
   const metricFillColor = [
     "interpolate",
     ["linear"],
@@ -226,6 +233,10 @@ export function NativeMapLayers({
               "#f5c85b",
               "military-base",
               "#e56b68",
+              "military-range",
+              "#ff9a62",
+              "strategic-site",
+              "#f5c85b",
               "naval-base",
               "#dc6be5",
               "airport",

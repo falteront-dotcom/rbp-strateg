@@ -16,6 +16,8 @@ import type { CountryBPData } from "./ChoroplethLayer";
 import { MapControls, MAP_STYLE_URLS } from "./MapControls";
 import type { MapStyle } from "./MapControls";
 import { CountryPopup } from "./CountryPopup";
+import { StrategicObjectPopup } from "./StrategicObjectPopup";
+import { ObjectLayerControls } from "./ObjectLayerControls";
 import { MapDataLegend } from "./MapDataLegend";
 import { NativeMapLayers } from "./NativeMapLayers";
 import { LayerSelector } from "./LayerSelector";
@@ -29,7 +31,7 @@ import {
 } from "@/lib/geo/country-boundaries";
 import type { CountryCollection, CountryBPRecord } from "@/lib/geo/country-boundaries";
 import { getPosition } from "@/lib/geo/country-centroids";
-import { STRATEGIC_OBJECTS, type StrategicObject } from "@/lib/geo/strategic-objects";
+import { STRATEGIC_OBJECTS, type StrategicObject, type StrategicObjectType } from "@/lib/geo/strategic-objects";
 
 // ─── OKLCH → sRGB conversion (shared with AnalyticsLayers) ─────────────
 
@@ -287,6 +289,7 @@ function buildBudgetGeoJsonLayer(
 /** Build a ScatterplotLayer for a given metric */
 function objectImportance(object: StrategicObject): number {
   if (object.type === "capital") return 3;
+  if (object.type === "military-base" || object.type === "naval-base" || object.type === "military-range" || object.type === "strategic-site" || object.operator) return 3;
   if (object.source === "Natural Earth Populated Places") return 2;
   return 1;
 }
@@ -608,7 +611,9 @@ function MapboxStrategicMap({
   const [layerOpen, setLayerOpen] = useState(false);
   const [choroplethVisible, setChoroplethVisible] = useState(true);
   const [showStrategicObjects, setShowStrategicObjects] = useState(true);
+  const [objectTypes, setObjectTypes] = useState<Set<StrategicObjectType>>(() => new Set(["capital", "city", "port", "airport", "military-base", "naval-base", "strategic-site", "military-range"]));
   const [strategicObjects, setStrategicObjects] = useState<StrategicObject[]>([...STRATEGIC_OBJECTS]);
+  const [selectedObject, setSelectedObject] = useState<{ object: StrategicObject; longitude: number; latitude: number } | null>(null);
   const [hover, setHover] = useState<HoverState>({
     iso: null,
     longitude: 0,
@@ -639,7 +644,7 @@ function MapboxStrategicMap({
     let cancelled = false;
     const regions = [-60, 0].flatMap((south) => [-180, -90, 0, 90].map((west) => ({ south, west, north: south + 60, east: west + 90 })));
     Promise.all(regions.map((region) => {
-      const query = new URLSearchParams(Object.fromEntries(Object.entries({ ...region, zoom: 3 }).map(([key, value]) => [key, String(value)])));
+      const query = new URLSearchParams(Object.fromEntries(Object.entries({ ...region, zoom: 2 }).map(([key, value]) => [key, String(value)])));
       return fetch(`/api/map/objects?${query}`).then((response) => response.ok ? response.json() as Promise<{ objects?: StrategicObject[] }> : { objects: [] }).catch(() => ({ objects: [] }));
     })).then((responses) => {
       if (cancelled) return;
@@ -654,7 +659,7 @@ function MapboxStrategicMap({
 
   // ─── Load public geospatial objects for the current viewport ────────
   useEffect(() => {
-    if (viewState.zoom < 4) return;
+    if (viewState.zoom < 3) return;
     let cancelled = false;
     const lonSpan = Math.min(90, 360 / 2 ** (viewState.zoom - 1));
     const latSpan = Math.min(45, 180 / 2 ** (viewState.zoom - 1));
@@ -664,7 +669,7 @@ function MapboxStrategicMap({
     const east = Math.min(180, viewState.longitude + lonSpan / 2);
     if (north <= south || east <= west) return;
     const timer = setTimeout(() => {
-      const query = new URLSearchParams({ south: String(south), west: String(west), north: String(north), east: String(east), zoom: String(Math.round(viewState.zoom)) });
+      const query = new URLSearchParams({ south: String(south), west: String(west), north: String(north), east: String(east), zoom: String(Math.round(viewState.zoom)), military: "1" });
       fetch(`/api/map/objects?${query}`)
         .then((response) => response.ok ? response.json() as Promise<{ objects?: StrategicObject[] }> : { objects: [] })
         .then((response) => {
@@ -733,10 +738,9 @@ function MapboxStrategicMap({
   );
 
   const handleNativeMapClick = useCallback((event: MapMouseEvent) => {
-    const feature = event.features?.[0];
-    if (!feature) return;
-    const properties = feature.properties as Record<string, unknown> | undefined;
-    const clusterId = properties?.cluster_id;
+    const features = event.features ?? [];
+    const clusterFeature = features.find((candidate) => typeof (candidate.properties as Record<string, unknown> | undefined)?.cluster_id === "number");
+    const clusterId = (clusterFeature?.properties as Record<string, unknown> | undefined)?.cluster_id;
     if (typeof clusterId === "number") {
       const source = mapRef.current?.getSource("rbp-strategic-objects") as { getClusterExpansionZoom?: (id: number) => Promise<number> } | undefined;
       source?.getClusterExpansionZoom?.(clusterId)
@@ -744,9 +748,18 @@ function MapboxStrategicMap({
         .catch(() => undefined);
       return;
     }
+    const objectFeature = features.find((candidate) => candidate.layer.id === "rbp-object-points");
+    const objectId = (objectFeature?.properties as Record<string, unknown> | undefined)?.id;
+    if (typeof objectId === "string") {
+      const object = strategicObjects.find((candidate) => candidate.id === objectId);
+      if (object) setSelectedObject({ object, longitude: event.lngLat.lng, latitude: event.lngLat.lat });
+      return;
+    }
+    const countryFeature = features.find((candidate) => candidate.layer.id === "rbp-country-fill");
+    const properties = countryFeature?.properties as Record<string, unknown> | undefined;
     const iso = properties?.ISO_A3 ?? properties?.ADM0_A3 ?? properties?.isoCode;
     if (typeof iso === "string" && iso !== "-99" && iso !== "UNK") handleCountryClick(iso);
-  }, [handleCountryClick]);
+  }, [handleCountryClick, strategicObjects]);
 
   const handleNativeMapHover = useCallback((event: MapMouseEvent) => {
     const feature = event.features?.find((candidate) => candidate.layer.id === "rbp-country-fill");
@@ -759,8 +772,8 @@ function MapboxStrategicMap({
 
   // ─── Visible map objects ─────────────────────────────────
   const visibleStrategicObjects = useMemo(
-    () => selectVisibleStrategicObjects(strategicObjects, viewState),
-    [strategicObjects, viewState],
+    () => selectVisibleStrategicObjects(strategicObjects.filter((object) => objectTypes.has(object.type)), viewState),
+    [objectTypes, strategicObjects, viewState],
   );
 
   const handleStrategicObjectClick = useCallback((object: StrategicObject) => {
@@ -819,6 +832,15 @@ function MapboxStrategicMap({
 
   const handleToggleChoropleth = useCallback(() => {
     setChoroplethVisible((prev) => !prev);
+  }, []);
+
+  const handleToggleObjectType = useCallback((type: StrategicObjectType) => {
+    setObjectTypes((current) => {
+      const next = new Set(current);
+      if (next.has(type)) next.delete(type);
+      else next.add(type);
+      return next;
+    });
   }, []);
 
   // ─── Popup details handler ──────────────────────────────
@@ -897,17 +919,23 @@ function MapboxStrategicMap({
                 hoveredISO={hover.iso}
                 visible={choroplethVisible}
                 objectsVisible={showStrategicObjects}
+                objectTypes={objectTypes}
               />
               {/* Country hover popup */}
-              {(
-                <CountryPopup
-                  country={hover.country}
-                  longitude={hover.longitude}
-                  latitude={hover.latitude}
-                  visible={hover.iso !== null && hover.country !== null}
-                  onDetailsClick={handlePopupDetails}
-                />
-              )}
+              <CountryPopup
+                country={hover.country}
+                longitude={hover.longitude}
+                latitude={hover.latitude}
+                visible={hover.iso !== null && hover.country !== null && selectedObject === null}
+                onDetailsClick={handlePopupDetails}
+              />
+              <StrategicObjectPopup
+                object={selectedObject?.object ?? null}
+                longitude={selectedObject?.longitude ?? 0}
+                latitude={selectedObject?.latitude ?? 0}
+                onCountryClick={handlePopupDetails}
+                onClose={() => setSelectedObject(null)}
+              />
             </MapGL>
           </div>
           </MapErrorBoundary>
@@ -936,6 +964,9 @@ function MapboxStrategicMap({
       <button type="button" aria-label="Переключить стратегические объекты" onClick={() => setShowStrategicObjects((visible) => !visible)} className="absolute right-4 top-4 z-20 rounded border border-cyan-400/20 bg-slate-950/70 px-3 py-2 font-mono text-[9px] uppercase tracking-widest text-cyan-300 backdrop-blur-sm">
         Объекты {showStrategicObjects ? "ON" : "OFF"} · {visibleStrategicObjects.length}/{strategicObjects.length}
       </button>
+      {showStrategicObjects && (
+        <ObjectLayerControls objects={strategicObjects} selected={objectTypes} onToggle={handleToggleObjectType} />
+      )}
 
       <MapDataLegend
         activeLayer={activeLayer}

@@ -5,6 +5,8 @@ import MapGL from "react-map-gl/maplibre";
 import type { MapRef, MapMouseEvent } from "react-map-gl/maplibre";
 import { DeckGL } from "@deck.gl/react";
 import type { Layer, PickingInfo } from "@deck.gl/core";
+import type { Feature, Polygon, MultiPolygon } from "geojson";
+import { scaleSequential } from "d3-scale";
 import { MapErrorBoundary } from './MapErrorBoundary';
 import { StrategicAtlas } from './StrategicAtlas';
 
@@ -14,10 +16,11 @@ import type { CountryBPData } from "./ChoroplethLayer";
 import { MapControls, MAP_STYLE_URLS } from "./MapControls";
 import type { MapStyle } from "./MapControls";
 import { CountryPopup } from "./CountryPopup";
-import { MapLegend } from "./MapLegend";
+import { MapDataLegend } from "./MapDataLegend";
 import { NativeMapLayers } from "./NativeMapLayers";
 import { LayerSelector } from "./LayerSelector";
 import type { AnalyticsLayerKey } from "./LayerSelector";
+import type { CountryMapData } from "./map-types";
 import {
   findISOFromCoords,
   loadCountryBoundaries,
@@ -177,17 +180,6 @@ interface ScatterPoint {
 }
 
 /** Shape of a country row from the /api/countries response */
-export interface CountryMapData {
-  isoCode: string;
-  name: string;
-  nameRu: string;
-  militaryBudgetBn: number;
-  totalTanks: number;
-  totalAircraft: number;
-  totalNavy: number;
-  nuclearWarheads: number;
-  bpTotal: number;
-}
 
 /** Default initial view state: a complete world view */
 const INITIAL_VIEW = {
@@ -636,6 +628,12 @@ function MapboxStrategicMap({
     return { minBP: min, maxBP: max };
   }, [countryBPData]);
 
+  const metricBounds = useMemo(() => {
+    const key = activeLayer === "budget" ? "militaryBudgetBn" : activeLayer === "fleet" ? "totalNavy" : activeLayer === "aviation" ? "totalAircraft" : activeLayer === "tanks" ? "totalTanks" : "nuclearWarheads";
+    const values = countriesRaw.map((country) => country[key]).filter((value) => value > 0);
+    return { min: values.length ? Math.min(...values) : 0, max: values.length ? Math.max(...values) : 1 };
+  }, [activeLayer, countriesRaw]);
+
   // ─── Load global capitals and major cities from the local Natural Earth cache ──
   useEffect(() => {
     let cancelled = false;
@@ -738,6 +736,14 @@ function MapboxStrategicMap({
     const feature = event.features?.[0];
     if (!feature) return;
     const properties = feature.properties as Record<string, unknown> | undefined;
+    const clusterId = properties?.cluster_id;
+    if (typeof clusterId === "number") {
+      const source = mapRef.current?.getSource("rbp-strategic-objects") as { getClusterExpansionZoom?: (id: number) => Promise<number> } | undefined;
+      source?.getClusterExpansionZoom?.(clusterId)
+        .then((zoom) => mapRef.current?.getMap().easeTo({ center: [event.lngLat.lng, event.lngLat.lat], zoom, duration: 450 }))
+        .catch(() => undefined);
+      return;
+    }
     const iso = properties?.ISO_A3 ?? properties?.ADM0_A3 ?? properties?.isoCode;
     if (typeof iso === "string" && iso !== "-99" && iso !== "UNK") handleCountryClick(iso);
   }, [handleCountryClick]);
@@ -751,7 +757,7 @@ function MapboxStrategicMap({
     } as PickingInfo);
   }, [handleCountryHover]);
 
-  // ─── Deck.gl layers ─────────────────────────────────────
+  // ─── Visible map objects ─────────────────────────────────
   const visibleStrategicObjects = useMemo(
     () => selectVisibleStrategicObjects(strategicObjects, viewState),
     [strategicObjects, viewState],
@@ -764,72 +770,6 @@ function MapboxStrategicMap({
       : geoJson ? findISOFromCoords(geoJson, object.longitude, object.latitude) : null;
     if (iso) onCountryClick(iso);
   }, [geoJson, onCountryClick]);
-
-  const deckLayers = useMemo<Layer[]>(() => {
-    // BP mode is rendered by native MapLibre layers in the same canvas.
-    // DeckGL remains for the secondary metric modes until those are migrated.
-    if (activeLayer === "bp") return [];
-    const objectLayer = showStrategicObjects ? [buildStrategicObjectsLayer(visibleStrategicObjects, handleStrategicObjectClick)] : [];
-
-    // ─── Analytics Layers ──────────────────────────────────
-    const budgetValues = countriesRaw.map((country) => country.militaryBudgetBn);
-    const budgetBounds = {
-      min: budgetValues.length ? Math.min(...budgetValues) : 0,
-      max: budgetValues.length ? Math.max(...budgetValues) : 100,
-    };
-    const analyticsOptions = {
-      selectedISO,
-      onHover: (info: PickingInfo) => {
-        const object = info.object as {
-          iso?: string;
-          members?: string[];
-          properties?: Record<string, unknown>;
-        } | null | undefined;
-        const props = object?.properties;
-        const iso = normalizeISO3(object?.iso ?? object?.members?.[0] ??
-          (typeof props?.ISO_A3 === "string" ? props.ISO_A3 :
-            typeof props?.ADM0_A3 === "string" ? props.ADM0_A3 : null));
-        handleCountryHover(iso, info);
-      },
-      onClick: (info: PickingInfo) => {
-        const object = info.object as { iso?: string; members?: string[] } | null | undefined;
-        handleCountryClick(normalizeISO3(object?.iso ?? object?.members?.[0]));
-      },
-    };
-
-    switch (activeLayer) {
-      case "budget":
-        return geoJson
-          ? [createMilitaryBudgetLayer(geoJson, budgetBounds, analyticsOptions, countriesRaw)]
-          : [];
-      case "fleet":
-        return [createNavyLayer(countriesRaw, analyticsOptions)];
-      case "aviation":
-        return [createAircraftLayer(countriesRaw, analyticsOptions)];
-      case "tanks":
-        return [createTankLayer(countriesRaw, analyticsOptions)];
-      case "nukes":
-        return [createNukeLayer(countriesRaw, analyticsOptions)];
-      default:
-        return [];
-    }
-
-    return [...objectLayer, ...layers];
-  }, [
-    activeLayer,
-    enrichedGeoJson,
-    geoJson,
-    countryBPData,
-    selectedISO,
-    hover.iso,
-    choroplethVisible,
-    minBP,
-    maxBP,
-    countriesRaw,
-    handleStrategicObjectClick,
-    showStrategicObjects,
-    visibleStrategicObjects,
-  ]);
 
   // ─── Map control handlers ────────────────────────────────
   const handleZoomIn = useCallback(() => {
@@ -927,35 +867,39 @@ function MapboxStrategicMap({
                 pitch: INITIAL_VIEW.pitch,
                 bearing: INITIAL_VIEW.bearing,
               }}
-              onMove={(event) => {
+              onMoveEnd={(event) => {
                 const next = event.viewState;
                 if (!Number.isFinite(next.longitude) || !Number.isFinite(next.latitude) || !Number.isFinite(next.zoom)) return;
-                setViewState((current) => {
-                  if (current.longitude === next.longitude && current.latitude === next.latitude && current.zoom === next.zoom && current.bearing === next.bearing && current.pitch === next.pitch) return current;
-                  return { ...current, longitude: next.longitude, latitude: next.latitude, zoom: next.zoom, bearing: next.bearing, pitch: next.pitch };
-                });
+                setViewState((current) => ({
+                  ...current,
+                  longitude: next.longitude,
+                  latitude: next.latitude,
+                  zoom: next.zoom,
+                  bearing: next.bearing,
+                  pitch: next.pitch,
+                }));
               }}
               mapStyle={styleUrl}
-              interactiveLayerIds={activeLayer === "bp" ? ["rbp-country-fill", "rbp-object-points", "rbp-object-clusters"] : []}
-              onClick={activeLayer === "bp" ? handleNativeMapClick : undefined}
-              onMouseMove={activeLayer === "bp" ? handleNativeMapHover : undefined}
+              interactiveLayerIds={["rbp-country-fill", "rbp-object-points", "rbp-object-clusters"]}
+              onClick={handleNativeMapClick}
+              onMouseMove={handleNativeMapHover}
               style={{ width: `${pixelSize.w}px`, height: `${pixelSize.h}px` }}
               projection="mercator"
             >
-              {activeLayer === "bp" && (
-                <NativeMapLayers
-                  countries={enrichedGeoJson}
-                  objects={visibleStrategicObjects}
-                  minBP={minBP}
-                  maxBP={maxBP}
-                  selectedISO={selectedISO}
-                  hoveredISO={hover.iso}
-                  visible={choroplethVisible}
-                  objectsVisible={showStrategicObjects}
-                />
-              )}
-              {/* Country hover popup — only in BP mode */}
-              {activeLayer === "bp" && (
+              <NativeMapLayers
+                countries={enrichedGeoJson}
+                objects={visibleStrategicObjects}
+                countriesRaw={countriesRaw}
+                activeLayer={activeLayer}
+                minBP={minBP}
+                maxBP={maxBP}
+                selectedISO={selectedISO}
+                hoveredISO={hover.iso}
+                visible={choroplethVisible}
+                objectsVisible={showStrategicObjects}
+              />
+              {/* Country hover popup */}
+              {(
                 <CountryPopup
                   country={hover.country}
                   longitude={hover.longitude}
@@ -968,28 +912,7 @@ function MapboxStrategicMap({
           </div>
           </MapErrorBoundary>
 
-          {/* Secondary metric overlay. BP uses native MapLibre layers above. */}
-          {activeLayer !== "bp" && <DeckGL
-            viewState={viewState as unknown as Parameters<typeof DeckGL>[0]["viewState"]}
-            onViewStateChange={({ viewState: vs }) => {
-              const lng = (vs as Record<string, unknown>).longitude;
-              const lat = (vs as Record<string, unknown>).latitude;
-              const zm = (vs as Record<string, unknown>).zoom;
-              if (
-                typeof lng === 'number' && isFinite(lng) &&
-                typeof lat === 'number' && isFinite(lat) &&
-                typeof zm === 'number' && isFinite(zm)
-              ) {
-                setViewState(vs as ViewState);
-              }
-            }}
-            layers={deckLayers}
-            controller={true}
-            style={{ position: "absolute", width: `${pixelSize.w}px`, height: `${pixelSize.h}px`, top: "0", left: "0", zIndex: "1", pointerEvents: "auto" }}
-            getCursor={({ isHovering }: { isHovering: boolean }) =>
-              isHovering ? "pointer" : "default"
-            }
-          />}
+
         </>
       ) : (
         <div className="w-full h-full bg-tactical-bg flex items-center justify-center text-tactical-primary font-mono text-sm">
@@ -1014,10 +937,14 @@ function MapboxStrategicMap({
         Объекты {showStrategicObjects ? "ON" : "OFF"} · {visibleStrategicObjects.length}/{strategicObjects.length}
       </button>
 
-      {/* Legend — only in BP mode */}
-      {activeLayer === "bp" && (
-        <MapLegend minBP={minBP} maxBP={maxBP} visible={choroplethVisible} />
-      )}
+      <MapDataLegend
+        activeLayer={activeLayer}
+        minValue={activeLayer === "bp" ? minBP : metricBounds.min}
+        maxValue={activeLayer === "bp" ? maxBP : metricBounds.max}
+        objectsVisible={showStrategicObjects}
+        visibleObjects={visibleStrategicObjects.length}
+        totalObjects={strategicObjects.length}
+      />
 
       {/* Loading overlay */}
       {!geoJson && (

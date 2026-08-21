@@ -9,6 +9,7 @@ import type { CountryRawData } from "@/lib/bp/types";
 import type { NewCountry } from "@/db/schema";
 import { openDatabase, isAuthorizedAdminRequest } from "@/db/runtime";
 import { ensureDatasetSchema } from "@/db/dataset-schema";
+import { ensureWorkspaceSchema } from "@/db/workspace-schema";
 import { recordPublishedDataset } from "@/db/dataset-repository";
 import { validateCountryDataset } from "@/lib/dataset/validation";
 import type { RawCountryRow } from "@/db/country-mapper";
@@ -147,6 +148,7 @@ export async function POST(request: Request): Promise<NextResponse> {
     const db = drizzle(database, { schema: { countries } });
     database.exec(CREATE_TABLE_SQL);
     ensureDatasetSchema(database);
+    ensureWorkspaceSchema(database);
 
     const updateStmt = database.prepare(UPDATE_BP_SQL);
 

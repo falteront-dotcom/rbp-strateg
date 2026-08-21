@@ -1,14 +1,18 @@
 "use client";
 
+import { useMemo } from "react";
 import { Layer, Source } from "react-map-gl/maplibre";
 import type { FeatureCollection, Point } from "geojson";
 import type { ExpressionSpecification, FilterSpecification } from "maplibre-gl";
 import type { CountryCollection } from "@/lib/geo/country-boundaries";
 import type { StrategicObject } from "@/lib/geo/strategic-objects";
+import type { AnalyticsLayerKey, CountryMapData } from "./map-types";
 
 interface NativeMapLayersProps {
   countries: CountryCollection | null;
   objects: readonly StrategicObject[];
+  countriesRaw: ReadonlyArray<CountryMapData>;
+  activeLayer: AnalyticsLayerKey;
   minBP: number;
   maxBP: number;
   selectedISO: string | null;
@@ -52,6 +56,8 @@ function objectFeatures(objects: readonly StrategicObject[]): FeatureCollection<
 export function NativeMapLayers({
   countries,
   objects,
+  countriesRaw,
+  activeLayer,
   minBP,
   maxBP,
   selectedISO,
@@ -59,8 +65,6 @@ export function NativeMapLayers({
   visible,
   objectsVisible,
 }: NativeMapLayersProps) {
-  if (!countries) return null;
-
   const range = Math.max(1, maxBP - minBP);
   const low = bpColor(0);
   const middle = bpColor(0.5);
@@ -89,39 +93,70 @@ export function NativeMapLayers({
     "#7de8ff",
     "rgba(80, 135, 151, 0.68)",
   ] as unknown as ExpressionSpecification;
-  const objectData = objectFeatures(objects);
+  const metricKey = activeLayer === "budget" ? "militaryBudgetBn" : activeLayer === "fleet" ? "totalNavy" : activeLayer === "aviation" ? "totalAircraft" : activeLayer === "tanks" ? "totalTanks" : "nuclearWarheads";
+  const metricValues = countriesRaw.map((country) => country[metricKey]).filter((value) => value > 0);
+  const metricMin = metricValues.length ? Math.min(...metricValues) : 0;
+  const metricMax = metricValues.length ? Math.max(...metricValues) : 1;
+  const metricColor = activeLayer === "nukes" ? ["#f0445e", "#ffbd4a"] : activeLayer === "fleet" ? ["#3a9edb", "#a9f0ff"] : activeLayer === "aviation" ? ["#667eea", "#b8c5ff"] : activeLayer === "tanks" ? ["#6eaa45", "#d6e875"] : ["#9b70d6", "#f4b6ff"];
+  const metricByIso = useMemo(() => new Map(countriesRaw.map((country) => [country.isoCode, country])), [countriesRaw]);
+  const countryData = useMemo(() => countries ? ({
+    ...countries,
+    features: countries.features.map((feature) => {
+      const iso = String(feature.properties.ISO_A3 ?? feature.properties.ADM0_A3 ?? "");
+      const country = metricByIso.get(iso);
+      return { ...feature, properties: { ...feature.properties, ...country } };
+    }),
+  }) : null, [countries, metricByIso]);
+  const objectData = useMemo(() => objectFeatures(objects), [objects]);
+  const metricFillColor = [
+    "interpolate",
+    ["linear"],
+    ["coalesce", ["get", metricKey], 0],
+    metricMin,
+    metricColor[0],
+    metricMax,
+    metricColor[1],
+  ] as unknown as ExpressionSpecification;
+  const fillOpacity = (activeLayer === "bp"
+    ? [
+      "case",
+      ["==", ["get", "ISO_A3"], selectedISO ?? "__none__"],
+      0.82,
+      ["==", ["get", "ISO_A3"], hoveredISO ?? "__none__"],
+      0.72,
+      0.58,
+    ]
+    : 0.72) as number | ExpressionSpecification;
+  const lineWidth = (activeLayer === "bp"
+    ? [
+      "case",
+      ["==", ["get", "ISO_A3"], selectedISO ?? "__none__"],
+      2.2,
+      ["==", ["get", "ISO_A3"], hoveredISO ?? "__none__"],
+      1.6,
+      0.7,
+    ]
+    : 0.7) as number | ExpressionSpecification;
+
+  if (!countryData) return null;
 
   return (
     <>
-      <Source id="rbp-countries" type="geojson" data={countries}>
+      <Source id="rbp-countries" type="geojson" data={countryData}>
         <Layer
           id="rbp-country-fill"
           type="fill"
           paint={{
-            "fill-color": visible ? fillColor : "rgba(0, 0, 0, 0)",
-            "fill-opacity": [
-              "case",
-              ["==", ["get", "ISO_A3"], selectedISO ?? "__none__"],
-              0.82,
-              ["==", ["get", "ISO_A3"], hoveredISO ?? "__none__"],
-              0.72,
-              0.58,
-            ],
+            "fill-color": activeLayer === "bp" ? (visible ? fillColor : "rgba(0, 0, 0, 0)") : metricFillColor,
+            "fill-opacity": fillOpacity,
           }}
         />
         <Layer
           id="rbp-country-line"
           type="line"
           paint={{
-            "line-color": visible ? lineColor : "rgba(50, 85, 99, 0.42)",
-            "line-width": [
-              "case",
-              ["==", ["get", "ISO_A3"], selectedISO ?? "__none__"],
-              2.2,
-              ["==", ["get", "ISO_A3"], hoveredISO ?? "__none__"],
-              1.6,
-              0.7,
-            ],
+            "line-color": activeLayer === "bp" ? (visible ? lineColor : "rgba(50, 85, 99, 0.42)") : "rgba(106, 180, 191, 0.68)",
+            "line-width": lineWidth,
           }}
         />
       </Source>

@@ -6,6 +6,7 @@ export { MapControls, default as MapControlsDefault, MAP_STYLE_URLS } from "./Ma
 export type { MapStyle } from "./MapControls";
 export { CountryPopup, default as CountryPopupDefault } from "./CountryPopup";
 export { MapLegend, default as MapLegendDefault } from "./MapLegend";
+export { MapDataLegend } from "./MapDataLegend";
 export type { CountryBPData } from "./ChoroplethLayer";
 
 export {
@@ -18,4 +19,4 @@ export {
 
 export { LayerSelector, default as LayerSelectorDefault } from "./LayerSelector";
 export type { AnalyticsLayerKey } from "./LayerSelector";
-export type { CountryMapData } from "./StrategicMap";
+export type { AnalyticsLayerKey as MapAnalyticsLayerKey, CountryMapData } from "./map-types";

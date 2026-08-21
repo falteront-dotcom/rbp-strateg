@@ -61,9 +61,11 @@ export function MapDataLegend({
           {objectsVisible && (
             <div className="mt-2 grid grid-cols-2 gap-x-2 gap-y-1 text-[8px] text-white/55">
               <span><i className="mr-1 inline-block h-2 w-2 rounded-full bg-[#f5c85b]" />capital</span>
-              <span><i className="mr-1 inline-block h-2 w-2 rounded-full bg-[#e56b68]" />military</span>
-              <span><i className="mr-1 inline-block h-2 w-2 rounded-full bg-[#dc6be5]" />naval</span>
-              <span><i className="mr-1 inline-block h-2 w-2 rounded-full bg-[#7bb7ff]" />airport</span>
+              <span><i className="mr-1 inline-block h-2 w-2 rounded-full bg-[#e56b68]" />military base</span>
+              <span><i className="mr-1 inline-block h-2 w-2 rounded-full bg-[#dc6be5]" />naval base</span>
+              <span><i className="mr-1 inline-block h-2 w-2 rounded-full bg-[#7bb7ff]" />airfield</span>
+              <span><i className="mr-1 inline-block h-2 w-2 rounded-full bg-[#ff9a62]" />range</span>
+              <span><i className="mr-1 inline-block h-2 w-2 rounded-full bg-[#f5c85b]" />strategic site</span>
               <span><i className="mr-1 inline-block h-2 w-2 rounded-full bg-[#5bd4c8]" />port</span>
               <span><i className="mr-1 inline-block h-2 w-2 rounded-full bg-[#34b8cb]" />city</span>
             </div>

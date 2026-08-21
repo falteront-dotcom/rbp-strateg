@@ -26,7 +26,7 @@ test.describe('native strategic map modes', () => {
     await page.waitForSelector('canvas');
     await expect(page.getByText(/Cluster numbers show documented objects/i)).toBeVisible();
     await expect(page.getByText('capital', { exact: true })).toBeVisible();
-    await expect(page.getByText('military', { exact: true })).toBeVisible();
-    await expect(page.getByText('airport', { exact: true })).toBeVisible();
+    await expect(page.getByText('military base', { exact: true })).toBeVisible();
+    await expect(page.getByText('airfield', { exact: true })).toBeVisible();
   });
 });

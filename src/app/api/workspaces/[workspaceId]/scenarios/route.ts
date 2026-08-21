@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import { openDatabase } from '@/db/runtime';
-import { createScenario, getWorkspace, listScenarios } from '@/db/workspace-repository';
+import { createScenario, getWorkspace, listScenarios, scenarioDepth } from '@/db/workspace-repository';
 import { validateScenarioInput } from '@/lib/workspace/validation';
 
 type Context = { params: Promise<{ workspaceId: string }> };
@@ -17,7 +17,9 @@ export async function POST(request: Request, context: Context): Promise<NextResp
   const db = openDatabase();
   try {
     if (!getWorkspace(db, workspaceId)) return NextResponse.json({ error: 'Workspace not found' }, { status: 404 });
-    if (validation.value.parentScenarioId && !listScenarios(db, workspaceId).some((scenario) => scenario.id === validation.value.parentScenarioId)) return NextResponse.json({ error: 'Parent scenario not found' }, { status: 400 });
+    const scenarios = listScenarios(db, workspaceId);
+    if (validation.value.parentScenarioId && !scenarios.some((scenario) => scenario.id === validation.value.parentScenarioId)) return NextResponse.json({ error: 'Parent scenario not found' }, { status: 409 });
+    if (scenarioDepth(scenarios, validation.value.parentScenarioId) + 1 > 3) return NextResponse.json({ error: 'Scenario tree depth cannot exceed 3' }, { status: 409 });
     return NextResponse.json({ scenario: createScenario(db, workspaceId, validation.value) }, { status: 201 });
   } finally { db.close(); }
 }

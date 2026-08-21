@@ -819,6 +819,7 @@ export default function Home() {
         <ScenarioLab
           allCountries={countriesCompareData}
           selectedIso={selectedISO}
+          onSelectedIsoChange={setSelectedISO}
           onWorkspaceChange={(id) => {
             if (id === null) setScenarioLabOpen(false);
           }}

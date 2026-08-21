@@ -15,6 +15,7 @@ function mapScenario(row: ScenarioRow): WorkspaceScenario { return { id: row.id,
 
 export function listWorkspaces(db: Database.Database): Workspace[] { ensureWorkspaceSchema(db); return (db.prepare('SELECT * FROM workspaces ORDER BY updated_at DESC').all() as WorkspaceRow[]).map(mapWorkspace); }
 export function getWorkspace(db: Database.Database, id: string): Workspace | null { ensureWorkspaceSchema(db); const row = db.prepare('SELECT * FROM workspaces WHERE id = ?').get(id) as WorkspaceRow | undefined; return row ? mapWorkspace(row) : null; }
+export function countryExists(db: Database.Database, isoCode: string): boolean { const row = db.prepare('SELECT 1 AS present FROM countries WHERE iso_code = ? LIMIT 1').get(isoCode) as { present: number } | undefined; return row?.present === 1; }
 export function createWorkspace(db: Database.Database, input: CreateWorkspaceInput): Workspace {
   ensureWorkspaceSchema(db); const now = new Date().toISOString(); const id = randomUUID();
   db.prepare('INSERT INTO workspaces (id, name, selected_country_iso, comparison_isos_json, notes, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?)').run(id, input.name.trim(), input.selectedCountryIso ?? 'USA', JSON.stringify(input.comparisonIsos ?? []), input.notes ?? '', now, now);
@@ -27,6 +28,33 @@ export function updateWorkspace(db: Database.Database, id: string, input: Update
 }
 export function deleteWorkspace(db: Database.Database, id: string): boolean { ensureWorkspaceSchema(db); return db.prepare('DELETE FROM workspaces WHERE id = ?').run(id).changes > 0; }
 export function listScenarios(db: Database.Database, workspaceId: string): WorkspaceScenario[] { ensureWorkspaceSchema(db); return (db.prepare('SELECT * FROM workspace_scenarios WHERE workspace_id = ? ORDER BY created_at ASC').all(workspaceId) as ScenarioRow[]).map(mapScenario); }
+export function scenarioDepth(scenarios: WorkspaceScenario[], scenarioId: string | null): number {
+  let depth = 1;
+  const byId = new Map(scenarios.map((scenario) => [scenario.id, scenario]));
+  let current = scenarioId;
+  const seen = new Set<string>();
+  while (current) {
+    if (seen.has(current)) return Number.MAX_SAFE_INTEGER;
+    seen.add(current);
+    const parent = byId.get(current)?.parentScenarioId;
+    if (!parent) break;
+    depth += 1;
+    current = parent;
+  }
+  return depth;
+}
+
+export function scenarioWouldCycle(scenarios: WorkspaceScenario[], scenarioId: string, parentId: string | null): boolean {
+  const byId = new Map(scenarios.map((scenario) => [scenario.id, scenario]));
+  const seen = new Set<string>();
+  let current = parentId;
+  while (current) {
+    if (current === scenarioId || seen.has(current)) return true;
+    seen.add(current);
+    current = byId.get(current)?.parentScenarioId ?? null;
+  }
+  return false;
+}
 export function getScenario(db: Database.Database, workspaceId: string, scenarioId: string): WorkspaceScenario | null { ensureWorkspaceSchema(db); const row = db.prepare('SELECT * FROM workspace_scenarios WHERE workspace_id = ? AND id = ?').get(workspaceId, scenarioId) as ScenarioRow | undefined; return row ? mapScenario(row) : null; }
 export function createScenario(db: Database.Database, workspaceId: string, input: CreateScenarioInput): WorkspaceScenario {
   ensureWorkspaceSchema(db); const now = new Date().toISOString(); const id = randomUUID();
@@ -36,11 +64,19 @@ export function createScenario(db: Database.Database, workspaceId: string, input
 }
 export function updateScenario(db: Database.Database, workspaceId: string, scenarioId: string, input: Partial<CreateScenarioInput>): WorkspaceScenario | null {
   ensureWorkspaceSchema(db); const existing = getScenario(db, workspaceId, scenarioId); if (!existing) return null; const now = new Date().toISOString();
-  db.prepare('UPDATE workspace_scenarios SET name = ?, params_json = ?, parent_scenario_id = ?, updated_at = ? WHERE workspace_id = ? AND id = ?').run(input.name?.trim() ?? existing.name, JSON.stringify(input.params ?? existing.params), input.parentScenarioId === undefined ? existing.parentScenarioId : input.parentScenarioId, now, workspaceId, scenarioId);
+  const params = input.params === undefined ? existing.params : { ...existing.params, ...(input.params as Partial<ScenarioParams>) };
+  db.prepare('UPDATE workspace_scenarios SET name = ?, params_json = ?, parent_scenario_id = ?, updated_at = ? WHERE workspace_id = ? AND id = ?').run(input.name?.trim() ?? existing.name, JSON.stringify(params), input.parentScenarioId === undefined ? existing.parentScenarioId : input.parentScenarioId, now, workspaceId, scenarioId);
   db.prepare('UPDATE workspaces SET updated_at = ? WHERE id = ?').run(now, workspaceId);
   return getScenario(db, workspaceId, scenarioId);
 }
-export function deleteScenario(db: Database.Database, workspaceId: string, scenarioId: string): boolean { ensureWorkspaceSchema(db); return db.prepare('DELETE FROM workspace_scenarios WHERE workspace_id = ? AND id = ?').run(workspaceId, scenarioId).changes > 0; }
+export function deleteScenario(db: Database.Database, workspaceId: string, scenarioId: string): boolean {
+  ensureWorkspaceSchema(db);
+  return db.transaction(() => {
+    const deleted = db.prepare('DELETE FROM workspace_scenarios WHERE workspace_id = ? AND id = ?').run(workspaceId, scenarioId).changes > 0;
+    if (deleted) db.prepare('UPDATE workspaces SET updated_at = ? WHERE id = ?').run(new Date().toISOString(), workspaceId);
+    return deleted;
+  })();
+}
 
 export function createWorkspaceSnapshot(db: Database.Database, workspaceId: string, scenarioId: string | null, datasetVersion: string, formulaVersion: string, result: unknown): WorkspaceSnapshot {
   ensureWorkspaceSchema(db); const id = randomUUID(); const createdAt = new Date().toISOString();

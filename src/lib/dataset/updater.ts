@@ -18,6 +18,11 @@ export interface PipelineCandidate {
 export interface PublishPipelineResult {
   dataset: DatasetVersion;
   countriesWritten: number;
+  top10: Array<{ rank: number | null; iso: string; name: string; totalBP: number }>;
+}
+
+export interface PublishPipelineOptions {
+  testFailure?: 'after-delete';
 }
 
 function countryToRawData(country: MergedCountry) {
@@ -42,7 +47,7 @@ function countryToRawData(country: MergedCountry) {
   };
 }
 
-export async function refreshDatasetFromSources(): Promise<PublishPipelineResult> {
+export async function refreshDatasetFromSources(options: PublishPipelineOptions = {}): Promise<PublishPipelineResult> {
   const { runPipeline } = await import('@/scripts/data-pipeline/merge-validate');
   const { calculateAllCountriesBP } = await import('@/lib/bp');
   const pipeline = await runPipeline();
@@ -53,8 +58,8 @@ export async function refreshDatasetFromSources(): Promise<PublishPipelineResult
     return publishPipelineCandidate(db, {
       countries: pipeline.countries,
       bpByIso,
-      sourceSummary: { source: 'automatic-pipeline', pipeline: pipeline.stats, conflicts: pipeline.conflicts.length },
-    }, `pipeline-${new Date().toISOString()}`);
+      sourceSummary: { source: 'automatic-pipeline', pipeline: pipeline.stats, conflicts: pipeline.conflicts.length, conflictDetails: pipeline.conflicts },
+    }, `pipeline-${new Date().toISOString()}`, options);
   } finally {
     db.close();
   }
@@ -79,6 +84,7 @@ export function publishPipelineCandidate(
   db: Database.Database,
   candidate: PipelineCandidate,
   version: string,
+  options: PublishPipelineOptions = {},
 ): PublishPipelineResult {
   ensureCountriesTable(db);
   ensureDatasetSchema(db);
@@ -86,6 +92,7 @@ export function publishPipelineCandidate(
 
   return db.transaction(() => {
     db.prepare('DELETE FROM countries').run();
+    if (options.testFailure === 'after-delete') throw new Error('Injected pipeline failure after delete');
     for (const country of candidate.countries) {
       const bp = candidate.bpByIso.get(country.isoCode);
       if (!bp) throw new Error(`Missing BP result for ${country.isoCode}`);
@@ -114,7 +121,11 @@ export function publishPipelineCandidate(
       throw new Error(`Dataset validation failed: ${validation.errors.map((issue) => issue.message).join('; ')}`);
     }
     const dataset = recordPublishedDataset(db, version, validation, candidate.sourceSummary);
-    return { dataset, countriesWritten: rows.length };
+    const top10 = [...candidate.bpByIso.values()]
+      .sort((a, b) => (a.rank ?? Number.MAX_SAFE_INTEGER) - (b.rank ?? Number.MAX_SAFE_INTEGER))
+      .slice(0, 10)
+      .map((bp) => ({ rank: bp.rank, iso: bp.isoCode, name: bp.name, totalBP: Number(bp.totalBP.toFixed(1)) }));
+    return { dataset, countriesWritten: rows.length, top10 };
   })();
 }
 

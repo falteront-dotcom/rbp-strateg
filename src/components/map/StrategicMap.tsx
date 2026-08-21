@@ -190,13 +190,16 @@ export interface CountryMapData {
   bpTotal: number;
 }
 
-/** Default initial view state: centered on Eastern Europe */
+/** Default initial view state: a complete world view */
 const INITIAL_VIEW = {
-  longitude: 20,
-  latitude: 25,
-  zoom: 1.5,
+  longitude: 0,
+  latitude: 20,
+  zoom: 0.8,
   pitch: 0,
   bearing: 0,
+  padding: { top: 0, bottom: 0, left: 0, right: 0 },
+  width: 0,
+  height: 0,
 } as const;
 
 type ViewState = typeof INITIAL_VIEW;
@@ -276,18 +279,43 @@ function buildBudgetGeoJsonLayer(
 }
 
 /** Build a ScatterplotLayer for a given metric */
+function objectImportance(object: StrategicObject): number {
+  if (object.type === "capital") return 3;
+  if (object.source === "Natural Earth Populated Places") return 2;
+  return 1;
+}
+
+function objectIsInViewport(object: StrategicObject, viewState: ViewState): boolean {
+  const longitudeSpan = Math.min(360, 360 / 2 ** (viewState.zoom - 1));
+  const latitudeSpan = Math.min(180, 180 / 2 ** (viewState.zoom - 1));
+  if (object.latitude < Math.max(-85, viewState.latitude - latitudeSpan / 2) || object.latitude > Math.min(85, viewState.latitude + latitudeSpan / 2)) return false;
+  if (longitudeSpan >= 360) return true;
+  let longitudeDelta = Math.abs(object.longitude - viewState.longitude) % 360;
+  if (longitudeDelta > 180) longitudeDelta = 360 - longitudeDelta;
+  return longitudeDelta <= longitudeSpan / 2;
+}
+
+function selectVisibleStrategicObjects(objects: readonly StrategicObject[], viewState: ViewState): StrategicObject[] {
+  const minimumImportance = viewState.zoom < 2.3 ? 3 : viewState.zoom < 4 ? 2 : 1;
+  const limit = viewState.zoom < 2.3 ? 250 : viewState.zoom < 4 ? 700 : 2500;
+  return objects
+    .filter((object) => objectImportance(object) >= minimumImportance && objectIsInViewport(object, viewState))
+    .sort((left, right) => objectImportance(right) - objectImportance(left))
+    .slice(0, limit);
+}
+
 function buildStrategicObjectsLayer(objects: readonly StrategicObject[], onClick: (object: StrategicObject) => void): Layer {
   return new ScatterplotLayer<StrategicObject>({
     id: "strategic-objects",
     data: objects,
     pickable: true,
     radiusUnits: "pixels",
-    radiusMinPixels: 4,
-    radiusMaxPixels: 10,
+    radiusMinPixels: 2,
+    radiusMaxPixels: 7,
     getPosition: (object) => [object.longitude, object.latitude],
-    getRadius: (object) => object.type === "capital" ? 7 : 4,
-    getFillColor: (object) => object.type === "capital" ? [255, 196, 64, 230] : [34, 211, 238, 210],
-    getLineColor: [2, 12, 24, 255],
+    getRadius: (object) => objectImportance(object) === 3 ? 5 : objectImportance(object) === 2 ? 3.5 : 2.5,
+    getFillColor: (object) => objectImportance(object) === 3 ? [255, 196, 64, 235] : [34, 211, 238, 190],
+    getLineColor: [2, 12, 24, 220],
     lineWidthMinPixels: 1,
     onClick: (info) => {
       const object = info.object as StrategicObject | undefined;
@@ -692,6 +720,11 @@ export function StrategicMap({
   );
 
   // ─── Deck.gl layers ─────────────────────────────────────
+  const visibleStrategicObjects = useMemo(
+    () => selectVisibleStrategicObjects(strategicObjects, viewState),
+    [strategicObjects, viewState],
+  );
+
   const handleStrategicObjectClick = useCallback((object: StrategicObject) => {
     if (!onCountryClick) return;
     const iso = object.isoCode !== "UNK"
@@ -701,7 +734,7 @@ export function StrategicMap({
   }, [geoJson, onCountryClick]);
 
   const deckLayers = useMemo<Layer[]>(() => {
-    const objectLayer = showStrategicObjects ? [buildStrategicObjectsLayer(strategicObjects, handleStrategicObjectClick)] : [];
+    const objectLayer = showStrategicObjects ? [buildStrategicObjectsLayer(visibleStrategicObjects, handleStrategicObjectClick)] : [];
     // ─── BP Choropleth (default) ────────────────────────────
     if (activeLayer === "bp") {
       if (!choroplethVisible || !enrichedGeoJson) return [];
@@ -801,7 +834,7 @@ export function StrategicMap({
     countriesRaw,
     handleStrategicObjectClick,
     showStrategicObjects,
-    strategicObjects,
+    visibleStrategicObjects,
   ]);
 
   // ─── Map control handlers ────────────────────────────────
@@ -817,7 +850,7 @@ export function StrategicMap({
     const map = mapRef.current?.getMap();
     if (map) {
       const currentZoom = map.getZoom();
-      map.easeTo({ zoom: Math.max(1, currentZoom - 1), duration: 300 });
+      map.easeTo({ zoom: Math.max(0.8, currentZoom - 1), duration: 300 });
     }
   }, []);
 
@@ -893,10 +926,12 @@ export function StrategicMap({
           <div style={{ position: "absolute", zIndex: 0, width: `${pixelSize.w}px`, height: `${pixelSize.h}px`, top: 0, left: 0 }}>
             <MapGL
               ref={mapRef}
-              initialViewState={{
-                longitude: INITIAL_VIEW.longitude,
-                latitude: INITIAL_VIEW.latitude,
-                zoom: INITIAL_VIEW.zoom,
+              viewState={viewState}
+              onMove={(event) => {
+                const next = event.viewState;
+                if (Number.isFinite(next.longitude) && Number.isFinite(next.latitude) && Number.isFinite(next.zoom)) {
+                  setViewState(next as ViewState);
+                }
               }}
               mapStyle={styleUrl}
               style={{ width: `${pixelSize.w}px`, height: `${pixelSize.h}px` }}
@@ -918,7 +953,7 @@ export function StrategicMap({
 
           {/* DeckGL overlay — sibling above MapGL */}
           <DeckGL
-            viewState={viewState}
+            viewState={viewState as unknown as Parameters<typeof DeckGL>[0]["viewState"]}
             onViewStateChange={({ viewState: vs }) => {
               const lng = (vs as Record<string, unknown>).longitude;
               const lat = (vs as Record<string, unknown>).latitude;
@@ -959,7 +994,7 @@ export function StrategicMap({
         onToggleChoropleth={handleToggleChoropleth}
       />
       <button type="button" aria-label="Переключить стратегические объекты" onClick={() => setShowStrategicObjects((visible) => !visible)} className="absolute right-4 top-4 z-20 rounded border border-cyan-400/20 bg-slate-950/70 px-3 py-2 font-mono text-[9px] uppercase tracking-widest text-cyan-300 backdrop-blur-sm">
-        Объекты {showStrategicObjects ? "ON" : "OFF"} · {strategicObjects.length}
+        Объекты {showStrategicObjects ? "ON" : "OFF"} · {visibleStrategicObjects.length}/{strategicObjects.length}
       </button>
 
       {/* Legend — only in BP mode */}

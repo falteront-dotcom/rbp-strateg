@@ -1,14 +1,14 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import MapGL from "react-map-gl/mapbox";
-import type { MapRef } from "react-map-gl/mapbox";
+import MapGL from "react-map-gl/maplibre";
+import type { MapRef } from "react-map-gl/maplibre";
 import { DeckGL } from "@deck.gl/react";
 import type { Layer, PickingInfo } from "@deck.gl/core";
 import { MapErrorBoundary } from './MapErrorBoundary';
 import { StrategicAtlas } from './StrategicAtlas';
 
-import "mapbox-gl/dist/mapbox-gl.css";
+import "maplibre-gl/dist/maplibre-gl.css";
 
 import { ChoroplethLayer } from "./ChoroplethLayer";
 import type { CountryBPData } from "./ChoroplethLayer";
@@ -18,18 +18,162 @@ import { CountryPopup } from "./CountryPopup";
 import { MapLegend } from "./MapLegend";
 import type { AnalyticsLayerKey } from "./LayerSelector";
 import {
+  findISOFromCoords,
   loadCountryBoundaries,
   mergeWithBPData,
   normalizeISO3,
 } from "@/lib/geo/country-boundaries";
 import type { CountryCollection, CountryBPRecord } from "@/lib/geo/country-boundaries";
-import {
-  createMilitaryBudgetLayer,
-  createNavyLayer,
-  createAircraftLayer,
-  createNukeLayer,
-  createTankLayer,
-} from "./AnalyticsLayers";
+import { getPosition } from "@/lib/geo/country-centroids";
+import { STRATEGIC_OBJECTS, type StrategicObject } from "@/lib/geo/strategic-objects";
+
+// ─── OKLCH → sRGB conversion (shared with AnalyticsLayers) ─────────────
+
+function oklchToRgb(l: number, c: number, h: number): [number, number, number] {
+  const hueRad = (h * Math.PI) / 180;
+  const a = c * Math.cos(hueRad);
+  const b = c * Math.sin(hueRad);
+  const l_ = l + 0.3963377774 * a + 0.2158037573 * b;
+  const m_ = l - 0.1055613458 * a - 0.0638541728 * b;
+  const s_ = l - 0.0894841775 * a - 1.291485548 * b;
+  const l3 = l_ * l_ * l_;
+  const m3 = m_ * m_ * m_;
+  const s3 = s_ * s_ * s_;
+  const r = +4.0767416621 * l3 - 3.3079834258 * m3 + 0.2309640425 * s3;
+  const g = -1.2681438942 * l3 + 2.6093399734 * m3 - 0.3411344294 * s3;
+  const bl = -0.0041119484 * l3 - 0.7037628646 * m3 + 1.7070697198 * s3;
+  return [
+    Math.round(Math.max(0, Math.min(255, r * 255))),
+    Math.round(Math.max(0, Math.min(255, g * 255))),
+    Math.round(Math.max(0, Math.min(255, bl * 255))),
+  ];
+}
+
+// ─── Analytics Layer Color Scales ──────────────────────────────────────
+
+function budgetColorInterpolator(t: number): [number, number, number, number] {
+  const tc = Math.max(0, Math.min(1, t));
+  let lightness: number;
+  let chroma: number;
+  let hue: number;
+  if (tc <= 0.4) {
+    const s = tc / 0.4;
+    lightness = 40 + s * 20;
+    chroma = 0.12 + s * 0.06;
+    hue = 220 - s * 40;
+  } else if (tc <= 0.75) {
+    const s = (tc - 0.4) / 0.35;
+    lightness = 60 + s * 15;
+    chroma = 0.18 + s * 0.04;
+    hue = 180 - s * 80;
+  } else {
+    const s = (tc - 0.75) / 0.25;
+    lightness = 75 - s * 10;
+    chroma = 0.22 + s * 0.06;
+    hue = 100 - s * 30;
+  }
+  const rgb = oklchToRgb(lightness / 100, chroma, hue);
+  return [rgb[0], rgb[1], rgb[2], 210];
+}
+
+function navyColorInterpolator(t: number): [number, number, number, number] {
+  const tc = Math.max(0, Math.min(1, t));
+  let lightness: number;
+  let chroma: number;
+  let hue: number;
+  if (tc <= 0.5) {
+    const s = tc * 2;
+    lightness = 35 + s * 25;
+    chroma = 0.14 + s * 0.06;
+    hue = 250 - s * 30;
+  } else {
+    const s = (tc - 0.5) * 2;
+    lightness = 60 + s * 15;
+    chroma = 0.20 + s * 0.05;
+    hue = 220 - s * 20;
+  }
+  const rgb = oklchToRgb(lightness / 100, chroma, hue);
+  return [rgb[0], rgb[1], rgb[2], 200];
+}
+
+function aircraftColorInterpolator(t: number): [number, number, number, number] {
+  const tc = Math.max(0, Math.min(1, t));
+  let lightness: number;
+  let chroma: number;
+  let hue: number;
+  if (tc <= 0.5) {
+    const s = tc * 2;
+    lightness = 40 + s * 25;
+    chroma = 0.10 + s * 0.08;
+    hue = 260 - s * 20;
+  } else {
+    const s = (tc - 0.5) * 2;
+    lightness = 65 + s * 15;
+    chroma = 0.18 + s * 0.04;
+    hue = 240 - s * 10;
+  }
+  const rgb = oklchToRgb(lightness / 100, chroma, hue);
+  return [rgb[0], rgb[1], rgb[2], 200];
+}
+
+function tankColorInterpolator(t: number): [number, number, number, number] {
+  const tc = Math.max(0, Math.min(1, t));
+  let lightness: number;
+  let chroma: number;
+  let hue: number;
+  if (tc <= 0.4) {
+    const s = tc / 0.4;
+    lightness = 35 + s * 20;
+    chroma = 0.10 + s * 0.06;
+    hue = 120 - s * 30;
+  } else if (tc <= 0.75) {
+    const s = (tc - 0.4) / 0.35;
+    lightness = 55 + s * 15;
+    chroma = 0.16 + s * 0.06;
+    hue = 90 - s * 30;
+  } else {
+    const s = (tc - 0.75) / 0.25;
+    lightness = 70 - s * 5;
+    chroma = 0.22 + s * 0.04;
+    hue = 60 - s * 15;
+  }
+  const rgb = oklchToRgb(lightness / 100, chroma, hue);
+  return [rgb[0], rgb[1], rgb[2], 200];
+}
+
+function nukeColorInterpolator(t: number): [number, number, number, number] {
+  const tc = Math.max(0, Math.min(1, t));
+  let lightness: number;
+  let chroma: number;
+  let hue: number;
+  if (tc <= 0.3) {
+    const s = tc / 0.3;
+    lightness = 25 + s * 15;
+    chroma = 0.18 + s * 0.06;
+    hue = 15 - s * 5;
+  } else if (tc <= 0.7) {
+    const s = (tc - 0.3) / 0.4;
+    lightness = 40 + s * 20;
+    chroma = 0.24 + s * 0.04;
+    hue = 10 - s * 3;
+  } else {
+    const s = (tc - 0.7) / 0.3;
+    lightness = 60 + s * 10;
+    chroma = 0.28 + s * 0.04;
+    hue = 7 - s * 2;
+  }
+  const rgb = oklchToRgb(lightness / 100, chroma, hue);
+  return [rgb[0], rgb[1], rgb[2], 220];
+}
+
+// ─── Scatter point type for analytics layers ──────────────────────────
+
+interface ScatterPoint {
+  iso: string;
+  name: string;
+  position: [number, number];
+  value: number;
+}
 
 /** Shape of a country row from the /api/countries response */
 export interface CountryMapData {
@@ -46,10 +190,10 @@ export interface CountryMapData {
 
 /** Default initial view state: centered on Eastern Europe */
 const INITIAL_VIEW = {
-  longitude: 30,
-  latitude: 50,
-  zoom: 3,
-  pitch: 45,
+  longitude: 20,
+  latitude: 25,
+  zoom: 1.5,
+  pitch: 0,
   bearing: 0,
 } as const;
 
@@ -87,17 +231,135 @@ interface HoverState {
 
 // ─── Analytics Layer Builders ──────────────────────────────────────────
 
-// ─── Token Validation ──────────────────────────────────────────────────
+/** Build a GeoJsonLayer for military budget heatmap */
+function buildBudgetGeoJsonLayer(
+  geoJson: CountryCollection | null,
+  countriesRaw: ReadonlyArray<CountryMapData>,
+): Layer | null {
+  if (!geoJson) return null;
 
-const MAPBOX_TOKEN = process.env.NEXT_PUBLIC_MAPBOX_TOKEN || "";
+  const budgetByIso = new Map<string, number>();
+  for (const c of countriesRaw) {
+    budgetByIso.set(c.isoCode, c.militaryBudgetBn);
+  }
 
-function isTokenValid(token: string): boolean {
-  if (!token || token.trim().length === 0) return false;
-  if (token.startsWith("pk.placeholder")) return false;
-  if (token === "pk.your_mapbox_token_here") return false;
-  // Valid Mapbox public tokens start with "pk." and are >20 chars
-  return token.startsWith("pk.") && token.length > 20;
+  let minBudget = Infinity;
+  let maxBudget = -Infinity;
+  for (const val of budgetByIso.values()) {
+    if (val < minBudget) minBudget = val;
+    if (val > maxBudget) maxBudget = val;
+  }
+  if (!isFinite(minBudget)) minBudget = 0;
+  if (!isFinite(maxBudget)) maxBudget = 100;
+  const range = maxBudget - minBudget || 1;
+  const colorScale = scaleSequential(budgetColorInterpolator).domain([minBudget, maxBudget]);
+
+  return new GeoJsonLayer({
+    id: "analytics-budget",
+    data: geoJson,
+    pickable: true,
+    stroked: true,
+    filled: true,
+    extruded: false,
+    wireframe: false,
+    lineWidthMinPixels: 1,
+    lineWidthMaxPixels: 2,
+    getFillColor: ((feature: Feature<Polygon | MultiPolygon>) => {
+      const iso = feature.properties?.iso ?? "";
+      const budget = budgetByIso.get(iso) ?? 0;
+      if (budget <= 0) return [20, 30, 40, 80];
+      const t = (budget - minBudget) / range;
+      return colorScale(t) as [number, number, number, number];
+    }) as (feature: object) => [number, number, number, number],
+    getLineColor: [0, 150, 180, 50] as [number, number, number, number],
+    getLineWidth: 1,
+    updateTriggers: {
+      getFillColor: [minBudget, maxBudget],
+    },
+  });
 }
+
+/** Build a ScatterplotLayer for a given metric */
+function buildStrategicObjectsLayer(objects: readonly StrategicObject[], onClick: (object: StrategicObject) => void): Layer {
+  return new ScatterplotLayer<StrategicObject>({
+    id: "strategic-objects",
+    data: objects,
+    pickable: true,
+    radiusUnits: "pixels",
+    radiusMinPixels: 4,
+    radiusMaxPixels: 10,
+    getPosition: (object) => [object.longitude, object.latitude],
+    getRadius: (object) => object.type === "capital" ? 7 : 4,
+    getFillColor: (object) => object.type === "capital" ? [255, 196, 64, 230] : [34, 211, 238, 210],
+    getLineColor: [2, 12, 24, 255],
+    lineWidthMinPixels: 1,
+    onClick: (info) => {
+      const object = info.object as StrategicObject | undefined;
+      if (object) onClick(object);
+    },
+    updateTriggers: { getRadius: objects.length, getFillColor: objects.length },
+  });
+}
+
+function buildScatterLayer(
+  id: string,
+  countriesRaw: ReadonlyArray<CountryMapData>,
+  metricKey: keyof CountryMapData,
+  colorInterpolator: (t: number) => [number, number, number, number],
+  lineColor: [number, number, number, number],
+  minRadius: number,
+  maxRadius: number,
+): Layer {
+  const values: number[] = [];
+  const points: ScatterPoint[] = [];
+
+  for (const c of countriesRaw) {
+    const val = c[metricKey] as number;
+    if (val > 0) {
+      values.push(val);
+      points.push({
+        iso: c.isoCode,
+        name: c.nameRu,
+        position: getPosition(c.isoCode),
+        value: val,
+      });
+    }
+  }
+
+  const min = values.length > 0 ? Math.min(...values) : 0;
+  const max = values.length > 0 ? Math.max(...values) : 100;
+  const range = max - min || 1;
+  const colorScale = scaleSequential(colorInterpolator).domain([min, max]);
+
+  return new ScatterplotLayer({
+    id,
+    data: points,
+    pickable: true,
+    opacity: 0.8,
+    stroked: true,
+    filled: true,
+    lineWidthMinPixels: 1,
+    getPosition: (d: ScatterPoint) => d.position,
+    getRadius: (d: ScatterPoint) => {
+      const t = (d.value - min) / range;
+      return minRadius + t * maxRadius;
+    },
+    getFillColor: (d: ScatterPoint) => {
+      const t = (d.value - min) / range;
+      return colorScale(t) as [number, number, number, number];
+    },
+    getLineColor: lineColor,
+    radiusUnits: "meters",
+    radiusMinPixels: 3,
+    radiusMaxPixels: 60,
+    updateTriggers: {
+      getRadius: [min, max],
+      getFillColor: [min, max],
+    },
+  });
+}
+
+// ─── Token Validation ──────────────────────────────────────────────────
 
 // ─── Fallback Component ────────────────────────────────────────────────
 
@@ -226,6 +488,39 @@ function MapTokenFallback({ className }: { className?: string }) {
   );
 }
 
+interface TokenlessMapCanvasProps {
+  layers: Layer[];
+  viewState: ViewState;
+  onViewStateChange: (viewState: ViewState) => void;
+  pixelSize: { w: number; h: number } | null;
+}
+
+/** Local GeoJSON map used when Mapbox credentials are absent. */
+function TokenlessMapCanvas({ layers, viewState, onViewStateChange, pixelSize }: TokenlessMapCanvasProps) {
+  if (!pixelSize) {
+    return <div className="w-full h-full bg-[#07101b]" />;
+  }
+  return (
+    <div className="absolute inset-0 overflow-hidden bg-[#07101b]">
+      <div className="absolute inset-0 opacity-20" style={{ backgroundImage: "linear-gradient(rgba(34,211,238,0.08) 1px, transparent 1px), linear-gradient(90deg, rgba(34,211,238,0.08) 1px, transparent 1px)", backgroundSize: "48px 48px" }} />
+      <DeckGL
+        viewState={viewState}
+        onViewStateChange={({ viewState: next }) => {
+          const value = next as ViewState;
+          if (Number.isFinite(value.longitude) && Number.isFinite(value.latitude) && Number.isFinite(value.zoom)) onViewStateChange(value);
+        }}
+        layers={layers}
+        controller
+        style={{ position: "absolute", width: `${pixelSize.w}px`, height: `${pixelSize.h}px`, inset: "0", zIndex: 1 } as unknown as Partial<CSSStyleDeclaration>}
+        getCursor={({ isHovering }: { isHovering: boolean }) => isHovering ? "pointer" : "grab"}
+      />
+      <div className="absolute left-4 top-4 z-10 border border-cyan-400/20 bg-slate-950/70 px-3 py-2 font-mono text-[9px] uppercase tracking-widest text-cyan-300/70 backdrop-blur-sm">
+        Локальная карта · Mapbox token не требуется
+      </div>
+    </div>
+  );
+}
+
 // ─── Component ────────────────────────────────────────────────────────
 
 function MapboxStrategicMap({
@@ -237,7 +532,6 @@ function MapboxStrategicMap({
   countriesRaw = [],
 }: StrategicMapProps) {
   const mapRef = useRef<MapRef>(null);
-  const tokenValid = isTokenValid(MAPBOX_TOKEN);
 
   // ─── Pixel-dimension guard for Mapbox GL ────────────────────────
   // Mapbox GL throws "Invalid LngLat (NaN, 50)" when react-map-gl calls
@@ -255,43 +549,6 @@ function MapboxStrategicMap({
   //
   const containerRef = useRef<HTMLDivElement>(null);
   const [pixelSize, setPixelSize] = useState<{ w: number; h: number } | null>(null);
-  const [mapPatched, setMapPatched] = useState(false);
-
-  // ─── Patch mapbox-gl LngLat dynamically before rendering MapGL ──
-  // We use dynamic import() instead of static import because Turbopack
-  // crashes on static `import mapbox-gl` in client components.
-  useEffect(() => {
-    let cancelled = false;
-    (async () => {
-      try {
-        const mod = await import('mapbox-gl');
-        const mgl = mod.default || mod;
-        const OrigLngLat = mgl.LngLat;
-        if (!OrigLngLat || (OrigLngLat as any)._safePatched) return;
-        // Mapbox exposes the constructor only after the client bundle loads.
-        // eslint-disable-next-line react-hooks/unsupported-syntax
-        class SafeLngLat extends OrigLngLat {
-          static _safePatched = true;
-          constructor(lng: number, lat: number) {
-            super(
-              typeof lng === 'number' && isFinite(lng) ? lng : 0,
-              typeof lat === 'number' && isFinite(lat) ? lat : 0
-            );
-          }
-        }
-        Object.setPrototypeOf(SafeLngLat, OrigLngLat);
-        Object.keys(OrigLngLat).forEach((key) => {
-          try { (SafeLngLat as any)[key] = (OrigLngLat as any)[key]; } catch {}
-        });
-        mgl.LngLat = SafeLngLat as any;
-        if (!cancelled) setMapPatched(true);
-      } catch (e) {
-        console.warn('[StrategicMap] Failed to patch mapbox-gl:', e);
-        if (!cancelled) setMapPatched(true); // render anyway
-      }
-    })();
-    return () => { cancelled = true; };
-  }, []);
 
   useEffect(() => {
     const el = containerRef.current;
@@ -320,6 +577,8 @@ function MapboxStrategicMap({
   const [mapStyle, setMapStyle] = useState<MapStyle>("dark-v11");
   const [layerOpen, setLayerOpen] = useState(false);
   const [choroplethVisible, setChoroplethVisible] = useState(true);
+  const [showStrategicObjects, setShowStrategicObjects] = useState(true);
+  const [strategicObjects, setStrategicObjects] = useState<StrategicObject[]>([...STRATEGIC_OBJECTS]);
   const [hover, setHover] = useState<HoverState>({
     iso: null,
     longitude: 0,
@@ -338,6 +597,52 @@ function MapboxStrategicMap({
     }
     return { minBP: min, maxBP: max };
   }, [countryBPData]);
+
+  // ─── Load global capitals and major cities from the local Natural Earth cache ──
+  useEffect(() => {
+    let cancelled = false;
+    const regions = [-60, 0].flatMap((south) => [-180, -90, 0, 90].map((west) => ({ south, west, north: south + 60, east: west + 90 })));
+    Promise.all(regions.map((region) => {
+      const query = new URLSearchParams(Object.fromEntries(Object.entries({ ...region, zoom: 3 }).map(([key, value]) => [key, String(value)])));
+      return fetch(`/api/map/objects?${query}`).then((response) => response.ok ? response.json() as Promise<{ objects?: StrategicObject[] }> : { objects: [] }).catch(() => ({ objects: [] }));
+    })).then((responses) => {
+      if (cancelled) return;
+      setStrategicObjects((current) => {
+        const merged = new Map(current.map((object) => [object.id, object]));
+        for (const response of responses) for (const object of response.objects ?? []) merged.set(object.id, object);
+        return [...merged.values()];
+      });
+    });
+    return () => { cancelled = true; };
+  }, []);
+
+  // ─── Load public geospatial objects for the current viewport ────────
+  useEffect(() => {
+    if (viewState.zoom < 4) return;
+    let cancelled = false;
+    const lonSpan = Math.min(90, 360 / 2 ** (viewState.zoom - 1));
+    const latSpan = Math.min(45, 180 / 2 ** (viewState.zoom - 1));
+    const south = Math.max(-60, viewState.latitude - latSpan / 2);
+    const north = Math.min(80, viewState.latitude + latSpan / 2);
+    const west = Math.max(-180, viewState.longitude - lonSpan / 2);
+    const east = Math.min(180, viewState.longitude + lonSpan / 2);
+    if (north <= south || east <= west) return;
+    const timer = setTimeout(() => {
+      const query = new URLSearchParams({ south: String(south), west: String(west), north: String(north), east: String(east), zoom: String(Math.round(viewState.zoom)) });
+      fetch(`/api/map/objects?${query}`)
+        .then((response) => response.ok ? response.json() as Promise<{ objects?: StrategicObject[] }> : { objects: [] })
+        .then((response) => {
+          if (cancelled) return;
+          setStrategicObjects((current) => {
+            const merged = new Map(current.map((object) => [object.id, object]));
+            for (const object of response.objects ?? []) merged.set(object.id, object);
+            return [...merged.values()];
+          });
+        })
+        .catch(() => undefined);
+    }, 700);
+    return () => { cancelled = true; clearTimeout(timer); };
+  }, [viewState.latitude, viewState.longitude, viewState.zoom]);
 
   // ─── Load GeoJSON on mount ───────────────────────────────
   useEffect(() => {
@@ -392,7 +697,16 @@ function MapboxStrategicMap({
   );
 
   // ─── Deck.gl layers ─────────────────────────────────────
+  const handleStrategicObjectClick = useCallback((object: StrategicObject) => {
+    if (!onCountryClick) return;
+    const iso = object.isoCode !== "UNK"
+      ? object.isoCode
+      : geoJson ? findISOFromCoords(geoJson, object.longitude, object.latitude) : null;
+    if (iso) onCountryClick(iso);
+  }, [geoJson, onCountryClick]);
+
   const deckLayers = useMemo<Layer[]>(() => {
+    const objectLayer = showStrategicObjects ? [buildStrategicObjectsLayer(strategicObjects, handleStrategicObjectClick)] : [];
     // ─── BP Choropleth (default) ────────────────────────────
     if (activeLayer === "bp") {
       if (!choroplethVisible || !enrichedGeoJson) return [];
@@ -406,7 +720,7 @@ function MapboxStrategicMap({
         minBP,
         maxBP,
       });
-      return [layer];
+      return [...objectLayer, layer];
     }
 
     // ─── Analytics Layers ──────────────────────────────────
@@ -451,6 +765,8 @@ function MapboxStrategicMap({
       default:
         return [];
     }
+
+    return [...objectLayer, ...layers];
   }, [
     activeLayer,
     enrichedGeoJson,
@@ -464,6 +780,9 @@ function MapboxStrategicMap({
     handleCountryHover,
     handleCountryClick,
     countriesRaw,
+    handleStrategicObjectClick,
+    showStrategicObjects,
+    strategicObjects,
   ]);
 
   // ─── Map control handlers ────────────────────────────────
@@ -539,15 +858,10 @@ function MapboxStrategicMap({
 
   const styleUrl = MAP_STYLE_URLS[mapStyle];
 
-  // ─── Token check — render fallback if Mapbox token is missing/invalid ──
-  if (!tokenValid) {
-    return <MapTokenFallback className={className} />;
-  }
-
   return (
     <div ref={containerRef} className={`relative w-full h-full overflow-hidden ${className ?? ""}`}>
       {/* Only render map when we have exact pixel dimensions AND mapbox is patched */}
-      {pixelSize && mapPatched && tokenValid ? (
+      {pixelSize ? (
         <>
           {/* Mapbox base map — sibling below DeckGL */}
           <MapErrorBoundary
@@ -566,10 +880,8 @@ function MapboxStrategicMap({
                 zoom: INITIAL_VIEW.zoom,
               }}
               mapStyle={styleUrl}
-              mapboxAccessToken={MAPBOX_TOKEN}
               style={{ width: `${pixelSize.w}px`, height: `${pixelSize.h}px` }}
               projection="mercator"
-              antialias
             >
               {/* Country hover popup — only in BP mode */}
               {activeLayer === "bp" && (
@@ -608,8 +920,6 @@ function MapboxStrategicMap({
             }
           />
         </>
-      ) : !tokenValid ? (
-        <MapTokenFallback className={className} />
       ) : (
         <div className="w-full h-full bg-tactical-bg flex items-center justify-center text-tactical-primary font-mono text-sm">
           Загрузка карты...
@@ -629,6 +939,9 @@ function MapboxStrategicMap({
         choroplethVisible={choroplethVisible}
         onToggleChoropleth={handleToggleChoropleth}
       />
+      <button type="button" aria-label="Переключить стратегические объекты" onClick={() => setShowStrategicObjects((visible) => !visible)} className="absolute right-4 top-4 z-20 rounded border border-cyan-400/20 bg-slate-950/70 px-3 py-2 font-mono text-[9px] uppercase tracking-widest text-cyan-300 backdrop-blur-sm">
+        Объекты {showStrategicObjects ? "ON" : "OFF"} · {strategicObjects.length}
+      </button>
 
       {/* Legend — only in BP mode */}
       {activeLayer === "bp" && (

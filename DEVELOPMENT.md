@@ -113,7 +113,7 @@ DeckGL внутри MapGL вызывает container dimension 0×0 → NaN LngL
 DeckGL должен обрабатывать все взаимодействия (клики по странам, ховеры). MapGL только рендерит базовую карту.
 
 **Почему `dynamic(() => import(...), { ssr: false })`?**
-Mapbox GL использует `window` при инициализации. SSR вызывает hydration mismatch и NaN координат.
+MapLibre используется как tokenless basemap по умолчанию; публичный стиль OpenFreeMap загружается без Mapbox credentials. DeckGL остаётся sibling overlay для локальных GeoJSON-границ и object layers.
 
 ### 2.2 БП Модель — Поток данных
 
@@ -195,7 +195,7 @@ export async function GET(request: NextRequest) {
 | 2.1 | Мигрировать БД на Turso (libSQL) для Vercel | P0 | Hard |
 | 2.2 | Настроить Vercel deployment | P0 | Easy |
 | 2.3 | Environment variables на Vercel | P0 | Easy |
-| 2.4 | Mapbox token rotation strategy | P1 | Easy |
+| 2.4 | Optional Mapbox token rotation strategy | P1 | Easy |
 | 2.5 | CDN для GeoJSON (countries.geojson 1.8MB) | P2 | Easy |
 
 ### Фаза 3: Фичи (2-4 недели)
@@ -437,6 +437,8 @@ export function CountryPanel({ country, onSelect }: Props) {
 ---
 
 ## 9. ДАННЫЕ — ИСТОЧНИКИ И КАЧЕСТВО
+
+Map object layer uses public OSM/Overpass tags for cities, ports, airports and explicitly mapped military features. Every object carries source, source URL when available, source date and confidence. OSM coverage is not a complete inventory of all military or strategic installations; absent objects must be treated as unknown, not as evidence of absence.
 
 | Источник | Покрытие | Точность | Свежесть | Поля |
 |---|---|---|---|---|

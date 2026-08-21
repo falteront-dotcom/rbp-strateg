@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import { IBM_Plex_Mono, IBM_Plex_Sans } from "next/font/google";
-// mapbox-gl CSS is imported in StrategicMap.tsx — loaded only when the map component renders
+// MapLibre CSS is imported in StrategicMap.tsx — loaded only when the map component renders
 import "./globals.css";
 import "flag-icons/css/flag-icons.min.css";
 

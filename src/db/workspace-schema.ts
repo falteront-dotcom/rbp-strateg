@@ -20,6 +20,16 @@ CREATE TABLE IF NOT EXISTS workspace_scenarios (
   updated_at TEXT NOT NULL
 );
 CREATE INDEX IF NOT EXISTS idx_workspace_scenarios_workspace ON workspace_scenarios(workspace_id);
+CREATE TABLE IF NOT EXISTS workspace_snapshots (
+  id TEXT PRIMARY KEY,
+  workspace_id TEXT NOT NULL REFERENCES workspaces(id) ON DELETE CASCADE,
+  scenario_id TEXT REFERENCES workspace_scenarios(id) ON DELETE SET NULL,
+  dataset_version TEXT NOT NULL,
+  formula_version TEXT NOT NULL,
+  result_json TEXT NOT NULL,
+  created_at TEXT NOT NULL
+);
+CREATE INDEX IF NOT EXISTS idx_workspace_snapshots_workspace ON workspace_snapshots(workspace_id);
 `;
 
 export function ensureWorkspaceSchema(db: Database.Database): void {

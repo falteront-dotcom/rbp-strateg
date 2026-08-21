@@ -42,6 +42,26 @@ test.describe('analytical workspaces', () => {
     expect(analysisBody.metadata.datasetVersion).toBeTruthy();
     expect(analysisBody.explanation.componentDeltas).toHaveLength(8);
 
+    const snapshot = await request.post(`/api/workspaces/${created.workspace.id}/analysis/snapshot`, {
+      data: { scenarioId: scenario.scenario.id, analysis: analysisBody },
+    });
+    expect(snapshot.status()).toBe(201);
+    expect((await snapshot.json()).snapshot.datasetVersion).toBeTruthy();
+
+    const jsonExport = await request.get(`/api/workspaces/${created.workspace.id}/export?format=json`);
+    expect(jsonExport.ok()).toBe(true);
+    const jsonBody = await jsonExport.json();
+    expect(jsonBody.workspace.schemaVersion).toBe(1);
+    expect(jsonBody.datasetVersion).toBeTruthy();
+    expect(jsonBody.scenarios).toHaveLength(1);
+
+    const csvExport = await request.get(`/api/workspaces/${created.workspace.id}/export?format=csv`);
+    expect(csvExport.ok()).toBe(true);
+    const csvBody = await csvExport.text();
+    expect(csvBody).toContain('workspaceId');
+    expect(csvBody).toContain('scenarioId');
+    expect(csvBody).toContain('totalBP');
+
     const deleted = await request.delete(`/api/workspaces/${created.workspace.id}`);
     expect(deleted.status()).toBe(204);
     expect((await request.get(`/api/workspaces/${created.workspace.id}`)).status()).toBe(404);

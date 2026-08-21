@@ -12,3 +12,5 @@ export { AnalyticsTab } from "./AnalyticsTab";
 export { default as WhatIfTab } from "./WhatIfTab";
 export { DoctrineTab } from "./DoctrineTab";
 export { GeographyTab } from "./GeographyTab";
+export { ScenarioLab } from "./ScenarioLab";
+export { WorkspacePanel } from "./WorkspacePanel";

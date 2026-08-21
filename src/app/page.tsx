@@ -40,6 +40,7 @@ import {
   WhatIfTab,
   DoctrineTab,
   GeographyTab,
+  ScenarioLab,
 } from "@/components/strategic";
 import { FacilitiesTab } from "@/components/strategic/FacilitiesTab";
 import { HistoryTab } from "@/components/strategic/HistoryTab";
@@ -74,12 +75,14 @@ function StrategicDetailPanel({
   onClose,
   onCompare,
   onLocateFacility,
+  onOpenScenarioLab,
 }: {
   country: CountryData;
   allCountries: CountryCompareData[];
   onClose: () => void;
   onCompare: (iso: string) => void;
   onLocateFacility: (lat: number, lng: number) => void;
+  onOpenScenarioLab: () => void;
 }) {
   const [activeTab, setActiveTab] = useState<StrategicTab>("summary");
   const [showActiveCompare, setShowActiveCompare] = useState(false);
@@ -115,6 +118,14 @@ function StrategicDetailPanel({
               <X size={15} />
             </button>
           </div>
+        </div>
+        <div className="flex items-center gap-1">
+          <button onClick={onOpenScenarioLab} className="text-[9px] text-cyan-300 hover:text-cyan-100 border border-cyan-400/20 rounded px-1.5 py-0.5 transition-colors flex-shrink-0">
+            Сценарная лаборатория
+          </button>
+          <button onClick={() => onCompare(country.isoCode)} className="text-[9px] text-slate-400 hover:text-tactical-primary border border-white/10 rounded px-1.5 py-0.5 transition-colors flex-shrink-0">
+            Сравнить
+          </button>
         </div>
       </div>
 
@@ -293,6 +304,7 @@ export default function Home() {
   const [compareInitialIsos, setCompareInitialIsos] = useState<string[]>([]);
   const [activeLayer, setActiveLayer] = useState<AnalyticsLayerKey>("bp");
   const [mapFocus, setMapFocus] = useState<{ lat: number; lng: number; seq: number } | null>(null);
+  const [scenarioLabOpen, setScenarioLabOpen] = useState(false);
 
   // ─── Clock tick — mount-only to avoid hydration mismatch ───────────────
   useEffect(() => {
@@ -742,6 +754,7 @@ export default function Home() {
               onClose={handleCloseCountryCard}
               onCompare={handleCompare}
               onLocateFacility={(lat, lng) => setMapFocus((prev) => ({ lat, lng, seq: (prev?.seq ?? 0) + 1 }))}
+              onOpenScenarioLab={() => setScenarioLabOpen(true)}
             />
           ) : (
             <div className="h-full flex flex-col items-center justify-center text-center px-6">
@@ -776,6 +789,16 @@ export default function Home() {
         allCountries={countriesCompareData}
         initialIsoCodes={compareInitialIsos}
       />
+
+      {scenarioLabOpen && (
+        <ScenarioLab
+          allCountries={countriesCompareData}
+          selectedIso={selectedISO}
+          onWorkspaceChange={(id) => {
+            if (id === null) setScenarioLabOpen(false);
+          }}
+        />
+      )}
     </main>
   );
 }

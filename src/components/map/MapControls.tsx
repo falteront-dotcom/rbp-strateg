@@ -20,9 +20,9 @@ export type MapStyle = "dark-v11" | "satellite-v9" | "dark-dem";
  * The style keys remain stable for the existing toolbar and scenario state.
  */
 export const MAP_STYLE_URLS: Record<MapStyle, string> = {
-  "dark-v11": "https://tiles.openfreemap.org/styles/liberty",
+  "dark-v11": "https://basemaps.cartocdn.com/gl/dark-matter-gl-style/style.json",
   "satellite-v9": "https://tiles.openfreemap.org/styles/liberty",
-  "dark-dem": "https://tiles.openfreemap.org/styles/liberty",
+  "dark-dem": "https://basemaps.cartocdn.com/gl/dark-matter-gl-style/style.json",
 };
 
 interface MapControlsProps {

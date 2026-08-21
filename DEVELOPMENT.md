@@ -113,7 +113,7 @@ DeckGL внутри MapGL вызывает container dimension 0×0 → NaN LngL
 DeckGL должен обрабатывать все взаимодействия (клики по странам, ховеры). MapGL только рендерит базовую карту.
 
 **Почему `dynamic(() => import(...), { ssr: false })`?**
-MapLibre используется как tokenless basemap по умолчанию; публичный стиль OpenFreeMap загружается без Mapbox credentials. DeckGL остаётся sibling overlay для локальных GeoJSON-границ и object layers.
+MapLibre используется как tokenless basemap по умолчанию; BP-режим использует CARTO Dark Matter style и нативные MapLibre fill/line/cluster layers в одном canvas. Вторичные метрики пока остаются в DeckGL overlay. CARTO/OpenStreetMap attribution отображается картой.
 
 ### 2.2 БП Модель — Поток данных
 

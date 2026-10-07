@@ -122,7 +122,6 @@ export function generateSIDC(
   side: SymbolSide,
   domain: SymbolDomain,
   category: SymbolCategory,
-  branch: string,
 ): string {
   // Standard: S F G [P/A/S/U] [U/I/C/H] --- ------
   const sideCode = side === "blue" ? "F" : side === "red" ? "H" : side === "neutral" ? "N" : "U";

@@ -14,7 +14,7 @@ interface CustomUnitBuilderProps {
 }
 
 export default function CustomUnitBuilder({ isOpen, onClose, onUnitAdded }: CustomUnitBuilderProps) {
-    const t = TRANSLATIONS;
+    void TRANSLATIONS;
     const fileInputRef = useRef<HTMLInputElement>(null);
 
     const [name, setName] = useState('');
@@ -100,7 +100,7 @@ export default function CustomUnitBuilder({ isOpen, onClose, onUnitAdded }: Cust
                 }
                 alert("Арсенал успешно обновлен из файла!");
                 if (fileInputRef.current) fileInputRef.current.value = '';
-            } catch (err) {
+            } catch {
                 alert("Ошибка чтения файла JSON.");
             }
         };
@@ -117,7 +117,7 @@ export default function CustomUnitBuilder({ isOpen, onClose, onUnitAdded }: Cust
                         animate={{ opacity: 1 }}
                         exit={{ opacity: 0 }}
                         onClick={onClose}
-                        className="fixed inset-0 bg-black/40 backdrop-blur-sm z-50 flex items-center justify-center p-4"
+                        className="fixed inset-0 bg-black/40 z-50 flex items-center justify-center p-4"
                     >
                         {/* Modal */}
                         <motion.div
@@ -125,7 +125,7 @@ export default function CustomUnitBuilder({ isOpen, onClose, onUnitAdded }: Cust
                             animate={{ opacity: 1, scale: 1, y: 0 }}
                             exit={{ opacity: 0, scale: 0.95, y: 20 }}
                             onClick={(e) => e.stopPropagation()}
-                            className="w-full max-w-lg bg-slate-900/90 border border-white/10 rounded-2xl shadow-2xl overflow-hidden glass-panel flex flex-col"
+                            className="w-full max-w-lg bg-slate-900/90 border border-white/10 rounded-md shadow-2xl overflow-hidden glass-panel flex flex-col"
                         >
                             {/* Header */}
                             <div className="p-4 border-b border-white/5 flex items-center justify-between bg-white/5">
@@ -331,7 +331,7 @@ export default function CustomUnitBuilder({ isOpen, onClose, onUnitAdded }: Cust
                                     <div className="text-[10px] text-slate-500 font-mono tracking-widest uppercase">
                                         Сводный ОБС:
                                     </div>
-                                    <div className="text-2xl font-black font-mono text-tactical-primary drop-shadow-[0_0_10px_var(--color-tactical-primary)]">
+                                    <div className="text-2xl font-black font-mono text-tactical-primary">
                                         {potential.toFixed(2)}
                                     </div>
                                 </div>
@@ -361,7 +361,7 @@ function ParametricSlider({ icon, label, value, min, max, step, unit, onChange, 
                     <span className="text-[10px] text-slate-300 font-mono uppercase tracking-widest">{label}</span>
                 </div>
                 <div className="text-xs font-black font-mono tracking-tighter text-white">
-                    {value} <span className="text-[9px] text-slate-500 font-normal">{unit}</span>
+                    {value} <span className="text-[10px] text-slate-500 font-normal">{unit}</span>
                 </div>
             </div>
             <input
@@ -377,7 +377,7 @@ function ParametricSlider({ icon, label, value, min, max, step, unit, onChange, 
     );
 }
 
-function ModuleCheckbox({ id, label, desc, active, onChange }: { id: string, label: string, desc: string, active: boolean, onChange: (c: boolean) => void }) {
+function ModuleCheckbox({ label, desc, active, onChange }: { id: string, label: string, desc: string, active: boolean, onChange: (c: boolean) => void }) {
     return (
         <label className={cn(
             "flex flex-col p-3 rounded-lg border focus-within:ring-1 focus-within:ring-tactical-primary transition-all cursor-pointer relative overflow-hidden",
@@ -392,7 +392,7 @@ function ModuleCheckbox({ id, label, desc, active, onChange }: { id: string, lab
                 />
                 <span className={cn("text-[10px] uppercase font-black tracking-widest", active ? "text-tactical-primary" : "text-slate-300")}>{label}</span>
             </div>
-            <span className="text-[8px] mt-1 ml-5.5 text-slate-500 font-mono pointer-events-none">{desc}</span>
+            <span className="text-[10px] mt-1 ml-5.5 text-slate-500 font-mono pointer-events-none">{desc}</span>
             {active && <div className="absolute top-0 right-0 w-8 h-8 bg-tactical-primary/20 rounded-bl-full blur-md" />}
         </label>
     );

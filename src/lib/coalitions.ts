@@ -260,15 +260,4 @@ export function compareCoalitions(
   };
 }
 
-/**
- * Convert ISO-3166-1 alpha-3 code to flag emoji.
- * Identical to the one in CountryCard but available for shared use.
- */
-export function isoToFlag(iso: string): string {
-  if (iso.length !== 3) return "🏳️";
-  const base = 0x1f1e6;
-  const codePointA = 65;
-  const ch1 = iso.charCodeAt(0) - codePointA + base;
-  const ch2 = iso.charCodeAt(1) - codePointA + base;
-  return String.fromCodePoint(ch1, ch2);
-}
+export { isoToFlag } from "./country-flags";

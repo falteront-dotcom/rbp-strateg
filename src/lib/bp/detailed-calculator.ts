@@ -9,7 +9,7 @@ import {
   type SubFactorScore,
   type ComponentSubFactors,
 } from "@/lib/bp/sub-factors";
-import type { CountryRawData, CountryBP, BPComponent } from "@/lib/bp/types";
+import type { CountryRawData } from "@/lib/bp/types";
 import { DEFAULT_WEIGHTS, type WeightsConfig } from "@/lib/bp/weights";
 import { calculateCountryBP } from "@/lib/bp/calculate-bp";
 import {

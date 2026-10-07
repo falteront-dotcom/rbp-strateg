@@ -14,9 +14,9 @@ interface ScoreGaugeProps {
 function defaultColorScale(score: number): string {
   if (score >= 80) return "#ef4444";
   if (score >= 60) return "#f59e0b";
-  if (score >= 40) return "#22d3ee";
-  if (score >= 20) return "#3b82f6";
-  return "#64748b";
+  if (score >= 40) return "#4fb287";
+  if (score >= 20) return "#6b8fa0";
+  return "#647a72";
 }
 
 function getTier(score: number): string {
@@ -84,7 +84,7 @@ export function ScoreGauge({
           x={size / 2}
           y={size / 2 + 10}
           textAnchor="middle"
-          fill="#64748b"
+          fill="#647a72"
           fontSize={size * 0.09}
           fontFamily="monospace"
         >
@@ -92,7 +92,7 @@ export function ScoreGauge({
         </text>
       </svg>
       {label && (
-        <span className="text-[9px] text-slate-500 mt-0.5 tracking-wider">{label}</span>
+        <span className="text-[10px] text-slate-500 mt-0.5 tracking-wider">{label}</span>
       )}
     </motion.div>
   );

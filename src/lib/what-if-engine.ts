@@ -7,7 +7,6 @@
 import type {
   CountryRawData,
   CountryBP,
-  ComponentScore,
   BPComponent,
 } from "@/lib/bp/types";
 import { BP_COMPONENTS } from "@/lib/bp/types";

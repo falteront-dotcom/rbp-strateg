@@ -41,7 +41,7 @@ export const NATO: CoalitionInfo = {
   headquarters: "Brussels, Belgium",
   article: "Статья 5: Коллективная оборона — атака на одного = атака на всех",
   description: "Военный альянс 32 стран (2024). Крупнейший оборонный союз в истории. Коллективная оборона (Art.5), стандарты interoperability, общие системы ПВО и РЭБ.",
-  color: "#3b82f6",
+  color: "#6b8fa0",
 };
 
 // ─── CSTO — Collective Security Treaty Organization ───────────────────────────
@@ -77,7 +77,7 @@ export const AUKUS: CoalitionInfo = {
   type: "military",
   members: ["USA", "GBR", "AUS"],
   description: "Трёхсторонний оборонный пакт. Pillar 1: Атомные подлодки для Австралии (SSN-AUKUS). Pillar 2: Передовые технологии — гипервук, ИИ, РЭБ, кибер, квантовые.",
-  color: "#06b6d4",
+  color: "#34b98a",
 };
 
 // ─── QUAD ──────────────────────────────────────────────────────────────────────

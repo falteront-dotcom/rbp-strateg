@@ -1,26 +1,64 @@
 @import "tailwindcss";
 
 @theme {
-  --color-tactical-bg: #0e1520;
-  --color-tactical-panel: rgba(20, 30, 45, 0.75);
-  --color-tactical-primary: #22d3ee;
-  --color-tactical-secondary: #0ea5e9;
-  --color-tactical-accent: #c084fc;
-  --color-tactical-nato: #3b82f6;
-  --color-tactical-rus: #ef4444;
-  --color-tactical-china: #f59e0b;
-  --color-tactical-ukr: #eab308;
-  --font-sans: var(--font-inter), system-ui, sans-serif;
-  --font-mono: var(--font-mono), monospace;
+  --color-tactical-bg: #07130e;
+  --color-tactical-panel: #0d2019;
+  --color-tactical-primary: #4fb287;
+  --color-tactical-secondary: #74a5b2;
+  --color-tactical-accent: #d8b56a;
+  --color-tactical-nato: #5b9cf4;
+  --color-tactical-rus: #e76363;
+  --color-tactical-china: #d8a640;
+  --color-tactical-ukr: #d8c24b;
+  --font-sans: var(--font-sans-face), sans-serif;
+  --font-mono: var(--font-mono-face), monospace;
 }
+
+* {
+  scrollbar-color: #365042 #0a1712;
+  scrollbar-width: thin;
+}
+
+*::-webkit-scrollbar { width: 7px; height: 7px; }
+*::-webkit-scrollbar-track { background: #0a1712; }
+*::-webkit-scrollbar-thumb { background: #365042; border: 1px solid #0a1712; }
+*::-webkit-scrollbar-thumb:hover { background: #4a6856; }
 
 body {
-  background: #0e1520;
-  color: white;
+  background: #07130e;
+  color: #dbe5e8;
 }
 
+/* Operational surfaces are matte. Transparency is reserved for real overlays. */
 .glass-panel {
-  background: rgba(20, 30, 45, 0.75);
-  backdrop-filter: blur(12px);
-  border: 1px solid rgba(34, 211, 238, 0.15);
+  background: #0d2019;
+  border: 1px solid #213d32;
+  box-shadow: none;
+}
+
+/* Nested analytical sections share a surface; hierarchy comes from spacing and rules. */
+.glass-panel .glass-panel {
+  background: transparent;
+  border-color: #243b46;
+  box-shadow: none;
+}
+
+.map-scanline-overlay { display: none; }
+
+button, input, select, textarea { letter-spacing: 0; }
+
+/* Numeric data aligns on the digit grid — spec-sheet density, not decorative. */
+.tabular-nums, .font-mono, [data-numeric] { font-variant-numeric: tabular-nums slashed-zero; }
+button { transition: color 120ms ease, background-color 120ms ease, border-color 120ms ease; }
+button:focus-visible, input:focus-visible, select:focus-visible, textarea:focus-visible {
+  outline: 2px solid #d8b56a;
+  outline-offset: 2px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    scroll-behavior: auto !important;
+  }
 }

@@ -6,7 +6,7 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "eslint",
+    "lint": "eslint --cache --cache-location .eslintcache",
     "typecheck": "tsc --noEmit",
     "test": "playwright test",
     "test:e2e": "playwright test"
@@ -21,6 +21,7 @@
     "d3-scale": "^4.0.2",
     "deck.gl": "^9.3.3",
     "drizzle-orm": "^0.45.1",
+    "flag-icons": "^7.5.0",
     "framer-motion": "^12.34.3",
     "lucide-react": "^0.575.0",
     "mapbox-gl": "^3.24.0",

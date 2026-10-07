@@ -21,7 +21,7 @@ export function ComparisonBar({
   leftLabel,
   rightLabel,
   maxValue,
-  leftColor = "#22d3ee",
+  leftColor = "#4fb287",
   rightColor = "#ef4444",
   label,
 }: ComparisonBarProps) {
@@ -38,7 +38,7 @@ export function ComparisonBar({
       className="space-y-1"
     >
       {label && (
-        <div className="text-[9px] text-slate-500 tracking-wider uppercase">{label}</div>
+        <div className="text-[10px] text-slate-500 tracking-wider uppercase">{label}</div>
       )}
       <div className="flex items-center gap-1">
         {/* Left bar (grows right to left from center) */}
@@ -53,7 +53,7 @@ export function ComparisonBar({
         </div>
         {/* Center delta */}
         <div className="w-12 text-center flex-shrink-0">
-          <span className={`text-[9px] font-bold ${delta > 0 ? "text-cyan-400" : delta < 0 ? "text-red-400" : "text-slate-400"}`}>
+          <span className={`text-[10px] font-bold ${delta > 0 ? "text-cyan-400" : delta < 0 ? "text-red-400" : "text-slate-400"}`}>
             {delta > 0 ? "+" : ""}{deltaPct}%
           </span>
         </div>
@@ -68,7 +68,7 @@ export function ComparisonBar({
           />
         </div>
       </div>
-      <div className="flex justify-between text-[9px]">
+      <div className="flex justify-between text-[10px]">
         <span style={{ color: leftColor }}>{leftLabel}: {leftValue.toFixed(1)}</span>
         <span style={{ color: rightColor }}>{rightLabel}: {rightValue.toFixed(1)}</span>
       </div>

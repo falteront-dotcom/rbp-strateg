@@ -1,5 +1,6 @@
 "use client";
 
+import { Flag } from "@/components/Flag";
 import { useMemo } from "react";
 import { motion } from "framer-motion";
 import {
@@ -13,7 +14,6 @@ import {
   Bar,
   XAxis,
   YAxis,
-  Cell,
   Tooltip,
 } from "recharts";
 import { Shield, Users, Fuel, Radio, Landmark, BookOpen, AlertCircle, Mountain, Swords } from "lucide-react";
@@ -22,7 +22,6 @@ import {
   COALITION_BP_LABELS,
   COALITION_TEXT_CLASSES,
   COALITION_BG_CLASSES,
-  isoToFlag,
   type CoalitionBP,
   type CoalitionComparison,
   type CoalitionBPComponent,
@@ -141,7 +140,7 @@ export function CoalitionCard({ coalition, comparison, side }: CoalitionCardProp
             </h3>
           </div>
           {advantageLabel && (
-            <span className={`text-[9px] font-bold tracking-widest ${advantageColor}`}>
+            <span className={`text-[10px] font-bold tracking-widest ${advantageColor}`}>
               {advantageLabel}
             </span>
           )}
@@ -149,7 +148,7 @@ export function CoalitionCard({ coalition, comparison, side }: CoalitionCardProp
         <div className="flex items-center gap-1 mt-2 flex-wrap">
           {visibleFlags.map((m) => (
             <span key={m.isoCode} className="text-lg leading-none" title={m.nameRu}>
-              {isoToFlag(m.isoCode)}
+              <Flag iso={m.isoCode} />
             </span>
           ))}
           {extraCount > 0 && (
@@ -162,13 +161,12 @@ export function CoalitionCard({ coalition, comparison, side }: CoalitionCardProp
 
       {/* ─── Total BP Score ─── */}
       <div className="p-4 border-b border-white/5">
-        <div className="text-[9px] text-tactical-secondary/60 tracking-widest uppercase mb-1">
+        <div className="text-[10px] text-tactical-secondary/60 tracking-widest uppercase mb-1">
           Суммарный БП
         </div>
         <div className="flex items-baseline gap-2">
           <span
             className={`text-3xl font-black tabular-nums ${textClass}`}
-            style={{ textShadow: "0 0 16px currentColor" }}
           >
             {coalition.totalBP.toFixed(1)}
           </span>
@@ -183,14 +181,14 @@ export function CoalitionCard({ coalition, comparison, side }: CoalitionCardProp
             style={{ width: `${Math.min(coalition.totalBP / coalition.memberCount, 100)}%` }}
           />
         </div>
-        <div className="text-[8px] text-tactical-secondary/40 mt-1 tracking-wider">
+        <div className="text-[10px] text-tactical-secondary/40 mt-1 tracking-wider">
           Средний БП: {(coalition.totalBP / Math.max(coalition.memberCount, 1)).toFixed(1)}
         </div>
       </div>
 
       {/* ─── Radar Chart ─── */}
       <div className="p-4 border-b border-white/5">
-        <div className="text-[9px] text-tactical-secondary/60 tracking-widest uppercase mb-2">
+        <div className="text-[10px] text-tactical-secondary/60 tracking-widest uppercase mb-2">
           Профиль Компонентов
         </div>
         <div className="w-full h-52">
@@ -200,8 +198,8 @@ export function CoalitionCard({ coalition, comparison, side }: CoalitionCardProp
               <PolarAngleAxis
                 dataKey="component"
                 tick={{
-                  fill: "oklch(75% 0.18 200 / 70%)",
-                  fontSize: 8,
+                  fill: "oklch(75% 0.18 155 / 70%)",
+                  fontSize: 10,
                   fontFamily: "var(--font-mono)",
                 }}
               />
@@ -209,10 +207,10 @@ export function CoalitionCard({ coalition, comparison, side }: CoalitionCardProp
               <Radar
                 name="БП"
                 dataKey="value"
-                stroke="oklch(75% 0.18 200)"
-                fill="oklch(75% 0.18 200 / 20%)"
+                stroke="oklch(75% 0.18 155)"
+                fill="oklch(75% 0.18 155 / 20%)"
                 strokeWidth={1.5}
-                dot={{ r: 2, fill: "oklch(75% 0.18 200)" }}
+                dot={{ r: 2, fill: "oklch(75% 0.18 155)" }}
               />
             </RadarChart>
           </ResponsiveContainer>
@@ -257,7 +255,7 @@ export function CoalitionCard({ coalition, comparison, side }: CoalitionCardProp
                 >
                   {val.toFixed(1)}
                 </span>
-                <span className="text-[7px] text-tactical-secondary/40 tracking-wider uppercase truncate w-full text-center">
+                <span className="text-[10px] text-tactical-secondary/40 tracking-wider uppercase truncate w-full text-center">
                   {COALITION_BP_LABELS[comp]}
                 </span>
               </div>
@@ -269,7 +267,7 @@ export function CoalitionCard({ coalition, comparison, side }: CoalitionCardProp
       {/* ─── Comparison Bars (if comparison data provided) ─── */}
       {comparison && comparisonBarData.length > 0 && (
         <div className="p-4 border-b border-white/5">
-          <div className="text-[9px] text-tactical-secondary/60 tracking-widest uppercase mb-2">
+          <div className="text-[10px] text-tactical-secondary/60 tracking-widest uppercase mb-2">
             Сравнение Компонентов
           </div>
           <div className="w-full h-48">
@@ -279,7 +277,7 @@ export function CoalitionCard({ coalition, comparison, side }: CoalitionCardProp
                 <YAxis
                   type="category"
                   dataKey="label"
-                  tick={{ fill: "oklch(75% 0.18 200 / 60%)", fontSize: 7, fontFamily: "var(--font-mono)" }}
+                  tick={{ fill: "oklch(75% 0.18 155 / 60%)", fontSize: 10, fontFamily: "var(--font-mono)" }}
                   axisLine={false}
                   width={72}
                 />
@@ -290,10 +288,10 @@ export function CoalitionCard({ coalition, comparison, side }: CoalitionCardProp
             </ResponsiveContainer>
           </div>
           <div className="flex justify-between mt-1">
-            <span className="text-[8px] font-bold text-tactical-nato tracking-wider uppercase">
+            <span className="text-[10px] font-bold text-tactical-nato tracking-wider uppercase">
               {comparison.coalitionA.name}
             </span>
-            <span className="text-[8px] font-bold text-tactical-rus tracking-wider uppercase">
+            <span className="text-[10px] font-bold text-tactical-rus tracking-wider uppercase">
               {comparison.coalitionB.name}
             </span>
           </div>
@@ -302,7 +300,7 @@ export function CoalitionCard({ coalition, comparison, side }: CoalitionCardProp
 
       {/* ─── Member List ─── */}
       <div className="p-3 flex-1 overflow-y-auto">
-        <div className="text-[9px] text-tactical-secondary/60 tracking-widest uppercase mb-2">
+        <div className="text-[10px] text-tactical-secondary/60 tracking-widest uppercase mb-2">
           Участники ({coalition.memberCount})
         </div>
         <div className="space-y-1">
@@ -312,7 +310,7 @@ export function CoalitionCard({ coalition, comparison, side }: CoalitionCardProp
               className="flex items-center justify-between bg-white/5 px-2 py-1.5 rounded border border-white/5 hover:bg-white/8 transition-colors"
             >
               <div className="flex items-center gap-2">
-                <span className="text-sm leading-none">{isoToFlag(m.isoCode)}</span>
+                <span className="text-sm leading-none"><Flag iso={m.isoCode} /></span>
                 <span className="text-[10px] text-white/80 font-bold truncate">
                   {m.nameRu}
                 </span>

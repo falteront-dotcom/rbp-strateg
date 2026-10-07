@@ -7,7 +7,6 @@ import { ARSENAL, UnitInfo, ParametricStats, applyModulesToUnit, ModuleType, sim
 import { getCombatCapabilities } from '@/lib/combat-engine';
 import { Radar, RadarChart, PolarGrid, PolarAngleAxis, PolarRadiusAxis, ResponsiveContainer } from 'recharts';
 import { cn } from '@/lib/utils';
-import { TRANSLATIONS } from '@/lib/i18n';
 import DuelSimulator from './DuelSimulator';
 
 interface ComparisonMatrixProps {
@@ -32,7 +31,6 @@ function getUnitStats(unit: UnitInfo): ParametricStats {
 }
 
 export default function ComparisonMatrix({ isOpen, onClose }: ComparisonMatrixProps) {
-    const t = TRANSLATIONS;
     const arsenalEntries = Object.entries(ARSENAL);
 
     const [unitAId, setUnitAId] = useState<string>(arsenalEntries[0]?.[0] || '');
@@ -135,14 +133,14 @@ export default function ComparisonMatrix({ isOpen, onClose }: ComparisonMatrixPr
                         animate={{ opacity: 1 }}
                         exit={{ opacity: 0 }}
                         onClick={onClose}
-                        className="fixed inset-0 bg-black/60 backdrop-blur-md z-50 flex items-center justify-center p-6"
+                        className="fixed inset-0 bg-black/60 z-50 flex items-center justify-center p-6"
                     >
                         <motion.div
                             initial={{ opacity: 0, scale: 0.95, y: 20 }}
                             animate={{ opacity: 1, scale: 1, y: 0 }}
                             exit={{ opacity: 0, scale: 0.95, y: 20 }}
                             onClick={(e) => e.stopPropagation()}
-                            className="w-full max-w-4xl bg-slate-950 border border-tactical-accent/20 rounded-2xl shadow-2xl overflow-hidden glass-panel flex flex-col max-h-[90vh]"
+                            className="w-full max-w-4xl bg-slate-950 border border-tactical-accent/20 rounded-md shadow-2xl overflow-hidden glass-panel flex flex-col max-h-[90vh]"
                         >
                             {/* Header */}
                             <div className="p-4 border-b border-white/5 flex items-center justify-between bg-white/5 shrink-0">
@@ -199,11 +197,11 @@ export default function ComparisonMatrix({ isOpen, onClose }: ComparisonMatrixPr
                                                 {unitA.costMillionUSD && (
                                                     <div className="flex justify-between items-end bg-slate-900/50 p-2 rounded-lg border border-white/5 mt-1">
                                                         <div className="flex flex-col">
-                                                            <span className="text-[9px] font-mono text-emerald-500/70 uppercase">Ориентир. Стоимость</span>
+                                                            <span className="text-[10px] font-mono text-emerald-500/70 uppercase">Ориентир. Стоимость</span>
                                                             <span className="text-sm font-black font-mono text-emerald-400">${unitA.costMillionUSD}M</span>
                                                         </div>
                                                         <div className="flex flex-col items-end">
-                                                            <span className="text-[9px] font-mono text-slate-500 uppercase">Индекс Эффективности (ОБС/$1M)</span>
+                                                            <span className="text-[10px] font-mono text-slate-500 uppercase">Индекс Эффективности (ОБС/$1M)</span>
                                                             <span className="text-sm font-black font-mono text-white">{(unitA.potential / unitA.costMillionUSD).toFixed(3)}</span>
                                                         </div>
                                                     </div>
@@ -218,7 +216,7 @@ export default function ComparisonMatrix({ isOpen, onClose }: ComparisonMatrixPr
 
                                 {/* VS Divider */}
                                 <div className="flex justify-center items-center h-full pt-10">
-                                    <div className="w-12 h-12 rounded-full border border-tactical-accent/30 bg-tactical-accent/10 flex items-center justify-center font-black text-tactical-accent text-sm italic shadow-[0_0_15px_rgba(234,179,8,0.2)]">
+                                    <div className="w-12 h-12 rounded-full border border-tactical-accent/30 bg-tactical-accent/10 flex items-center justify-center font-black text-tactical-accent text-sm italic">
                                         VS
                                     </div>
                                 </div>
@@ -265,11 +263,11 @@ export default function ComparisonMatrix({ isOpen, onClose }: ComparisonMatrixPr
                                                 {unitB.costMillionUSD && (
                                                     <div className="flex justify-between items-end bg-slate-900/50 p-2 rounded-lg border border-white/5 mt-1">
                                                         <div className="flex flex-col">
-                                                            <span className="text-[9px] font-mono text-emerald-500/70 uppercase">Ориентир. Стоимость</span>
+                                                            <span className="text-[10px] font-mono text-emerald-500/70 uppercase">Ориентир. Стоимость</span>
                                                             <span className="text-sm font-black font-mono text-emerald-400">${unitB.costMillionUSD}M</span>
                                                         </div>
                                                         <div className="flex flex-col items-end">
-                                                            <span className="text-[9px] font-mono text-slate-500 uppercase">Индекс Эффективности (ОБС/$1M)</span>
+                                                            <span className="text-[10px] font-mono text-slate-500 uppercase">Индекс Эффективности (ОБС/$1M)</span>
                                                             <span className="text-sm font-black font-mono text-white">{(unitB.potential / unitB.costMillionUSD).toFixed(3)}</span>
                                                         </div>
                                                     </div>
@@ -287,14 +285,13 @@ export default function ComparisonMatrix({ isOpen, onClose }: ComparisonMatrixPr
                             {/* Radar Chart */}
                             {(unitA && unitB && radarData.length > 0) && (
                                 <div className="px-6 pb-2 shrink-0">
-                                    <div className="w-full h-64 bg-slate-900/40 rounded-xl border border-tactical-accent/20 p-2 relative overflow-hidden">
-                                        <div className="absolute inset-0 bg-blue-500/5 blur-3xl rounded-full" />
+                                    <div className="w-full h-64 bg-slate-900/40 rounded-md border border-tactical-accent/20 p-2 relative overflow-hidden">
                                         <ResponsiveContainer width="100%" height="100%">
                                             <RadarChart cx="50%" cy="50%" outerRadius="70%" data={radarData}>
                                                 <PolarGrid stroke="rgba(255,255,255,0.1)" />
                                                 <PolarAngleAxis dataKey="subject" tick={{ fill: 'rgba(255,255,255,0.6)', fontSize: 10, fontFamily: 'monospace', fontWeight: 'bold' }} />
                                                 <PolarRadiusAxis angle={30} domain={[0, 10]} tick={false} axisLine={false} />
-                                                <Radar name={unitA.displayName} dataKey="A" stroke="#3b82f6" fill="#3b82f6" fillOpacity={0.3} strokeWidth={2} />
+                                                <Radar name={unitA.displayName} dataKey="A" stroke="#6b8fa0" fill="#6b8fa0" fillOpacity={0.3} strokeWidth={2} />
                                                 <Radar name={unitB.displayName} dataKey="B" stroke="#ef4444" fill="#ef4444" fillOpacity={0.3} strokeWidth={2} />
                                             </RadarChart>
                                         </ResponsiveContainer>
@@ -308,7 +305,7 @@ export default function ComparisonMatrix({ isOpen, onClose }: ComparisonMatrixPr
                                     <div className="flex items-center gap-2 mb-2">
                                         <Swords size={16} className="text-tactical-accent" />
                                         <span className="text-xs font-black uppercase tracking-[0.2em] text-white">Прогноз боестолкновения</span>
-                                        <span className="text-[9px] font-mono text-slate-500 ml-auto">Монте-Карло, 1000 итераций</span>
+                                        <span className="text-[10px] font-mono text-slate-500 ml-auto">Монте-Карло, 1000 итераций</span>
                                     </div>
 
                                     <div className="flex h-12 w-full rounded-lg overflow-hidden border border-white/10">
@@ -342,11 +339,10 @@ export default function ComparisonMatrix({ isOpen, onClose }: ComparisonMatrixPr
                                     <div className="mt-6 flex justify-center">
                                         <button 
                                             onClick={() => setIsDuelOpen(true)}
-                                            className="group relative px-6 py-3 bg-tactical-accent text-slate-950 font-black uppercase tracking-widest text-xs rounded-lg hover:bg-white transition-all duration-300 shadow-[0_0_20px_rgba(234,179,8,0.3)] hover:shadow-[0_0_30px_rgba(234,179,8,0.5)] flex items-center gap-2"
+                                            className="group relative px-6 py-3 bg-tactical-accent text-slate-950 font-black uppercase tracking-widest text-xs rounded-lg hover:bg-white transition-all duration-300 flex items-center gap-2"
                                         >
                                             <Swords size={16} className="group-hover:rotate-12 transition-transform" />
                                             Симуляция Дуэли
-                                            <div className="absolute -inset-1 bg-tactical-accent opacity-20 blur-lg group-hover:opacity-40 transition-opacity rounded-lg" />
                                         </button>
                                     </div>
 
@@ -365,7 +361,6 @@ export default function ComparisonMatrix({ isOpen, onClose }: ComparisonMatrixPr
                                             <span className="text-tactical-primary block">ПВО: Дальность радара 500+ км, Мах 8.</span>
                                             Это изменение необходимо для корректной нормализации ТТХ новейших перспективных разработок (таких как AbramsX, AbramsX 130, KF51 Panther, NGAD) в единый сопоставимый индекс ОБС.
                                         </div>
-                                        <div className="absolute top-1/2 right-0 -translate-y-1/2 w-32 h-32 bg-tactical-primary/5 blur-3xl opacity-0 group-hover:opacity-100 transition-opacity" />
                                     </div>
                                 </div>
                             )}
@@ -414,7 +409,7 @@ function StatRow({ label, valA, valB, unit, icon, inverse = false, rightAlign = 
                 {icon}
                 <span className="text-[10px] text-slate-400 font-mono tracking-widest uppercase">{label}</span>
                 {valB !== undefined && Math.abs(delta) > 0.1 && (
-                    <span className={cn("text-[9px] font-bold ml-auto font-mono", deltaColor, rightAlign && "mr-auto ml-0")}>
+                    <span className={cn("text-[10px] font-bold ml-auto font-mono", deltaColor, rightAlign && "mr-auto ml-0")}>
                         {deltaSign}{delta.toFixed(1)}%
                     </span>
                 )}
@@ -427,7 +422,7 @@ function StatRow({ label, valA, valB, unit, icon, inverse = false, rightAlign = 
     );
 }
 
-function ModuleCheckbox({ id, label, desc, active, onChange }: { id: string, label: string, desc: string, active: boolean, onChange: (c: boolean) => void }) {
+function ModuleCheckbox({ label, desc, active, onChange }: { id: string, label: string, desc: string, active: boolean, onChange: (c: boolean) => void }) {
     return (
         <label className={cn(
             "flex flex-col p-2 rounded-lg border focus-within:ring-1 focus-within:ring-tactical-primary transition-all cursor-pointer relative overflow-hidden",
@@ -440,9 +435,9 @@ function ModuleCheckbox({ id, label, desc, active, onChange }: { id: string, lab
                     onChange={(e) => onChange(e.target.checked)}
                     className="w-3 h-3 rounded-sm accent-tactical-primary bg-slate-900 border-white/20"
                 />
-                <span className={cn("text-[8px] uppercase font-black tracking-widest", active ? "text-tactical-primary" : "text-slate-300")}>{label}</span>
+                <span className={cn("text-[10px] uppercase font-black tracking-widest", active ? "text-tactical-primary" : "text-slate-300")}>{label}</span>
             </div>
-            <span className="text-[7px] mt-1 ml-4 text-slate-500 font-mono pointer-events-none line-clamp-1">{desc}</span>
+            <span className="text-[10px] mt-1 ml-4 text-slate-500 font-mono pointer-events-none line-clamp-1">{desc}</span>
             {active && <div className="absolute top-0 right-0 w-6 h-6 bg-tactical-primary/20 rounded-bl-full blur-md" />}
         </label>
     );

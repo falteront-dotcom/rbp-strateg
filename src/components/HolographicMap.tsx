@@ -1,47 +1,43 @@
 "use client";
 
-import React from 'react';
-import { motion } from 'framer-motion';
-import type { ActiveUnit } from '@/lib/rbp-engine';
+import React from "react";
+import type { ActiveUnit } from "@/lib/rbp-engine";
 
-export default function HolographicMap({ units = [], c2Nodes = [] }: { units?: ActiveUnit[], c2Nodes?: string[] }) {
-    return (
-        <div className="absolute inset-0 z-0 overflow-hidden pointer-events-none perspective-center">
-            <div className="absolute inset-0 tilted-map">
-                <div className="absolute inset-0 bg-grid-tactical opacity-20" />
-                <div className="absolute inset-0 overflow-hidden">
-                    <div className="w-full h-[2px] bg-tactical-primary/30 blur-[2px] shadow-[0_0_15px_var(--color-tactical-primary)] animate-scanline" />
-                </div>
-                <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,var(--color-tactical-primary)_0%,transparent_70%)] opacity-[0.03] animate-pulse-slow" />
+const VERTICALS = Array.from({ length: 11 }, (_, index) => index * 100);
+const HORIZONTALS = Array.from({ length: 7 }, (_, index) => index * 100);
 
-                <svg
-                    viewBox="0 0 1000 600"
-                    className="absolute inset-0 w-full h-full opacity-30 fill-none stroke-tactical-primary/20 stroke-[0.5]"
-                    style={{ filter: 'drop-shadow(0 0 10px var(--color-tactical-primary))' }}
-                >
-                    <g strokeWidth="0.5" strokeDasharray="1,3" className="opacity-40">
-                        <path d="M150,120 L180,100 L220,110 L250,90 L280,110 L300,150 L280,200 L240,230 L180,210 L150,170 Z" />
-                        <path d="M450,100 L550,80 L650,90 L750,110 L850,130 L900,180 L850,250 L700,280 L600,260 L500,240 L450,180 Z" />
-                        <path d="M480,300 L550,280 L620,310 L600,450 L520,480 L450,420 Z" />
-                        <path d="M260,280 L320,300 L350,380 L300,480 L240,420 L220,320 Z" />
-                        <path d="M780,350 L880,370 L900,420 L820,460 L750,430 Z" />
-                    </g>
-                    
-                    {/* C2 Network Mesh Visualization */}
-                    <g className="stroke-tactical-primary/30 stroke-[0.5] stroke-dasharray-mesh">
-                        {units.map(u => {
-                            // Simulation of mesh connectivity: draw lines to other units of the same side within range
-                            return units
-                                .filter(other => other.id !== u.id && other.unit.side === u.unit.side)
-                                .filter(other => Math.sqrt((other.lon - u.lon)**2 + (other.lat - u.lat)**2) < 30)
-                                .map(other => (
-                                    <line key={`${u.id}-${other.id}`} x1={`${u.lon}%`} y1={`${u.lat}%`} x2={`${other.lon}%`} y2={`${other.lat}%`} />
-                                ));
-                        })}
-                    </g>
-                </svg>
-                <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,transparent_40%,var(--color-tactical-bg)_100%)] opacity-60 pointer-events-none" />
-            </div>
-        </div>
-    );
+/** Functional theater grid. Unit markers are rendered by TacticalHUD above this layer. */
+export default function HolographicMap({ units = [] }: { units?: ActiveUnit[]; c2Nodes?: string[] }) {
+  return (
+    <div className="pointer-events-none absolute inset-0 z-0 overflow-hidden bg-[#061219]">
+      <svg viewBox="0 0 1000 600" preserveAspectRatio="none" className="absolute inset-0 h-full w-full">
+        <rect width="1000" height="600" fill="#061219" />
+        <g stroke="#29434e" strokeWidth="0.8" opacity="0.68">
+          {VERTICALS.map(x => <line key={`v-${x}`} x1={x} y1="0" x2={x} y2="600" />)}
+          {HORIZONTALS.map(y => <line key={`h-${y}`} x1="0" y1={y} x2="1000" y2={y} />)}
+        </g>
+        <g stroke="#3e6471" strokeWidth="1" opacity="0.45" fill="none">
+          <circle cx="500" cy="300" r="75" />
+          <circle cx="500" cy="300" r="150" />
+          <circle cx="500" cy="300" r="225" />
+          <line x1="500" y1="0" x2="500" y2="600" />
+          <line x1="0" y1="300" x2="1000" y2="300" />
+        </g>
+        <g fill="#52717c" fontFamily="var(--font-mono)" fontSize="10">
+          {VERTICALS.slice(1, -1).map((x, index) => <text key={`vx-${x}`} x={x + 5} y="18">{String(index + 1).padStart(2, "0")}</text>)}
+          {HORIZONTALS.slice(1, -1).map((y, index) => <text key={`hy-${y}`} x="8" y={y - 7}>{String.fromCharCode(65 + index)}</text>)}
+          <text x="20" y="580">ТЕАТР / 1000 × 600</text>
+          <text x="980" y="580" textAnchor="end">СЕТКА 100</text>
+        </g>
+        <g stroke="#4fb287" strokeWidth="0.9" opacity="0.3">
+          {units.flatMap(unit => units
+            .filter(other => other.id !== unit.id && other.unit.side === unit.unit.side)
+            .filter(other => Math.hypot(other.lon - unit.lon, other.lat - unit.lat) < 30)
+            .map(other => (
+              <line key={`${unit.id}-${other.id}`} x1={`${unit.lon}%`} y1={`${unit.lat}%`} x2={`${other.lon}%`} y2={`${other.lat}%`} />
+            )))}
+        </g>
+      </svg>
+    </div>
+  );
 }

@@ -528,11 +528,11 @@ export const COMPONENT_LABELS: Record<BPComponent, string> = {
 
 export const COMPONENT_COLORS: Record<BPComponent, string> = {
   weapon: "#ef4444",
-  manpower: "#3b82f6",
+  manpower: "#6b8fa0",
   logistics: "#22c55e",
   c2: "#a855f7",
   economy: "#eab308",
   doctrine: "#ec4899",
   readiness: "#f97316",
-  terrain: "#06b6d4",
+  terrain: "#34b98a",
 };

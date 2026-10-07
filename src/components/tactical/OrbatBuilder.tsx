@@ -149,7 +149,7 @@ export function OrbatBuilder({ side, onExport }: OrbatBuilderProps) {
 
   const handleExport = useCallback(() => onExport(orbat), [orbat, onExport]);
 
-  const sideColor = side === "blue" ? "#22d3ee" : "#ef4444";
+  const sideColor = side === "blue" ? "#4fb287" : "#ef4444";
 
   return (
     <div className="space-y-3 font-mono">
@@ -161,14 +161,14 @@ export function OrbatBuilder({ side, onExport }: OrbatBuilderProps) {
           </h3>
           <button
             onClick={handleExport}
-            className="text-[9px] border border-white/10 rounded px-2 py-0.5 text-slate-400 hover:text-tactical-primary transition-colors"
+            className="text-[10px] border border-white/10 rounded px-2 py-0.5 text-slate-400 hover:text-tactical-primary transition-colors"
           >
             ↗ Экспорт JSON
           </button>
         </div>
 
         {/* Totals */}
-        <div className="grid grid-cols-2 gap-1 text-[9px]">
+        <div className="grid grid-cols-2 gap-1 text-[10px]">
           <div className="glass-panel rounded-md p-1.5 text-center">
             <div className="text-sm font-bold" style={{ color: sideColor }}>{totals.personnel.toLocaleString()}</div>
             <div className="text-slate-500">Личный состав</div>
@@ -184,7 +184,7 @@ export function OrbatBuilder({ side, onExport }: OrbatBuilderProps) {
 
       {/* Equipment breakdown */}
       <div className="glass-panel rounded-md p-2">
-        <h4 className="text-[9px] font-bold text-tactical-primary tracking-widest uppercase mb-1">
+        <h4 className="text-[10px] font-bold text-tactical-primary tracking-widest uppercase mb-1">
           Техника
         </h4>
         <div className="grid grid-cols-4 gap-1">
@@ -194,7 +194,7 @@ export function OrbatBuilder({ side, onExport }: OrbatBuilderProps) {
                 <div className="text-[10px] font-bold text-slate-300">
                   {icon} {totals.equipment[eq] ?? 0}
                 </div>
-                <div className="text-[7px] text-slate-500">{name}</div>
+                <div className="text-[10px] text-slate-500">{name}</div>
               </div>
             )
           )}
@@ -203,7 +203,7 @@ export function OrbatBuilder({ side, onExport }: OrbatBuilderProps) {
 
       {/* Formation tree */}
       <div className="glass-panel rounded-md p-2 max-h-64 overflow-y-auto">
-        <h4 className="text-[9px] font-bold text-tactical-primary tracking-widest uppercase mb-1">
+        <h4 className="text-[10px] font-bold text-tactical-primary tracking-widest uppercase mb-1">
           Дерево формаций
         </h4>
         <FormationNode
@@ -249,7 +249,7 @@ function FormationNode({
       <motion.div
         initial={{ opacity: 0, x: -5 }}
         animate={{ opacity: 1, x: 0 }}
-        className={`py-1 px-2 rounded-md cursor-pointer border text-[9px] ${
+        className={`py-1 px-2 rounded-md cursor-pointer border text-[10px] ${
           isSelected ? "border-tactical-primary/30 bg-tactical-primary/5" : "border-transparent hover:bg-white/3"
         }`}
         onClick={() => onSelect(formation.id)}
@@ -278,7 +278,7 @@ function FormationNode({
                   e.stopPropagation();
                   onAdd(formation.id, tmpl.subFormations[0]);
                 }}
-                className="text-slate-500 hover:text-tactical-primary text-[8px] border border-white/5 rounded px-1"
+                className="text-slate-500 hover:text-tactical-primary text-[10px] border border-white/5 rounded px-1"
                 title="Добавить подразделение"
               >
                 +
@@ -288,7 +288,7 @@ function FormationNode({
             {depth > 0 && (
               <button
                 onClick={(e) => { e.stopPropagation(); onRemove(formation.id); }}
-                className="text-slate-500 hover:text-red-400 text-[8px]"
+                className="text-slate-500 hover:text-red-400 text-[10px]"
                 title="Удалить"
               >
                 ✕

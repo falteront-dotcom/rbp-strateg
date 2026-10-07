@@ -8,9 +8,21 @@
  * Strict TypeScript — no `any`.
  */
 
+import { COUNTRY_ALLIANCES, COUNTRY_NAMES_RU, COUNTRY_REGIONS_RU } from "./country-names-ru";
+import { WORLD_ALLIANCES, WORLD_CENTROIDS, WORLD_REGIONS_RU } from "./world-registry.generated";
+
 export interface Centroid {
   lng: number;
   lat: number;
+}
+
+export interface CapitalMarker {
+  iso: string;
+  nameRu: string;
+  capital: string;
+  position: [number, number];
+  region: string;
+  alliances: readonly string[];
 }
 
 /** ISO-A3 → Capital centroid lookup */
@@ -56,7 +68,7 @@ export const COUNTRY_CENTROIDS: Record<string, Centroid> = {
   NLD: { lng: 4.9041, lat: 52.3676 },     // Amsterdam
   NOR: { lng: 10.7522, lat: 59.9139 },    // Oslo
   NZL: { lng: 174.7633, lat: -41.2865 },  // Wellington
-  PHI: { lng: 121.0582, lat: 14.5547 },   // Manila
+  PHL: { lng: 121.0582, lat: 14.5547 },   // Manila
   POL: { lng: 21.0122, lat: 52.2297 },    // Warsaw
   PRK: { lng: 125.7625, lat: 39.0392 },   // Pyongyang
   PRT: { lng: -9.1393, lat: 38.7223 },    // Lisbon
@@ -82,16 +94,49 @@ export const COUNTRY_CENTROIDS: Record<string, Centroid> = {
 };
 
 /** Get centroid for a country ISO code — returns null if not found */
+function normalizeCentroidISO(iso: string): string {
+  const code = iso.trim().toUpperCase();
+  return code === "PHI" ? "PHL" : code;
+}
+
+/** Get capital centroid for a country ISO code — null means no safe marker exists. */
 export function getCentroid(iso: string): Centroid | null {
-  return COUNTRY_CENTROIDS[iso] ?? null;
+  const code = normalizeCentroidISO(iso);
+  return COUNTRY_CENTROIDS[code] ?? WORLD_CENTROIDS[code] ?? null;
 }
 
-/** Get centroid position as [lng, lat] array for deck.gl — defaults to [0, 0] */
+/** Get centroid position as [lng, lat] for deck.gl, or null when unavailable. */
+export function getPositionOrNull(iso: string): [number, number] | null {
+  const c = getCentroid(iso);
+  return c ? [c.lng, c.lat] : null;
+}
+
+/** Legacy deck.gl accessor: retain [0, 0] only for callers that require a tuple. */
 export function getPosition(iso: string): [number, number] {
-  const c = COUNTRY_CENTROIDS[iso];
-  if (c) return [c.lng, c.lat];
-  return [0, 0];
+  return getPositionOrNull(iso) ?? [0, 0];
 }
 
-/** Total number of countries in the centroid registry */
-export const CENTROID_COUNT = Object.keys(COUNTRY_CENTROIDS).length;
+const TOP_20_CAPITALS: ReadonlyArray<readonly [string, string]> = [
+  ["USA", "Вашингтон"], ["RUS", "Москва"], ["CHN", "Пекин"], ["IND", "Нью-Дели"],
+  ["GBR", "Лондон"], ["FRA", "Париж"], ["JPN", "Токио"], ["KOR", "Сеул"],
+  ["ITA", "Рим"], ["DEU", "Берлин"], ["TUR", "Анкара"], ["BRA", "Бразилиа"],
+  ["PAK", "Исламабад"], ["EGY", "Каир"], ["ISR", "Иерусалим"], ["IDN", "Джакарта"],
+  ["AUS", "Канберра"], ["CAN", "Оттава"], ["UKR", "Киев"], ["SAU", "Эр-Рияд"],
+];
+
+/** Top-20 capital markers ready for deck.gl Scatterplot/Icon layers. */
+export const TOP_20_CAPITAL_MARKERS: CapitalMarker[] = TOP_20_CAPITALS.flatMap(([iso, capital]) => {
+  const position = getPositionOrNull(iso);
+  if (!position) return [];
+  return [{
+    iso,
+    nameRu: COUNTRY_NAMES_RU[iso] ?? iso,
+    capital,
+    position,
+    region: COUNTRY_REGIONS_RU[iso] ?? WORLD_REGIONS_RU[iso] ?? "Не определён",
+    alliances: COUNTRY_ALLIANCES[iso] ?? WORLD_ALLIANCES[iso] ?? [],
+  }];
+});
+
+/** Total number of countries in the centroid registry (hand-written + world layer) */
+export const CENTROID_COUNT = Object.keys(COUNTRY_CENTROIDS).length + Object.keys(WORLD_CENTROIDS).length;

@@ -1,5 +1,6 @@
 "use client";
 
+import { Flag } from "@/components/Flag";
 import { useMemo, useState } from "react";
 import {
   RadarChart,
@@ -18,7 +19,7 @@ import {
 } from "recharts";
 import { motion } from "framer-motion";
 import type { CountryCompareData } from "@/lib/comparison";
-import { isoToFlag, formatLargeNumber, getBPTierLabel, getBPTierColor } from "@/lib/comparison";
+import { formatLargeNumber } from "@/lib/comparison";
 
 // ─── Props ──────────────────────────────────────────────────────────────────
 interface ComparisonTabProps {
@@ -28,7 +29,7 @@ interface ComparisonTabProps {
 }
 
 // ─── Constants ───────────────────────────────────────────────────────────────
-const COLORS = ["#22d3ee", "#ef4444", "#f59e0b", "#a78bfa"];
+const COLORS = ["#4fb287", "#ef4444", "#f59e0b", "#a78bfa"];
 const COMPONENTS = [
   { key: "bpWeapon", label: "W · Оружие" },
   { key: "bpManpower", label: "M · Люди" },
@@ -48,25 +49,10 @@ export function ComparisonTab({ countries, onRemoveCountry, onAddCountry }: Comp
   const radarData = useMemo(() => {
     return COMPONENTS.map((comp) => {
       const entry: Record<string, unknown> = { component: comp.label };
-      countries.forEach((c, idx) => {
+      countries.forEach((c) => {
         entry[c.nameRu] = c[comp.key] as number;
       });
       return entry;
-    });
-  }, [countries]);
-
-  // Comparison table data
-  const tableData = useMemo(() => {
-    const base = countries[0];
-    return COMPONENTS.map((comp) => {
-      const row: Record<string, unknown> = { component: comp.label };
-      countries.forEach((c, idx) => {
-        const val = c[comp.key] as number;
-        const delta = base ? val - (base[comp.key] as number) : 0;
-        row[`val_${idx}`] = val;
-        row[`delta_${idx}`] = delta;
-      });
-      return row;
     });
   }, [countries]);
 
@@ -80,7 +66,7 @@ export function ComparisonTab({ countries, onRemoveCountry, onAddCountry }: Comp
     ];
     return metrics.map((m) => {
       const entry: Record<string, unknown> = { metric: m.label };
-      countries.forEach((c, idx) => {
+      countries.forEach((c) => {
         entry[`${c.nameRu}`] = (c as unknown as Record<string, unknown>)[m.key] as number ?? 0;
       });
       return entry;
@@ -124,12 +110,12 @@ export function ComparisonTab({ countries, onRemoveCountry, onAddCountry }: Comp
             className="glass-panel rounded-md px-3 py-2 flex items-center gap-2"
             style={{ borderColor: `${COLORS[idx]}40` }}
           >
-            <span className="text-sm">{isoToFlag(c.isoCode)}</span>
+            <span className="text-sm"><Flag iso={c.isoCode} /></span>
             <div className="flex flex-col">
               <span className="text-[11px] font-bold" style={{ color: COLORS[idx] }}>
                 {c.nameRu}
               </span>
-              <span className="text-[9px] text-slate-400">
+              <span className="text-[10px] text-slate-400">
                 БП: {c.bpTotal.toFixed(1)} · #{idx + 1}
               </span>
             </div>
@@ -195,7 +181,7 @@ export function ComparisonTab({ countries, onRemoveCountry, onAddCountry }: Comp
                           {val.toFixed(1)}
                         </span>
                         {idx > 0 && delta !== 0 && (
-                          <span className={`ml-1 text-[8px] ${delta > 0 ? "text-emerald-400" : "text-red-400"}`}>
+                          <span className={`ml-1 text-[10px] ${delta > 0 ? "text-emerald-400" : "text-red-400"}`}>
                             {delta > 0 ? "↑" : "↓"}{Math.abs(delta).toFixed(1)}
                           </span>
                         )}
@@ -226,8 +212,8 @@ export function ComparisonTab({ countries, onRemoveCountry, onAddCountry }: Comp
           <ResponsiveContainer width="100%" height={260}>
             <RadarChart data={radarData} cx="50%" cy="50%" outerRadius="70%">
               <PolarGrid stroke="#1e293b" />
-              <PolarAngleAxis dataKey="component" tick={{ fill: "#94a3b8", fontSize: 9 }} />
-              <PolarRadiusAxis angle={90} domain={[0, 100]} tick={{ fill: "#475569", fontSize: 8 }} />
+              <PolarAngleAxis dataKey="component" tick={{ fill: "#94a3a4", fontSize: 10 }} />
+              <PolarRadiusAxis angle={90} domain={[0, 100]} tick={{ fill: "#47584c", fontSize: 10 }} />
               {countries.map((c, idx) => (
                 <Radar
                   key={c.isoCode}
@@ -242,8 +228,8 @@ export function ComparisonTab({ countries, onRemoveCountry, onAddCountry }: Comp
               <Legend wrapperStyle={{ fontSize: 10, fontFamily: "monospace" }} />
               <Tooltip
                 contentStyle={{
-                  backgroundColor: "#0e1520ee",
-                  border: "1px solid #22d3ee40",
+                  backgroundColor: "#0e1710ee",
+                  border: "1px solid #4fb28740",
                   borderRadius: 8,
                   fontSize: 10,
                   fontFamily: "monospace",
@@ -262,15 +248,15 @@ export function ComparisonTab({ countries, onRemoveCountry, onAddCountry }: Comp
         <ResponsiveContainer width="100%" height={200}>
           <BarChart data={hardwareData}>
             <CartesianGrid strokeDasharray="3 3" stroke="#1e293b" />
-            <XAxis dataKey="metric" tick={{ fill: "#94a3b8", fontSize: 10 }} />
-            <YAxis tick={{ fill: "#475569", fontSize: 9 }} />
+            <XAxis dataKey="metric" tick={{ fill: "#94a3a4", fontSize: 10 }} />
+            <YAxis tick={{ fill: "#47584c", fontSize: 10 }} />
             {countries.map((c, idx) => (
               <Bar key={c.isoCode} dataKey={c.nameRu} fill={COLORS[idx]} />
             ))}
             <Tooltip
               contentStyle={{
-                backgroundColor: "#0e1520ee",
-                border: "1px solid #22d3ee40",
+                backgroundColor: "#0e1710ee",
+                border: "1px solid #4fb28740",
                 borderRadius: 8,
                 fontSize: 10,
                 fontFamily: "monospace",

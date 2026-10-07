@@ -53,8 +53,8 @@ export type ParametricStats = GroundStats | AirStats | AirDefenseStats;
 export function calculateCustomPotential(stats?: ParametricStats, modules?: ModuleType[]): number {
     if (!stats) return 1.0;
     if (stats.type === 'ground') return calculateGroundPotential(stats, modules);
-    if (stats.type === 'aircraft') return calculateAirPotential(stats, modules);
-    if (stats.type === 'air_defense') return calculateADPotential(stats, modules);
+    if (stats.type === 'aircraft') return calculateAirPotential(stats);
+    if (stats.type === 'air_defense') return calculateADPotential(stats);
     return 1.0;
 }
 
@@ -73,7 +73,7 @@ export function calculateGroundPotential(stats: GroundStats, modules: ModuleType
     return Number(basePotential.toFixed(2));
 }
 
-export function calculateAirPotential(stats: AirStats, modules: ModuleType[] = []): number {
+export function calculateAirPotential(stats: AirStats): number {
     const twr = stats.thrustKgf / (Math.max(1, stats.weightEmpty) * 1000);
     // Baseline upgraded from 1.2 to 1.3 TWR, speed from 2.0 to 2.2
     const mobility = Math.min(10, (twr / 1.3) * 5 + (stats.maxSpeedMach / 2.2) * 3);
@@ -84,7 +84,7 @@ export function calculateAirPotential(stats: AirStats, modules: ModuleType[] = [
     return Number(((firepower * 0.3 + mobility * 0.3 + rcsFactor * 0.2 + techFactor * 0.2) / 2.5).toFixed(2));
 }
 
-export function calculateADPotential(stats: AirDefenseStats, modules: ModuleType[] = []): number {
+export function calculateADPotential(stats: AirDefenseStats): number {
     // Baseline upgraded ranges 400->500, 200->300
     const rangeFactor = Math.min(10, (stats.radarRangeKm / 500) * 4 + (stats.interceptRangeKm / 300) * 4);
     // Baseline upgraded speed 6->8, channels 6->10

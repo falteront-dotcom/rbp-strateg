@@ -28,11 +28,11 @@ export interface BPTierInfo {
 
 /** Tiers ordered from highest to lowest by lower-inclusive threshold. */
 export const BPTIERS: readonly BPTierInfo[] = [
-  { key: "CRITICAL", threshold: 80, labelRu: "КРИТИЧЕСКИЙ", labelEn: "CRITICAL", colorClass: "text-red-400", hex: "#ef4444" },
-  { key: "HIGH", threshold: 60, labelRu: "ВЫСОКИЙ", labelEn: "HIGH", colorClass: "text-yellow-400", hex: "#f59e0b" },
-  { key: "MODERATE", threshold: 40, labelRu: "СРЕДНИЙ", labelEn: "MODERATE", colorClass: "text-teal-400", hex: "#22d3ee" },
-  { key: "LOW", threshold: 20, labelRu: "НИЗКИЙ", labelEn: "LOW", colorClass: "text-cyan-400", hex: "#3b82f6" },
-  { key: "MINIMAL", threshold: Number.NEGATIVE_INFINITY, labelRu: "МИНИМАЛЬНЫЙ", labelEn: "MINIMAL", colorClass: "text-slate-400", hex: "#64748b" },
+  { key: "CRITICAL", threshold: 80, labelRu: "КРИТИЧЕСКИЙ", labelEn: "CRITICAL", colorClass: "text-[#c76a5a]", hex: "#c76a5a" },
+  { key: "HIGH", threshold: 60, labelRu: "ВЫСОКИЙ", labelEn: "HIGH", colorClass: "text-[#d8a03c]", hex: "#d8a03c" },
+  { key: "MODERATE", threshold: 40, labelRu: "СРЕДНИЙ", labelEn: "MODERATE", colorClass: "text-[#8aa89b]", hex: "#8aa89b" },
+  { key: "LOW", threshold: 20, labelRu: "НИЗКИЙ", labelEn: "LOW", colorClass: "text-[#677a6c]", hex: "#677a6c" },
+  { key: "MINIMAL", threshold: Number.NEGATIVE_INFINITY, labelRu: "МИНИМАЛЬНЫЙ", labelEn: "MINIMAL", colorClass: "text-slate-500", hex: "#55636d" },
 ] as const;
 
 /** Tier info keyed by BPTierKey for O(1) lookup of labels/colors. */

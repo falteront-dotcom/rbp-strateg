@@ -21,11 +21,11 @@ import {
   Radio,
   Globe,
   Target,
-  Landmark,
   Radiation,
   ChevronRight,
   Activity,
 } from "lucide-react";
+import { DOCTRINE_INDEX } from "@/lib/data/doctrines.generated";
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Types — mirrors CountryData from CountryCard.tsx + API
@@ -372,6 +372,7 @@ const sectionVariants: Record<string, unknown> = {
 
 export function DoctrineTab({ country }: DoctrineTabProps) {
   const posture = useMemo(() => getDefensePosture(country), [country]);
+  const doctrineProfile = useMemo(() => DOCTRINE_INDEX[country.isoCode] ?? null, [country.isoCode]);
   const postureMeta = useMemo(() => getPostureMeta(posture), [posture]);
 
   const conflicts = useMemo(
@@ -404,7 +405,7 @@ export function DoctrineTab({ country }: DoctrineTabProps) {
   /** Doctrine Score breakdown for stacked bar */
   const breakdownData = useMemo(() => [
     { name: "Боевой опыт", value: country.combatExperience * 4, fill: "#f59e0b" },
-    { name: "Модернизация", value: country.techLevel * 3, fill: "#22d3ee" },
+    { name: "Модернизация", value: country.techLevel * 3, fill: "#4fb287" },
     { name: "Технология", value: country.techLevel * 3, fill: "#a855f7" },
   ], [country]);
 
@@ -422,7 +423,7 @@ export function DoctrineTab({ country }: DoctrineTabProps) {
       >
         <div className="flex items-center gap-2 mb-3">
           <Shield size={14} className="text-tactical-primary" />
-          <span className="text-[9px] text-tactical-secondary/60 tracking-widest uppercase">
+          <span className="text-[10px] text-tactical-secondary/60 tracking-widest uppercase">
             Оборонная позиция
           </span>
         </div>
@@ -439,7 +440,7 @@ export function DoctrineTab({ country }: DoctrineTabProps) {
             </span>
           </div>
           <div className="flex-1 text-right">
-            <div className="text-[8px] text-tactical-secondary/40 tracking-wider uppercase">
+            <div className="text-[10px] text-tactical-secondary/40 tracking-wider uppercase">
               Танк/Авиа соотношение
             </div>
             <div className="text-xs font-bold text-white/70 tabular-nums">
@@ -449,6 +450,41 @@ export function DoctrineTab({ country }: DoctrineTabProps) {
         </div>
       </motion.section>
 
+      {/* ─── 1b. Doctrine profile (open sources) ─── */}
+      {doctrineProfile && (
+        <motion.section
+          custom={1} variants={sectionVariants as any} initial="hidden" animate="visible"
+          className="glass-panel rounded-lg p-4 border border-white/5"
+        >
+          <div className="flex items-center gap-2 mb-3">
+            <BookOpen size={14} className="text-tactical-primary" />
+            <span className="text-[10px] text-tactical-secondary/60 tracking-widest uppercase">
+              Доктринальный профиль · открытые источники
+            </span>
+          </div>
+          <div className="text-sm font-bold text-tactical-primary tracking-wide mb-2">
+            {doctrineProfile.postureRu}
+          </div>
+          <p className="text-[11px] leading-relaxed text-slate-300/90 mb-3">
+            {doctrineProfile.summaryRu}
+          </p>
+          <div className="space-y-1.5 mb-3">
+            {doctrineProfile.principlesRu.map((p, i) => (
+              <div key={i} className="flex items-start gap-2 text-[11px] text-slate-400">
+                <span className="mt-px font-mono text-[10px] text-tactical-primary/70">
+                  {String(i + 1).padStart(2, "0")}
+                </span>
+                <span className="leading-snug">{p}</span>
+              </div>
+            ))}
+          </div>
+          <div className="rounded border border-white/5 bg-slate-900/40 px-2.5 py-1.5 text-[10px] leading-relaxed text-slate-400">
+            <span className="font-semibold text-tactical-secondary/70">Ядерная политика: </span>
+            {doctrineProfile.nuclearRu}
+          </div>
+        </motion.section>
+      )}
+
       {/* ─── 2. Alliance Membership ─── */}
       <motion.section
         custom={1} variants={sectionVariants as any} initial="hidden" animate="visible"
@@ -456,7 +492,7 @@ export function DoctrineTab({ country }: DoctrineTabProps) {
       >
         <div className="flex items-center gap-2 mb-3">
           <Users size={14} className="text-tactical-primary" />
-          <span className="text-[9px] text-tactical-secondary/60 tracking-widest uppercase">
+          <span className="text-[10px] text-tactical-secondary/60 tracking-widest uppercase">
             Членство в альянсе
           </span>
         </div>
@@ -467,7 +503,7 @@ export function DoctrineTab({ country }: DoctrineTabProps) {
               <span className="text-sm font-bold text-tactical-primary tracking-wider">
                 {alliance.nameRu}
               </span>
-              <span className="text-[9px] text-tactical-secondary/50 ml-auto">
+              <span className="text-[10px] text-tactical-secondary/50 ml-auto">
                 {alliance.name}
               </span>
             </div>
@@ -478,7 +514,7 @@ export function DoctrineTab({ country }: DoctrineTabProps) {
                   className="flex items-center gap-1.5 bg-white/5 px-2 py-1 rounded border border-white/5"
                 >
                   <ChevronRight size={10} className="text-tactical-primary/60" />
-                  <span className="text-[9px] text-white/70">{b}</span>
+                  <span className="text-[10px] text-white/70">{b}</span>
                 </div>
               ))}
             </div>
@@ -499,7 +535,7 @@ export function DoctrineTab({ country }: DoctrineTabProps) {
         <div className="flex items-center justify-between mb-3">
           <div className="flex items-center gap-2">
             <Clock size={14} className="text-tactical-primary" />
-            <span className="text-[9px] text-tactical-secondary/60 tracking-widest uppercase">
+            <span className="text-[10px] text-tactical-secondary/60 tracking-widest uppercase">
               Боевой опыт (50 лет)
             </span>
           </div>
@@ -507,7 +543,7 @@ export function DoctrineTab({ country }: DoctrineTabProps) {
             <span className={`text-[10px] font-bold ${expLabel.color}`}>
               {expLabel.ru}
             </span>
-            <span className="text-[9px] text-tactical-secondary/40 tabular-nums">
+            <span className="text-[10px] text-tactical-secondary/40 tabular-nums">
               {country.combatExperience}/10
             </span>
           </div>
@@ -528,11 +564,11 @@ export function DoctrineTab({ country }: DoctrineTabProps) {
                   key={`${conf.name}-${idx}`}
                   className="flex items-center gap-2 px-2 py-1 rounded border border-white/5 bg-white/[0.02]"
                 >
-                  <span className="text-[9px] font-bold text-tactical-primary/60 tabular-nums w-8">
+                  <span className="text-[10px] font-bold text-tactical-primary/60 tabular-nums w-8">
                     {conf.year}
                   </span>
                   <span className="text-[10px] text-white/80 flex-1">{conf.name}</span>
-                  <span className={`text-[7px] px-1.5 py-0.5 rounded border ${typeColor[conf.type] ?? "border-white/10 text-white/40"}`}>
+                  <span className={`text-[10px] px-1.5 py-0.5 rounded border ${typeColor[conf.type] ?? "border-white/10 text-white/40"}`}>
                     {conf.type === "conventional" ? "Конв." :
                      conf.type === "asymmetric" ? "Асимм." :
                      conf.type === "peacekeeping" ? "Миротв." :
@@ -551,10 +587,10 @@ export function DoctrineTab({ country }: DoctrineTabProps) {
         {/* Impact on doctrine score */}
         <div className="mt-3 pt-2 border-t border-white/5">
           <div className="flex items-center justify-between">
-            <span className="text-[8px] text-tactical-secondary/40 tracking-wider uppercase">
+            <span className="text-[10px] text-tactical-secondary/40 tracking-wider uppercase">
               Влияние на доктрину
             </span>
-            <span className="text-[9px] font-bold text-tactical-accent tabular-nums">
+            <span className="text-[10px] font-bold text-tactical-accent tabular-nums">
               +{(country.combatExperience * 4).toFixed(0)} баллов
             </span>
           </div>
@@ -568,7 +604,7 @@ export function DoctrineTab({ country }: DoctrineTabProps) {
       >
         <div className="flex items-center gap-2 mb-3">
           <Zap size={14} className="text-tactical-primary" />
-          <span className="text-[9px] text-tactical-secondary/60 tracking-widest uppercase">
+          <span className="text-[10px] text-tactical-secondary/60 tracking-widest uppercase">
             Индекс модернизации
           </span>
         </div>
@@ -576,13 +612,13 @@ export function DoctrineTab({ country }: DoctrineTabProps) {
           <span className={`text-sm font-bold tracking-wider ${modernLabel.color}`}>
             {modernLabel.ru}
           </span>
-          <span className="text-[9px] text-tactical-secondary/40">
+          <span className="text-[10px] text-tactical-secondary/40">
             ({modernLevel})
           </span>
         </div>
         <div className="grid grid-cols-2 gap-2">
           <div className="bg-white/5 rounded p-2 border border-white/5">
-            <div className="text-[8px] text-tactical-secondary/40 tracking-wider uppercase">
+            <div className="text-[10px] text-tactical-secondary/40 tracking-wider uppercase">
               Бюджет/солдат
             </div>
             <div className="text-xs font-bold text-tactical-primary tabular-nums">
@@ -590,7 +626,7 @@ export function DoctrineTab({ country }: DoctrineTabProps) {
             </div>
           </div>
           <div className="bg-white/5 rounded p-2 border border-white/5">
-            <div className="text-[8px] text-tactical-secondary/40 tracking-wider uppercase">
+            <div className="text-[10px] text-tactical-secondary/40 tracking-wider uppercase">
               Тех. уровень
             </div>
             <div className="text-xs font-bold text-tactical-primary tabular-nums">
@@ -605,12 +641,12 @@ export function DoctrineTab({ country }: DoctrineTabProps) {
             style={{
               width: `${Math.min((country.techLevel / 10) * 100, 100)}%`,
               background: modernLevel === "Cutting-edge"
-                ? "linear-gradient(90deg, #22d3ee, #a855f7)"
+                ? "#6bb995"
                 : modernLevel === "Modern"
-                ? "linear-gradient(90deg, #14b8a6, #22d3ee)"
+                ? "#82a882"
                 : modernLevel === "Mixed"
-                ? "linear-gradient(90deg, #0ea5e9, #14b8a6)"
-                : "linear-gradient(90deg, #475569, #0ea5e9)",
+                ? "#d8a03c"
+                : "#677a6c",
             }}
           />
         </div>
@@ -623,7 +659,7 @@ export function DoctrineTab({ country }: DoctrineTabProps) {
       >
         <div className="flex items-center gap-2 mb-3">
           <BookOpen size={14} className="text-tactical-primary" />
-          <span className="text-[9px] text-tactical-secondary/60 tracking-widest uppercase">
+          <span className="text-[10px] text-tactical-secondary/60 tracking-widest uppercase">
             Стратегическая культура
           </span>
         </div>
@@ -632,7 +668,7 @@ export function DoctrineTab({ country }: DoctrineTabProps) {
           <div className="flex items-center justify-between bg-white/[0.03] px-3 py-2 rounded border border-white/5">
             <div className="flex items-center gap-2">
               <Radiation size={12} className="text-tactical-accent/70" />
-              <span className="text-[9px] text-tactical-secondary/50 tracking-wider uppercase">
+              <span className="text-[10px] text-tactical-secondary/50 tracking-wider uppercase">
                 Ядерная доктрина
               </span>
             </div>
@@ -645,7 +681,7 @@ export function DoctrineTab({ country }: DoctrineTabProps) {
           <div className="flex items-center justify-between bg-white/[0.03] px-3 py-2 rounded border border-white/5">
             <div className="flex items-center gap-2">
               <Globe size={12} className="text-tactical-accent/70" />
-              <span className="text-[9px] text-tactical-secondary/50 tracking-wider uppercase">
+              <span className="text-[10px] text-tactical-secondary/50 tracking-wider uppercase">
                 Проекция силы
               </span>
             </div>
@@ -658,7 +694,7 @@ export function DoctrineTab({ country }: DoctrineTabProps) {
           <div className="flex items-center justify-between bg-white/[0.03] px-3 py-2 rounded border border-white/5">
             <div className="flex items-center gap-2">
               <Radio size={12} className="text-tactical-accent/70" />
-              <span className="text-[9px] text-tactical-secondary/50 tracking-wider uppercase">
+              <span className="text-[10px] text-tactical-secondary/50 tracking-wider uppercase">
                 Информ. война
               </span>
             </div>
@@ -685,12 +721,12 @@ export function DoctrineTab({ country }: DoctrineTabProps) {
         <div className="flex items-center justify-between mb-3">
           <div className="flex items-center gap-2">
             <Activity size={14} className="text-tactical-primary" />
-            <span className="text-[9px] text-tactical-secondary/60 tracking-widest uppercase">
+            <span className="text-[10px] text-tactical-secondary/60 tracking-widest uppercase">
               Разбивка доктрины
             </span>
           </div>
           <div className="flex items-center gap-2">
-            <span className="text-[9px] text-tactical-secondary/40">Итого</span>
+            <span className="text-[10px] text-tactical-secondary/40">Итого</span>
             <span className="text-sm font-black text-tactical-primary tabular-nums">
               {breakdownTotal.toFixed(0)}
             </span>
@@ -705,8 +741,8 @@ export function DoctrineTab({ country }: DoctrineTabProps) {
                 type="category"
                 dataKey="name"
                 tick={{
-                  fill: "oklch(75% 0.18 200 / 60%)",
-                  fontSize: 8,
+                  fill: "oklch(75% 0.18 155 / 60%)",
+                  fontSize: 10,
                   fontFamily: "var(--font-mono)",
                 }}
                 width={80}
@@ -717,10 +753,10 @@ export function DoctrineTab({ country }: DoctrineTabProps) {
                 contentStyle={{
                   background: "rgba(20, 30, 45, 0.9)",
                   border: "1px solid rgba(34, 211, 238, 0.2)",
-                  fontSize: "9px",
+                  fontSize: "10px",
                   fontFamily: "var(--font-mono)",
                 }}
-                itemStyle={{ color: "#22d3ee" }}
+                itemStyle={{ color: "#4fb287" }}
               />
               <Bar dataKey="value" radius={[0, 4, 4, 0]} minPointSize={2}>
                 {breakdownData.map((entry, idx) => (
@@ -736,20 +772,20 @@ export function DoctrineTab({ country }: DoctrineTabProps) {
           {breakdownData.map((d) => (
             <div key={d.name} className="flex items-center gap-1.5">
               <div className="w-2 h-2 rounded-sm" style={{ background: d.fill }} />
-              <span className="text-[8px] text-tactical-secondary/50">{d.name}</span>
+              <span className="text-[10px] text-tactical-secondary/50">{d.name}</span>
             </div>
           ))}
         </div>
 
         {/* Overall BP Doctrine score */}
         <div className="mt-3 pt-2 border-t border-white/5 flex items-center justify-between">
-          <span className="text-[8px] text-tactical-secondary/40 tracking-wider uppercase">
+          <span className="text-[10px] text-tactical-secondary/40 tracking-wider uppercase">
             БП Доктрина
           </span>
           <div className="flex items-center gap-2">
             <div className="w-24 h-1.5 bg-white/5 rounded-full overflow-hidden">
               <div
-                className="h-full rounded-full bg-gradient-to-r from-yellow-400 via-cyan-400 to-purple-400"
+                className="h-full rounded-full bg-tactical-primary/80"
                 style={{ width: `${Math.min(country.bpDoctrine, 100)}%` }}
               />
             </div>

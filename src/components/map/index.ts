@@ -14,7 +14,9 @@ export {
   createAircraftLayer,
   createNukeLayer,
   createTankLayer,
+  getAnalyticsLayerLegend,
 } from "./AnalyticsLayers";
+export type { AnalyticsCountry, AnalyticsLayerOptions, AnalyticsLegend } from "./AnalyticsLayers";
 
 export { LayerSelector, default as LayerSelectorDefault } from "./LayerSelector";
 export type { AnalyticsLayerKey } from "./LayerSelector";

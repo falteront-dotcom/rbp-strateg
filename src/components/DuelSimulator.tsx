@@ -4,7 +4,7 @@ import React, { useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { X, Swords, Target, Eye, Clock, Zap, Shield, AlertTriangle, Info, Brain } from 'lucide-react';
 import { UnitInfo } from '@/lib/unit-database';
-import { simulateEngagementAtDistance, CombatCapabilities, EngagementResult } from '@/lib/combat-engine';
+import { simulateEngagementAtDistance, CombatCapabilities } from '@/lib/combat-engine';
 import { cn } from '@/lib/utils';
 
 interface DuelSimulatorProps {
@@ -41,9 +41,6 @@ export default function DuelSimulator({ isOpen, onClose, unitA, unitB, combatA, 
         const events = [];
         
         // 1. Detection
-        const detA = result.detectionRangeA;
-        const detB = result.detectionRangeB;
-        
         events.push({
             time: 0,
             label: 'Начало сближения',
@@ -91,14 +88,14 @@ export default function DuelSimulator({ isOpen, onClose, unitA, unitB, combatA, 
                     initial={{ opacity: 0 }}
                     animate={{ opacity: 1 }}
                     exit={{ opacity: 0 }}
-                    className="fixed inset-0 bg-black/80 backdrop-blur-xl z-[60] flex items-center justify-center p-6"
+                    className="fixed inset-0 bg-black/80 z-[60] flex items-center justify-center p-6"
                     onClick={onClose}
                 >
                     <motion.div
                         initial={{ opacity: 0, scale: 0.9, y: 20 }}
                         animate={{ opacity: 1, scale: 1, y: 0 }}
                         exit={{ opacity: 0, scale: 0.9, y: 20 }}
-                        className="w-full max-w-3xl bg-slate-950 border border-tactical-accent/30 rounded-3xl shadow-2xl overflow-hidden glass-panel"
+                        className="w-full max-w-3xl bg-slate-950 border border-tactical-accent/30 rounded-md shadow-2xl overflow-hidden glass-panel"
                         onClick={e => e.stopPropagation()}
                     >
                         {/* Header */}
@@ -136,8 +133,8 @@ export default function DuelSimulator({ isOpen, onClose, unitA, unitB, combatA, 
                                         >
                                             <div className={cn(
                                                 "absolute -left-8 top-1 w-4 h-4 rounded-full border-2 bg-slate-950 transition-all group-hover:scale-125",
-                                                event.type === 'A' ? "border-blue-500 shadow-[0_0_8px_rgba(59,130,246,0.5)]" : 
-                                                event.type === 'B' ? "border-red-500 shadow-[0_0_8px_rgba(239,68,68,0.5)]" : 
+                                                event.type === 'A' ? "border-blue-500" :
+                                                event.type === 'B' ? "border-red-500" :
                                                 "border-slate-500"
                                             )} />
                                             <div className="flex flex-col">
@@ -155,9 +152,7 @@ export default function DuelSimulator({ isOpen, onClose, unitA, unitB, combatA, 
                                     <Brain size={14} /> Финальный Анализ ИИ
                                 </h3>
                                 
-                                <div className="p-6 rounded-2xl bg-white/5 border border-white/10 space-y-6 relative overflow-hidden">
-                                    <div className="absolute -right-4 -top-4 w-24 h-24 bg-tactical-accent/10 blur-3xl rounded-full" />
-                                    
+                                <div className="p-6 rounded-md bg-white/5 border border-white/10 space-y-6 relative overflow-hidden">
                                     <div className="flex justify-between items-center">
                                         <div className="text-center flex-1">
                                             <div className="text-xs font-mono text-blue-400 uppercase mb-1">{unitA.displayName}</div>

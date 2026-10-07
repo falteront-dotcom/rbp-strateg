@@ -148,20 +148,20 @@ export const SIDE_COLORS: Record<string, string> = {
 
 /** Side-based stroke colors for Recharts (hex for compatibility) */
 export const SIDE_STROKE_COLORS: Record<string, string> = {
-  NATO: "#3b82f6",
+  NATO: "#6b8fa0",
   RUS: "#ef4444",
   CHINA: "#eab308",
   UKR: "#fbbf24",
-  NEUTRAL: "#94a3b8",
+  NEUTRAL: "#94a3a4",
 };
 
 /** Side-based fill opacity colors for Recharts */
 export const SIDE_FILL_COLORS: Record<string, string> = {
-  NATO: "#3b82f6",
+  NATO: "#6b8fa0",
   RUS: "#ef4444",
   CHINA: "#eab308",
   UKR: "#fbbf24",
-  NEUTRAL: "#94a3b8",
+  NEUTRAL: "#94a3a4",
 };
 
 /** Side-based Tailwind text classes */
@@ -296,17 +296,7 @@ function buildMetricDeltas(countries: CountryCompareData[]): MetricDelta[] {
   });
 }
 
-/**
- * Convert ISO-3166-1 alpha-3 code to flag emoji.
- */
-export function isoToFlag(iso: string): string {
-  if (iso.length !== 3) return "🏳️";
-  const base = 0x1f1e6;
-  const codePointA = 65;
-  const ch1 = iso.charCodeAt(0) - codePointA + base;
-  const ch2 = iso.charCodeAt(1) - codePointA + base;
-  return String.fromCodePoint(ch1, ch2);
-}
+export { isoToFlag } from "./country-flags";
 
 /**
  * Format large numbers with K/M/B suffixes.

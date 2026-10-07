@@ -3,10 +3,11 @@ import { countries } from "@/db/schema";
 import { top20Countries } from "./top20-countries";
 import { extendedCountries } from "./extended-countries";
 import { additionalCountries } from "./additional-countries";
+import { worldCountries } from "./world-countries";
 import { sql } from "drizzle-orm";
 
 export async function seedCountries(): Promise<number> {
-  const allData = [...top20Countries, ...extendedCountries, ...additionalCountries];
+  const allData = [...top20Countries, ...extendedCountries, ...additionalCountries, ...worldCountries];
 
   // Drop existing data and re-insert in a transaction
   sqlite.exec("BEGIN");

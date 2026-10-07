@@ -4,7 +4,6 @@ import { useMemo } from "react";
 import {
   AreaChart,
   Area,
-  LineChart,
   Line,
   XAxis,
   YAxis,
@@ -44,7 +43,7 @@ export function TrendChart({
   forecast = [],
   label = "БП",
   dataKey = "bp",
-  color = "#22d3ee",
+  color = "#4fb287",
   height = 200,
 }: TrendChartProps) {
   const combinedData = useMemo(() => {
@@ -78,12 +77,12 @@ export function TrendChart({
       <ResponsiveContainer width="100%" height={height}>
         <AreaChart data={combinedData}>
           <CartesianGrid strokeDasharray="3 3" stroke="#1e293b" />
-          <XAxis dataKey="year" tick={{ fill: "#94a3b8", fontSize: 10 }} />
-          <YAxis domain={[0, 100]} tick={{ fill: "#475569", fontSize: 9 }} />
+          <XAxis dataKey="year" tick={{ fill: "#94a3a4", fontSize: 10 }} />
+          <YAxis domain={[0, 100]} tick={{ fill: "#47584c", fontSize: 10 }} />
           <Tooltip
             contentStyle={{
-              backgroundColor: "#0e1520ee",
-              border: "1px solid #22d3ee40",
+              backgroundColor: "#0e1710ee",
+              border: "1px solid #4fb28740",
               borderRadius: 8,
               fontSize: 10,
               fontFamily: "monospace",
@@ -101,7 +100,7 @@ export function TrendChart({
             type="monotone"
             dataKey="lower"
             stroke="none"
-            fill="#0e1520"
+            fill="#0e1710"
             fillOpacity={0.5}
           />
           {/* Historical line */}
@@ -127,14 +126,14 @@ export function TrendChart({
           {forecastStart && (
             <ReferenceLine
               x={forecastStart}
-              stroke="#475569"
+              stroke="#47584c"
               strokeDasharray="3 3"
               label={undefined}
             />
           )}
         </AreaChart>
       </ResponsiveContainer>
-      <div className="flex items-center gap-3 mt-1 text-[9px]">
+      <div className="flex items-center gap-3 mt-1 text-[10px]">
         <span className="flex items-center gap-1">
           <span className="w-4 h-0.5 inline-block" style={{ backgroundColor: color }} />
           Исторические данные

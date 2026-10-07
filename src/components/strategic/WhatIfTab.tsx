@@ -1,5 +1,6 @@
 "use client";
 
+import { Flag } from "@/components/Flag";
 // ─────────────────────────────────────────────────────────────────────────────
 // What-If Scenario Analysis Tab
 // РБП-Стратег 2.0 — Military HUD Style
@@ -51,8 +52,6 @@ import {
   COMPARISON_BP_COMPONENTS,
   type ComparisonBPComponent,
   type CountryCompareData,
-  isoToFlag,
-  formatLargeNumber,
   getBPTierLabel,
   getBPTierColor,
 } from "@/lib/comparison";
@@ -73,7 +72,6 @@ import {
   type ScenarioPreset,
 } from "@/lib/what-if-engine";
 import type { BPComponent, CountryRawData } from "@/lib/bp/types";
-import { BP_COMPONENTS } from "@/lib/bp/types";
 import { cn } from "@/lib/utils";
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -85,6 +83,7 @@ interface WhatIfTabProps {
   onClose: () => void;
   allCountries: CountryCompareData[];
   initialIsoCode?: string;
+  embedded?: boolean;
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -184,7 +183,7 @@ function SliderControl({
             isNegative ? "text-red-400" : value > 0 ? "text-cyan-400" : "text-slate-400",
           )}
         >
-          {displayValue}
+          {displayValue}{unit === "%" ? "" : ` ${unit}`}
         </span>
       </div>
       <div className="relative">
@@ -202,7 +201,6 @@ function SliderControl({
             [&::-webkit-slider-thumb]:h-3.5
             [&::-webkit-slider-thumb]:rounded-full
             [&::-webkit-slider-thumb]:bg-cyan-400
-            [&::-webkit-slider-thumb]:shadow-[0_0_8px_rgba(34,211,238,0.5)]
             [&::-webkit-slider-thumb]:cursor-pointer
             [&::-webkit-slider-thumb]:border-2
             [&::-webkit-slider-thumb]:border-cyan-300/50
@@ -260,7 +258,7 @@ function ToggleControl({
             {label}
           </span>
           {description && (
-            <div className="text-[8px] font-mono text-slate-500 mt-0.5">
+            <div className="text-[10px] font-mono text-slate-500 mt-0.5">
               {description}
             </div>
           )}
@@ -279,13 +277,13 @@ function ToggleControl({
           className={cn(
             "absolute top-0.5 w-3.5 h-3.5 rounded-full transition-all duration-200",
             active
-              ? "left-5.5 bg-cyan-400 shadow-[0_0_6px_rgba(34,211,238,0.6)]"
+              ? "left-5.5 bg-cyan-400"
               : "left-0.5 bg-slate-500",
           )}
         />
         <span
           className={cn(
-            "absolute text-[7px] font-mono top-0.5 font-bold",
+            "absolute text-[10px] font-mono top-0.5 font-bold",
             active
               ? "left-1 text-cyan-300"
               : "left-4 text-slate-500",
@@ -307,6 +305,7 @@ export default function WhatIfTab({
   onClose,
   allCountries,
   initialIsoCode,
+  embedded = false,
 }: WhatIfTabProps) {
   // ─── State ──────────────────────────────────────────────────────────
   const [selectedIso, setSelectedIso] = useState<string>(
@@ -347,6 +346,10 @@ export default function WhatIfTab({
       setParams(decoded.params);
     }
   }, [isOpen]);
+
+  useEffect(() => {
+    if (initialIsoCode) setSelectedIso(initialIsoCode);
+  }, [initialIsoCode]);
 
   // ─── Selected country data ──────────────────────────────────────────
   const selectedCountry: CountryCompareData | undefined = useMemo(
@@ -526,15 +529,16 @@ export default function WhatIfTab({
           animate={{ opacity: 1, x: 0 }}
           exit={{ opacity: 0, x: 40 }}
           transition={{ duration: 0.3, ease: "easeOut" }}
-          className="fixed inset-y-0 right-0 w-[860px] z-50
-            bg-[#0e1520]/95 backdrop-blur-xl
-            border-l border-cyan-400/10
-            flex flex-col overflow-hidden"
+          className={cn(
+            "bg-[#0e1710] flex min-h-0 flex-col overflow-hidden",
+            embedded
+              ? "relative h-full w-full"
+              : "fixed inset-y-0 right-0 z-50 w-[860px] border-l border-cyan-400/10",
+          )}
         >
           {/* ── Header ──────────────────────────────────────────────── */}
-          <div className="flex items-center justify-between px-5 py-3
-            border-b border-cyan-400/10
-            bg-gradient-to-r from-cyan-900/20 to-transparent">
+          {!embedded && <div className="flex items-center justify-between px-5 py-3
+            border-b border-cyan-400/10 bg-[#10232c]">
             <div className="flex items-center gap-2.5">
               <FlaskConical size={18} className="text-cyan-400" />
               <h2 className="text-sm font-mono font-bold text-cyan-300 tracking-wider uppercase">
@@ -548,16 +552,18 @@ export default function WhatIfTab({
             >
               <X size={16} />
             </button>
-          </div>
+          </div>}
 
-          <div className="flex flex-1 overflow-hidden">
+          <div className={cn("flex min-h-0 flex-1 overflow-hidden", embedded ? "flex-col" : "flex-row")}>
             {/* ── Left: Parameters Panel ────────────────────────────── */}
-            <div className="w-[310px] flex-shrink-0 border-r border-cyan-400/10
-              overflow-y-auto p-4 space-y-4">
+            <div className={cn(
+              "flex-shrink-0 overflow-y-auto p-4 space-y-4",
+              embedded ? "w-full border-b border-cyan-400/10" : "w-[310px] border-r border-cyan-400/10",
+            )}>
 
               {/* Country selector */}
               <div className="space-y-1.5" ref={dropdownRef}>
-                <label className="text-[9px] font-mono text-slate-500 uppercase tracking-widest">
+                <label className="text-[10px] font-mono text-slate-500 uppercase tracking-widest">
                   Базовая Страна
                 </label>
                 <div className="relative">
@@ -569,7 +575,7 @@ export default function WhatIfTab({
                       hover:border-cyan-400/30 transition-colors"
                   >
                     <span className="flex items-center gap-2">
-                      <span>{isoToFlag(selectedIso)}</span>
+                      <span><Flag iso={selectedIso} /></span>
                       <span>
                         {selectedCountry?.nameRu ?? selectedCountry?.name ?? selectedIso}
                       </span>
@@ -607,11 +613,11 @@ export default function WhatIfTab({
                                 "bg-cyan-400/10 text-cyan-300",
                             )}
                           >
-                            <span>{isoToFlag(c.isoCode)}</span>
+                            <span><Flag iso={c.isoCode} /></span>
                             <span className="flex-1 text-left">
                               {c.nameRu ?? c.name}
                             </span>
-                            <span className="text-slate-500 text-[9px]">
+                            <span className="text-slate-500 text-[10px]">
                               БП {c.bpTotal.toFixed(1)}
                             </span>
                           </button>
@@ -627,7 +633,7 @@ export default function WhatIfTab({
 
               {/* Sliders */}
               <div className="space-y-3">
-                <div className="text-[9px] font-mono text-slate-500 uppercase tracking-widest">
+                <div className="text-[10px] font-mono text-slate-500 uppercase tracking-widest">
                   Параметры Сценария
                 </div>
 
@@ -695,7 +701,7 @@ export default function WhatIfTab({
 
               {/* Alliance dropdown */}
               <div className="space-y-1.5">
-                <label className="text-[9px] font-mono text-slate-500 uppercase tracking-widest">
+                <label className="text-[10px] font-mono text-slate-500 uppercase tracking-widest">
                   Альянс
                 </label>
                 <select
@@ -759,7 +765,7 @@ export default function WhatIfTab({
 
               {/* Presets */}
               <div className="space-y-2">
-                <div className="text-[9px] font-mono text-slate-500 uppercase tracking-widest">
+                <div className="text-[10px] font-mono text-slate-500 uppercase tracking-widest">
                   Пресеты Сценариев
                 </div>
                 <div className="grid grid-cols-1 gap-1.5">
@@ -781,7 +787,7 @@ export default function WhatIfTab({
                         <div className="text-[10px] font-mono text-slate-300 group-hover:text-cyan-300 transition-colors">
                           {preset.nameRu}
                         </div>
-                        <div className="text-[8px] font-mono text-slate-500">
+                        <div className="text-[10px] font-mono text-slate-500">
                           {preset.description}
                         </div>
                       </div>
@@ -818,10 +824,10 @@ export default function WhatIfTab({
             </div>
 
             {/* ── Right: Results Panel ────────────────────────────────── */}
-            <div className="flex-1 overflow-y-auto p-4 space-y-4">
+            <div className="relative flex-1 overflow-y-auto p-4 space-y-4">
               {isCalculating && (
                 <div className="absolute inset-0 flex items-center justify-center
-                  bg-[#0e1520]/50 z-10 pointer-events-none">
+                  bg-[#0e1710]/50 z-10 pointer-events-none">
                   <div className="flex items-center gap-2 text-cyan-400 font-mono text-xs">
                     <div className="w-4 h-4 border-2 border-cyan-400/30
                       border-t-cyan-400 rounded-full animate-spin" />
@@ -834,23 +840,23 @@ export default function WhatIfTab({
                 <>
                   {/* ── Summary banner ────────────────────────────────── */}
                   <div className="glass-panel rounded-lg p-4">
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center gap-3">
+                    <div className="flex items-center justify-between gap-3 min-w-0">
+                      <div className="flex min-w-0 items-center gap-3">
                         <span className="text-2xl">
-                          {isoToFlag(selectedIso)}
+                          <Flag iso={selectedIso} />
                         </span>
-                        <div>
-                          <div className="text-sm font-mono font-bold text-slate-200">
+                        <div className="min-w-0">
+                          <div className="truncate text-sm font-mono font-bold text-slate-200">
                             {selectedCountry.nameRu ?? selectedCountry.name}
                           </div>
-                          <div className="text-[9px] font-mono text-slate-500 uppercase tracking-widest">
+                          <div className="text-[10px] font-mono text-slate-500 uppercase tracking-widest">
                             Результат Сценария
                           </div>
                         </div>
                       </div>
 
                       {/* Rank change */}
-                      <div className="text-right">
+                      <div className="shrink-0 text-right">
                         <div className="text-lg font-mono font-bold">
                           <span
                             className={cn(
@@ -868,17 +874,16 @@ export default function WhatIfTab({
                             )}
                           </span>
                         </div>
-                        <div className="text-[8px] font-mono text-slate-500 uppercase">
+                        <div className="text-[10px] font-mono text-slate-500 uppercase">
                           Изменение Ранга
                         </div>
                       </div>
                     </div>
 
                     {/* Total BP before/after */}
-                    <div className="flex items-center justify-center gap-6 mt-3 pt-3
-                      border-t border-cyan-400/10">
+                    <div className="grid grid-cols-3 gap-2 mt-3 pt-3 border-t border-cyan-400/10">
                       <div className="text-center">
-                        <div className="text-[9px] font-mono text-slate-500 uppercase tracking-widest">
+                        <div className="text-[10px] font-mono text-slate-500 uppercase tracking-widest">
                           Базовый БП
                         </div>
                         <div className="text-2xl font-mono font-bold text-slate-300">
@@ -886,7 +891,7 @@ export default function WhatIfTab({
                         </div>
                         <div
                           className={cn(
-                            "text-[9px] font-mono",
+                            "text-[10px] font-mono",
                             getBPTierColor(result.baseBP.totalBP),
                           )}
                         >
@@ -919,7 +924,7 @@ export default function WhatIfTab({
                       </div>
 
                       <div className="text-center">
-                        <div className="text-[9px] font-mono text-slate-500 uppercase tracking-widest">
+                        <div className="text-[10px] font-mono text-slate-500 uppercase tracking-widest">
                           Сценарный БП
                         </div>
                         <div
@@ -932,7 +937,7 @@ export default function WhatIfTab({
                         </div>
                         <div
                           className={cn(
-                            "text-[9px] font-mono",
+                            "text-[10px] font-mono",
                             getBPTierColor(result.scenarioBP.totalBP),
                           )}
                         >
@@ -972,10 +977,10 @@ export default function WhatIfTab({
                   {/* ── Radar view ─────────────────────────────────────── */}
                   {activeView === "radar" && radarData.length > 0 && (
                     <div className="glass-panel rounded-lg p-4">
-                      <div className="grid grid-cols-2 gap-4">
+                      <div className="grid grid-cols-1 gap-4">
                         {/* Before radar */}
                         <div className="space-y-2">
-                          <div className="text-[9px] font-mono text-slate-500 uppercase tracking-widest text-center">
+                          <div className="text-[10px] font-mono text-slate-500 uppercase tracking-widest text-center">
                             Базовый Профиль
                           </div>
                           <ResponsiveContainer width="100%" height={220}>
@@ -992,8 +997,8 @@ export default function WhatIfTab({
                               <PolarAngleAxis
                                 dataKey="component"
                                 tick={{
-                                  fill: "#94a3b8",
-                                  fontSize: 9,
+                                  fill: "#94a3a4",
+                                  fontSize: 10,
                                   fontFamily: "monospace",
                                 }}
                               />
@@ -1016,7 +1021,7 @@ export default function WhatIfTab({
 
                         {/* After radar */}
                         <div className="space-y-2">
-                          <div className="text-[9px] font-mono text-cyan-400/70 uppercase tracking-widest text-center">
+                          <div className="text-[10px] font-mono text-cyan-400/70 uppercase tracking-widest text-center">
                             Сценарный Профиль
                           </div>
                           <ResponsiveContainer width="100%" height={220}>
@@ -1033,8 +1038,8 @@ export default function WhatIfTab({
                               <PolarAngleAxis
                                 dataKey="component"
                                 tick={{
-                                  fill: "#94a3b8",
-                                  fontSize: 9,
+                                  fill: "#94a3a4",
+                                  fontSize: 10,
                                   fontFamily: "monospace",
                                 }}
                               />
@@ -1058,7 +1063,7 @@ export default function WhatIfTab({
 
                       {/* Overlay comparison */}
                       <div className="mt-2 pt-2 border-t border-cyan-400/10">
-                        <div className="text-[9px] font-mono text-slate-500 uppercase tracking-widest text-center mb-2">
+                        <div className="text-[10px] font-mono text-slate-500 uppercase tracking-widest text-center mb-2">
                           Наложение
                         </div>
                         <ResponsiveContainer width="100%" height={220}>
@@ -1075,8 +1080,8 @@ export default function WhatIfTab({
                             <PolarAngleAxis
                               dataKey="component"
                               tick={{
-                                fill: "#94a3b8",
-                                fontSize: 9,
+                                fill: "#94a3a4",
+                                fontSize: 10,
                                 fontFamily: "monospace",
                               }}
                             />
@@ -1113,23 +1118,23 @@ export default function WhatIfTab({
                       <table className="w-full text-[11px] font-mono">
                         <thead>
                           <tr className="border-b border-cyan-400/10">
-                            <th className="px-3 py-2 text-left text-[9px]
+                            <th className="px-3 py-2 text-left text-[10px]
                               text-slate-500 uppercase tracking-widest">
                               Компонент
                             </th>
-                            <th className="px-3 py-2 text-right text-[9px]
+                            <th className="px-3 py-2 text-right text-[10px]
                               text-slate-500 uppercase tracking-widest">
                               Базовый
                             </th>
-                            <th className="px-3 py-2 text-right text-[9px]
+                            <th className="px-3 py-2 text-right text-[10px]
                               text-slate-500 uppercase tracking-widest">
                               Сценарный
                             </th>
-                            <th className="px-3 py-2 text-right text-[9px]
+                            <th className="px-3 py-2 text-right text-[10px]
                               text-slate-500 uppercase tracking-widest">
                               Δ
                             </th>
-                            <th className="px-3 py-2 text-right text-[9px]
+                            <th className="px-3 py-2 text-right text-[10px]
                               text-slate-500 uppercase tracking-widest">
                               Δ%
                             </th>
@@ -1230,7 +1235,7 @@ export default function WhatIfTab({
                     <div className="space-y-3">
                       {/* Active effects */}
                       <div className="glass-panel rounded-lg p-4">
-                        <div className="text-[9px] font-mono text-slate-500 uppercase tracking-widest mb-3">
+                        <div className="text-[10px] font-mono text-slate-500 uppercase tracking-widest mb-3">
                           Активные Эффекты
                         </div>
                         <div className="grid grid-cols-2 gap-2">
@@ -1360,7 +1365,7 @@ export default function WhatIfTab({
 
                       {/* Key changes */}
                       <div className="glass-panel rounded-lg p-4">
-                        <div className="text-[9px] font-mono text-slate-500 uppercase tracking-widest mb-3">
+                        <div className="text-[10px] font-mono text-slate-500 uppercase tracking-widest mb-3">
                           Ключевые Изменения
                         </div>
                         <div className="space-y-2">
@@ -1412,7 +1417,7 @@ export default function WhatIfTab({
 
                       {/* Scenario URL share */}
                       <div className="glass-panel rounded-lg p-4">
-                        <div className="text-[9px] font-mono text-slate-500 uppercase tracking-widest mb-2">
+                        <div className="text-[10px] font-mono text-slate-500 uppercase tracking-widest mb-2">
                           Экспорт Сценария
                         </div>
                         <div className="flex gap-2">
@@ -1509,7 +1514,7 @@ function EffectCard({
       >
         {value}
       </div>
-      <div className="text-[8px] font-mono text-slate-500 mt-0.5">
+      <div className="text-[10px] font-mono text-slate-500 mt-0.5">
         {impact}
       </div>
     </div>

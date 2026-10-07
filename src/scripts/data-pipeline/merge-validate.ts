@@ -18,7 +18,6 @@
 import { getGFPData } from "./scrape-gfp";
 import { getNuclearData } from "./nuclear-data";
 import { COUNTRY_NAMES_RU } from "@/lib/geo/country-names-ru";
-import type { NewCountry } from "@/db/schema";
 
 interface ConflictRecord {
   iso3: string;
@@ -95,9 +94,6 @@ const NATO_MEMBERS = new Set([
 
 /** CSTO members */
 const CSTO_MEMBERS = new Set(["RUS","BLR","ARM","KAZ","KGZ","TJK"]);
-
-/** AUKUS members */
-const AUKUS_MEMBERS = new Set(["USA","AUS","GBR"]);
 
 /** BRICS members */
 const BRICS_MEMBERS = new Set(["CHN","RUS","IND","BRA","ZAF","SAU","IRN","UAE","EGY","ETH"]);
@@ -345,6 +341,7 @@ export async function runPipeline(): Promise<{
 if (typeof require !== "undefined" && require.main === module) {
   runPipeline()
     .then(({ countries, conflicts, stats }) => {
+      void conflicts;
       console.log("\n📊 Results:");
       console.log(JSON.stringify(stats, null, 2));
       console.log(`\nTop 5:`);

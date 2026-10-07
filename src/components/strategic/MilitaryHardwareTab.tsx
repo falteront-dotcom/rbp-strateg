@@ -18,7 +18,24 @@ import {
   PolarAngleAxis,
   PolarRadiusAxis,
 } from "recharts";
+import {
+  Users, Package, HardHat, Swords, Shield, Truck, Crosshair, Target,
+  Plane, Anchor, Ship, Radiation, BarChart3, Rocket, Waves, Radar as RadarIcon, Boxes, ChevronDown,
+} from "lucide-react";
 import { cn } from "@/lib/utils";
+import { EQUIPMENT_INDEX, type EquipmentCat } from "@/lib/data/equipment.generated";
+import { MISSILE_SYSTEMS } from "@/lib/data/missiles.generated";
+import { AIR_DEFENSE_NETWORKS } from "@/lib/data/airdefense.generated";
+import { NAVY_FLEETS } from "@/lib/data/navy.generated";
+import { WEAPON_SPECS } from "@/lib/data/weapons.generated";
+import { ORDER_OF_BATTLE } from "@/lib/data/order-of-battle.generated";
+
+const EQUIPMENT_GROUPS: readonly { label: string; cats: readonly EquipmentCat[] }[] = [
+  { label: "Сухопутная техника", cats: ["tank", "ifv", "apc", "arty", "mlrs", "sam"] },
+  { label: "Авиация", cats: ["fighter", "attack", "transport", "uav", "heli", "heli_attack"] },
+  { label: "Флот", cats: ["carrier", "cruiser", "destroyer", "frigate", "corvette", "submarine", "patrol", "amphib"] },
+  { label: "Стратегические ракетные силы", cats: ["icbm", "slbm"] },
+];
 
 // ---------------------------------------------------------------------------
 // Types
@@ -82,15 +99,13 @@ interface MilitaryHardwareTabProps {
 // Constants & Helpers
 // ---------------------------------------------------------------------------
 
-const CYAN = "#00e5ff";
-const CYAN_DIM = "#00e5ff66";
-const RED = "#ff3d5a";
-const AMBER = "#ffab00";
-const GREEN = "#00e676";
-const BLUE_STEEL = "#4fc3f7";
-const PURPLE = "#b388ff";
+const CYAN = "#6bb995";
+const RED = "#c76a5a";
+const AMBER = "#d8a03c";
+const GREEN = "#82a882";
+const BLUE_STEEL = "#8aa89b";
+const PURPLE = "#a892a8";
 
-const CHART_COLORS = [CYAN, RED, AMBER, GREEN, BLUE_STEEL, PURPLE];
 
 /** Reference data for top-10 tank counts (2025 GFP). */
 const TOP10_TANKS: ReadonlyArray<{ name: string; value: number }> = [
@@ -194,7 +209,7 @@ function GlassPanel({
   children: React.ReactNode;
   className?: string;
   title?: string;
-  icon?: string;
+  icon?: React.ReactNode;
 }) {
   return (
     <motion.div
@@ -202,22 +217,19 @@ function GlassPanel({
       initial="hidden"
       animate="visible"
       className={cn(
-        "relative overflow-hidden rounded-lg border border-[#00e5ff22] bg-[#0a1628cc] backdrop-blur-md",
-        "p-4 shadow-[0_0_20px_#00e5ff11]",
+        "relative overflow-hidden rounded-lg border border-[#6bb99522] bg-[#0a1628cc]",
+        "p-4",
         className
       )}
     >
-      {/* Scanline overlay */}
-      <div className="pointer-events-none absolute inset-0 bg-[repeating-linear-gradient(0deg,transparent,transparent_2px,#00e5ff05_2px,#00e5ff05_4px)]" />
-
       {/* Corner brackets */}
-      <div className="pointer-events-none absolute left-0 top-0 h-3 w-3 border-l border-t border-[#00e5ff55]" />
-      <div className="pointer-events-none absolute right-0 top-0 h-3 w-3 border-r border-t border-[#00e5ff55]" />
-      <div className="pointer-events-none absolute bottom-0 left-0 h-3 w-3 border-b border-l border-[#00e5ff55]" />
-      <div className="pointer-events-none absolute bottom-0 right-0 h-3 w-3 border-b border-r border-[#00e5ff55]" />
+      <div className="pointer-events-none absolute left-0 top-0 h-3 w-3 border-l border-t border-[#6bb99555]" />
+      <div className="pointer-events-none absolute right-0 top-0 h-3 w-3 border-r border-t border-[#6bb99555]" />
+      <div className="pointer-events-none absolute bottom-0 left-0 h-3 w-3 border-b border-l border-[#6bb99555]" />
+      <div className="pointer-events-none absolute bottom-0 right-0 h-3 w-3 border-b border-r border-[#6bb99555]" />
 
       {title && (
-        <div className="mb-3 flex items-center gap-2 border-b border-[#00e5ff22] pb-2 font-mono text-xs uppercase tracking-[0.2em] text-[#00e5ff]">
+        <div className="mb-3 flex items-center gap-2 border-b border-[#6bb99522] pb-2 font-mono text-xs uppercase tracking-[0.2em] text-[#6bb995]">
           {icon && <span className="text-sm">{icon}</span>}
           <span>{title}</span>
         </div>
@@ -235,7 +247,7 @@ function StatRow({
   rank,
   highlight,
 }: {
-  icon: string;
+  icon?: React.ReactNode;
   label: string;
   value: number;
   rank?: number;
@@ -249,8 +261,8 @@ function StatRow({
       className="flex items-center justify-between gap-3 py-1.5"
     >
       <div className="flex items-center gap-2">
-        <span className="text-base">{icon}</span>
-        <span className="font-mono text-xs uppercase tracking-wide text-[#8eb8d4]">
+        {icon && <span className="flex items-center text-[#5b7683]">{icon}</span>}
+        <span className="font-mono text-xs uppercase tracking-wide text-[#8eb8a6]">
           {label}
         </span>
       </div>
@@ -258,7 +270,7 @@ function StatRow({
         <span
           className={cn(
             "font-mono text-sm tabular-nums",
-            highlight ? "font-bold text-[#00e5ff]" : "text-white"
+            highlight ? "font-bold text-[#6bb995]" : "text-white"
           )}
         >
           {fmt(value)}
@@ -296,15 +308,15 @@ function BigNumber({
         initial={{ opacity: 0, scale: 0.5 }}
         animate={{ opacity: 1, scale: 1 }}
         transition={{ duration: 0.6, ease: "easeOut" }}
-        className="font-mono text-4xl font-black text-[#ff3d5a] drop-shadow-[0_0_16px_#ff3d5a88]"
+        className="font-mono text-4xl font-black text-[#c76a5a]"
       >
         {fmt(value)}
       </motion.span>
-      <span className="mt-1 font-mono text-xs uppercase tracking-[0.15em] text-[#ff3d5a99]">
+      <span className="mt-1 font-mono text-xs uppercase tracking-[0.15em] text-[#c76a5a99]">
         {label}
       </span>
       {sublabel && (
-        <span className="font-mono text-[10px] text-[#8eb8d4]">{sublabel}</span>
+        <span className="font-mono text-[10px] text-[#8eb8a6]">{sublabel}</span>
       )}
     </div>
   );
@@ -321,9 +333,9 @@ function TriadIndicator({
   air: boolean;
 }) {
   const legs = [
-    { active: land, icon: "🚀", label: "ICBM" },
-    { active: sea, icon: "⚓", label: "SLBM" },
-    { active: air, icon: "✈️", label: "Бомбардировщики" },
+    { active: land, icon: <Rocket size={15} />, label: "ICBM" },
+    { active: sea, icon: <Waves size={15} />, label: "SLBM" },
+    { active: air, icon: <Plane size={15} />, label: "Бомбардировщики" },
   ];
   return (
     <div className="flex items-center justify-center gap-3">
@@ -333,12 +345,12 @@ function TriadIndicator({
           className={cn(
             "flex flex-col items-center rounded-md border px-3 py-2 font-mono",
             l.active
-              ? "border-[#ff3d5a44] bg-[#ff3d5a11] text-[#ff3d5a]"
+              ? "border-[#c76a5a44] bg-[#c76a5a11] text-[#c76a5a]"
               : "border-[#ffffff11] bg-[#ffffff05] text-[#ffffff44]"
           )}
         >
-          <span className="text-lg">{l.icon}</span>
-          <span className="mt-0.5 text-[9px] uppercase tracking-wide">{l.label}</span>
+          <span className="flex h-4 items-center">{l.icon}</span>
+          <span className="mt-0.5 text-[10px] uppercase tracking-wide">{l.label}</span>
           <span className="text-[10px]">{l.active ? "АКТИВНО" : "—"}</span>
         </div>
       ))}
@@ -358,8 +370,8 @@ function HudTooltip({
 }) {
   if (!active || !payload?.length) return null;
   return (
-    <div className="rounded border border-[#00e5ff44] bg-[#0a1628ee] px-3 py-2 font-mono text-xs shadow-[0_0_12px_#00e5ff22]">
-      <p className="mb-1 text-[#00e5ff]">{lbl}</p>
+    <div className="rounded border border-[#6bb99544] bg-[#0a1628ee] px-3 py-2 font-mono text-xs">
+      <p className="mb-1 text-[#6bb995]">{lbl}</p>
       {payload.map((p) => (
         <p key={p.name} style={{ color: p.color }}>
           {p.name}: {fmt(p.value)}
@@ -498,7 +510,7 @@ export function MilitaryHardwareTab({ country }: MilitaryHardwareTabProps) {
       {/* ================================================================ */}
       {/* PERSONNEL SECTION                                                */}
       {/* ================================================================ */}
-      <GlassPanel title="Личный состав" icon="🛡️">
+      <GlassPanel title="Личный состав" icon={<Users size={14} />}>
         <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
           {/* Donut chart */}
           <div className="flex flex-col items-center">
@@ -515,7 +527,7 @@ export function MilitaryHardwareTab({ country }: MilitaryHardwareTabProps) {
                   animationBegin={0}
                   animationDuration={800}
                 >
-                  {personnelData.map((d, i) => (
+                  {personnelData.map((d) => (
                     <Cell key={d.name} fill={d.color} />
                   ))}
                 </Pie>
@@ -535,8 +547,8 @@ export function MilitaryHardwareTab({ country }: MilitaryHardwareTabProps) {
                   x="50%"
                   y="58%"
                   textAnchor="middle"
-                  fill="#8eb8d4"
-                  fontSize={9}
+                  fill="#8eb8a6"
+                  fontSize={10}
                   fontFamily="monospace"
                 >
                   ВСЕГО ЧЕЛОВЕК
@@ -553,7 +565,7 @@ export function MilitaryHardwareTab({ country }: MilitaryHardwareTabProps) {
                     className="inline-block h-2 w-2 rounded-full"
                     style={{ backgroundColor: d.color }}
                   />
-                  <span className="text-[10px] text-[#8eb8d4]">{d.name}</span>
+                  <span className="text-[10px] text-[#8eb8a6]">{d.name}</span>
                 </div>
               ))}
             </div>
@@ -561,31 +573,31 @@ export function MilitaryHardwareTab({ country }: MilitaryHardwareTabProps) {
 
           {/* Manpower index */}
           <div className="flex flex-col justify-center gap-3">
-            <div className="text-center font-mono text-xs uppercase tracking-[0.15em] text-[#8eb8d4]">
+            <div className="text-center font-mono text-xs uppercase tracking-[0.15em] text-[#8eb8a6]">
               Индекс людских ресурсов
             </div>
             <div className="flex items-center justify-center gap-2">
-              <span className="font-mono text-3xl font-black text-[#00e5ff] drop-shadow-[0_0_12px_#00e5ff66]">
+              <span className="font-mono text-3xl font-black text-[#6bb995]">
                 {manpowerIndex}
               </span>
-              <span className="font-mono text-sm text-[#8eb8d4]">/ 10</span>
+              <span className="font-mono text-sm text-[#8eb8a6]">/ 10</span>
             </div>
 
             {/* Comparison bar */}
             <div className="mx-4">
-              <div className="h-2 rounded-full bg-[#1a2a44]">
+              <div className="h-2 rounded-full bg-[#1a2a22]">
                 <motion.div
                   initial={{ width: 0 }}
                   animate={{ width: `${manpowerIndex * 10}%` }}
                   transition={{ duration: 0.8, ease: "easeOut" }}
                   className="h-full rounded-full"
                   style={{
-                    background: `linear-gradient(90deg, ${CYAN}, ${CYAN}88)`,
-                    boxShadow: `0 0 8px ${CYAN}44`,
+                    background: CYAN,
+                    boxShadow: "none",
                   }}
                 />
               </div>
-              <div className="mt-1 flex justify-between font-mono text-[9px] text-[#8eb8d4]">
+              <div className="mt-1 flex justify-between font-mono text-[10px] text-[#8eb8a6]">
                 <span>0</span>
                 <span>5</span>
                 <span>10</span>
@@ -593,9 +605,9 @@ export function MilitaryHardwareTab({ country }: MilitaryHardwareTabProps) {
             </div>
 
             {/* Breakdown */}
-            <StatRow icon="🎖️" label="Активный" value={country.activePersonnel} />
-            <StatRow icon="📦" label="Резерв" value={country.reservePersonnel} />
-            <StatRow icon="🪖" label="Пригодных" value={Math.round(country.fitForServiceM * 1000)} />
+            <StatRow icon={<Users size={13} />} label="Активный" value={country.activePersonnel} />
+            <StatRow icon={<Package size={13} />} label="Резерв" value={country.reservePersonnel} />
+            <StatRow icon={<HardHat size={13} />} label="Пригодных" value={Math.round(country.fitForServiceM * 1000)} />
           </div>
         </div>
       </GlassPanel>
@@ -603,42 +615,42 @@ export function MilitaryHardwareTab({ country }: MilitaryHardwareTabProps) {
       {/* ================================================================ */}
       {/* GROUND FORCES SECTION                                            */}
       {/* ================================================================ */}
-      <GlassPanel title="Сухопутные войска" icon="⚔️">
+      <GlassPanel title="Сухопутные войска" icon={<Swords size={14} />}>
         <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
           {/* Stats column */}
           <div className="flex flex-col gap-1">
             <StatRow
-              icon="🛡️"
+              icon={<Shield size={13} />}
               label="Танки"
               value={country.totalTanks}
               rank={tankRank}
               highlight
             />
             <StatRow
-              icon="🚛"
+              icon={<Truck size={13} />}
               label="БМП/БТР"
               value={country.totalAfv}
             />
             <StatRow
-              icon="💥"
+              icon={<Crosshair size={13} />}
               label="Артиллерия"
               value={country.totalArtillery}
             />
             <StatRow
-              icon="🎯"
+              icon={<Target size={13} />}
               label="РСЗО"
               value={country.totalMlrs}
               highlight
             />
             <StatRow
-              icon="🚀"
+              icon={<RadarIcon size={13} />}
               label="ЗРК (оценка)"
               value={Math.round(country.totalArtillery * 0.06 + country.ewCapability * 20)}
             />
 
             {/* Quick tech indicator */}
-            <div className="mt-2 flex items-center gap-2 border-t border-[#00e5ff11] pt-2">
-              <span className="font-mono text-[10px] uppercase text-[#8eb8d4]">
+            <div className="mt-2 flex items-center gap-2 border-t border-[#6bb99511] pt-2">
+              <span className="font-mono text-[10px] uppercase text-[#8eb8a6]">
                 Техноуровень:
               </span>
               <div className="flex gap-0.5">
@@ -647,19 +659,19 @@ export function MilitaryHardwareTab({ country }: MilitaryHardwareTabProps) {
                     key={i}
                     className="h-2 w-2 rounded-sm"
                     style={{
-                      backgroundColor: i < country.techLevel ? CYAN : "#1a2a44",
-                      boxShadow: i < country.techLevel ? `0 0 4px ${CYAN}44` : "none",
+                      backgroundColor: i < country.techLevel ? CYAN : "#1a2a22",
+                      boxShadow: "none",
                     }}
                   />
                 ))}
               </div>
-              <span className="font-mono text-xs text-[#00e5ff]">{country.techLevel}/10</span>
+              <span className="font-mono text-xs text-[#6bb995]">{country.techLevel}/10</span>
             </div>
           </div>
 
           {/* Top-10 tanks bar chart */}
           <div>
-            <div className="mb-2 text-center font-mono text-[10px] uppercase tracking-widest text-[#8eb8d4]">
+            <div className="mb-2 text-center font-mono text-[10px] uppercase tracking-widest text-[#8eb8a6]">
               Топ-10 стран по танкам
             </div>
             <ResponsiveContainer width="100%" height={220}>
@@ -672,8 +684,8 @@ export function MilitaryHardwareTab({ country }: MilitaryHardwareTabProps) {
                 <YAxis
                   type="category"
                   dataKey="name"
-                  tick={{ fill: "#8eb8d4", fontSize: 10, fontFamily: "monospace" }}
-                  axisLine={{ stroke: "#00e5ff22" }}
+                  tick={{ fill: "#8eb8a6", fontSize: 10, fontFamily: "monospace" }}
+                  axisLine={{ stroke: "#6bb99522" }}
                   tickLine={false}
                   width={55}
                 />
@@ -687,7 +699,7 @@ export function MilitaryHardwareTab({ country }: MilitaryHardwareTabProps) {
                   {tankChartData.map((entry, i) => (
                     <Cell
                       key={i}
-                      fill={entry.isHighlighted ? CYAN : "#1e3a5f"}
+                      fill={entry.isHighlighted ? CYAN : "#1e3a2b"}
                       stroke={entry.isHighlighted ? CYAN : "none"}
                       strokeWidth={entry.isHighlighted ? 1 : 0}
                     />
@@ -702,30 +714,28 @@ export function MilitaryHardwareTab({ country }: MilitaryHardwareTabProps) {
       {/* ================================================================ */}
       {/* AIR FORCES SECTION                                               */}
       {/* ================================================================ */}
-      <GlassPanel title="Военно-воздушные силы" icon="✈️">
+      <GlassPanel title="Военно-воздушные силы" icon={<Plane size={14} />}>
         <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
           {/* Stats column */}
           <div className="flex flex-col gap-1">
             <StatRow
-              icon="✈️"
+              icon={<Plane size={13} />}
               label="Всего самолётов"
               value={country.totalAircraft}
               highlight
             />
             {airBreakdown.map((a) => (
-              <StatRow key={a.name} icon="▪️" label={a.name} value={a.value} />
+              <StatRow key={a.name} label={a.name} value={a.value} />
             ))}
 
-            <div className="my-2 border-t border-[#00e5ff11]" />
+            <div className="my-2 border-t border-[#6bb99511]" />
 
             <StatRow
-              icon="🚁"
               label="Вертолёты"
               value={country.totalHelicopters}
               highlight
             />
             <StatRow
-              icon="💀"
               label="Ударные вертолёты"
               value={attackHelis}
             />
@@ -765,8 +775,8 @@ export function MilitaryHardwareTab({ country }: MilitaryHardwareTabProps) {
                   x="50%"
                   y="58%"
                   textAnchor="middle"
-                  fill="#8eb8d4"
-                  fontSize={8}
+                  fill="#8eb8a6"
+                  fontSize={10}
                   fontFamily="monospace"
                 >
                   САМОЛЁТОВ
@@ -783,7 +793,7 @@ export function MilitaryHardwareTab({ country }: MilitaryHardwareTabProps) {
                     className="inline-block h-2 w-2 rounded-full"
                     style={{ backgroundColor: d.color }}
                   />
-                  <span className="text-[10px] text-[#8eb8d4]">{d.name}</span>
+                  <span className="text-[10px] text-[#8eb8a6]">{d.name}</span>
                 </div>
               ))}
             </div>
@@ -794,24 +804,24 @@ export function MilitaryHardwareTab({ country }: MilitaryHardwareTabProps) {
       {/* ================================================================ */}
       {/* NAVAL FORCES SECTION                                             */}
       {/* ================================================================ */}
-      <GlassPanel title="Военно-морские силы" icon="⚓">
+      <GlassPanel title="Военно-морские силы" icon={<Anchor size={14} />}>
         <div className="grid grid-cols-1 gap-4 lg:grid-cols-3">
           {/* Navy breakdown */}
           <div className="flex flex-col gap-1">
             <StatRow
-              icon="⚓"
+              icon={<Ship size={13} />}
               label="Всего кораблей"
               value={country.totalNavy}
               highlight
             />
             {navyBreakdown.map((n) => (
-              <StatRow key={n.name} icon="▪️" label={n.name} value={n.value} />
+              <StatRow key={n.name} label={n.name} value={n.value} />
             ))}
           </div>
 
           {/* Submarine detail */}
           <div className="flex flex-col items-center">
-            <div className="mb-2 font-mono text-[10px] uppercase tracking-widest text-[#8eb8d4]">
+            <div className="mb-2 font-mono text-[10px] uppercase tracking-widest text-[#8eb8a6]">
               Подводный флот
             </div>
             <ResponsiveContainer width="100%" height={170}>
@@ -846,8 +856,8 @@ export function MilitaryHardwareTab({ country }: MilitaryHardwareTabProps) {
                   x="50%"
                   y="58%"
                   textAnchor="middle"
-                  fill="#8eb8d4"
-                  fontSize={7}
+                  fill="#8eb8a6"
+                  fontSize={10}
                   fontFamily="monospace"
                 >
                   ПОДЛОДОК
@@ -863,7 +873,7 @@ export function MilitaryHardwareTab({ country }: MilitaryHardwareTabProps) {
                   <span className="font-mono text-sm font-bold" style={{ color: s.color }}>
                     {s.value}
                   </span>
-                  <span className="font-mono text-[9px] text-[#8eb8d4]">{s.name}</span>
+                  <span className="font-mono text-[10px] text-[#8eb8a6]">{s.name}</span>
                 </div>
               ))}
             </div>
@@ -871,7 +881,7 @@ export function MilitaryHardwareTab({ country }: MilitaryHardwareTabProps) {
 
           {/* Fleet tonnage bar chart */}
           <div>
-            <div className="mb-2 text-center font-mono text-[10px] uppercase tracking-widest text-[#8eb8d4]">
+            <div className="mb-2 text-center font-mono text-[10px] uppercase tracking-widest text-[#8eb8a6]">
               Тоннаж флота (тыс. т)
             </div>
             <ResponsiveContainer width="100%" height={200}>
@@ -884,8 +894,8 @@ export function MilitaryHardwareTab({ country }: MilitaryHardwareTabProps) {
                 <YAxis
                   type="category"
                   dataKey="name"
-                  tick={{ fill: "#8eb8d4", fontSize: 10, fontFamily: "monospace" }}
-                  axisLine={{ stroke: "#00e5ff22" }}
+                  tick={{ fill: "#8eb8a6", fontSize: 10, fontFamily: "monospace" }}
+                  axisLine={{ stroke: "#6bb99522" }}
                   tickLine={false}
                   width={55}
                 />
@@ -899,7 +909,7 @@ export function MilitaryHardwareTab({ country }: MilitaryHardwareTabProps) {
                   {fleetTonnageHighlighted.map((entry, i) => (
                     <Cell
                       key={i}
-                      fill={entry.isHighlighted ? CYAN : "#1e3a5f"}
+                      fill={entry.isHighlighted ? CYAN : "#1e3a2b"}
                       stroke={entry.isHighlighted ? CYAN : "none"}
                       strokeWidth={entry.isHighlighted ? 1 : 0}
                     />
@@ -915,8 +925,8 @@ export function MilitaryHardwareTab({ country }: MilitaryHardwareTabProps) {
       {/* NUCLEAR ARSENAL SECTION                                          */}
       {/* ================================================================ */}
       {showNuclear && (
-        <GlassPanel title="Ядерный арсенал" icon="☢️">
-          <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
+        <GlassPanel title="Ядерный арсенал" icon={<Radiation size={14} />}>
+          <div className="grid grid-cols-1 gap-4">
             {/* Big number */}
             <div className="flex flex-col items-center justify-center gap-3">
               <BigNumber
@@ -930,25 +940,25 @@ export function MilitaryHardwareTab({ country }: MilitaryHardwareTabProps) {
                 href={NUCLEAR_SOURCE.url}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="mt-2 rounded border border-[#ff3d5a33] bg-[#ff3d5a11] px-2 py-1 font-mono text-[9px] uppercase text-[#ff3d5a99] transition-colors hover:border-[#ff3d5a66] hover:text-[#ff3d5acc]"
+                className="mt-2 rounded border border-[#c76a5a33] bg-[#c76a5a11] px-2 py-1 font-mono text-[10px] uppercase text-[#c76a5a99] transition-colors hover:border-[#c76a5a66] hover:text-[#c76a5acc]"
               >
-                📖 {NUCLEAR_SOURCE.label}
+                {NUCLEAR_SOURCE.label}
               </a>
             </div>
 
             {/* Delivery systems */}
             <div className="flex flex-col items-center justify-center gap-2">
-              <div className="font-mono text-[10px] uppercase tracking-widest text-[#ff3d5a99]">
+              <div className="font-mono text-[10px] uppercase tracking-widest text-[#c76a5a99]">
                 Средства доставки
               </div>
-              <StatRow icon="🚀" label="МБР" value={nuclearDelivery.icbm} highlight />
-              <StatRow icon="⚓" label="БРПЛ" value={nuclearDelivery.slbm} highlight />
-              <StatRow icon="✈️" label="Страт. бомб." value={nuclearDelivery.bombers} highlight />
+              <StatRow icon={<Rocket size={13} />} label="МБР" value={nuclearDelivery.icbm} highlight />
+              <StatRow icon={<Waves size={13} />} label="БРПЛ" value={nuclearDelivery.slbm} highlight />
+              <StatRow icon={<Plane size={13} />} label="Страт. бомб." value={nuclearDelivery.bombers} highlight />
             </div>
 
             {/* Triad indicator */}
             <div className="flex flex-col items-center justify-center gap-3">
-              <div className="font-mono text-[10px] uppercase tracking-widest text-[#ff3d5a99]">
+              <div className="font-mono text-[10px] uppercase tracking-widest text-[#c76a5a99]">
                 Ядерная триада
               </div>
               <TriadIndicator
@@ -956,10 +966,10 @@ export function MilitaryHardwareTab({ country }: MilitaryHardwareTabProps) {
                 sea={nuclearDelivery.slbm > 0}
                 air={nuclearDelivery.bombers > 0}
               />
-              <div className="mt-1 font-mono text-[10px] text-[#8eb8d4]">
+              <div className="mt-1 font-mono text-[10px] text-[#8eb8a6]">
                 {nuclearDelivery.icbm > 0 && nuclearDelivery.slbm > 0 && nuclearDelivery.bombers > 0
-                  ? "✅ Полная триада"
-                  : "⚠️ Неполная триада"}
+                  ? "Полная триада"
+                  : "Неполная триада"}
               </div>
             </div>
           </div>
@@ -969,7 +979,7 @@ export function MilitaryHardwareTab({ country }: MilitaryHardwareTabProps) {
       {/* ================================================================ */}
       {/* OVERALL STRENGTH RADAR                                           */}
       {/* ================================================================ */}
-      <GlassPanel title="Общая военная мощь" icon="📊">
+      <GlassPanel title="Общая военная мощь" icon={<BarChart3 size={14} />}>
         <div className="flex flex-col items-center">
           <ResponsiveContainer width="100%" height={320}>
             <RadarChart
@@ -979,12 +989,12 @@ export function MilitaryHardwareTab({ country }: MilitaryHardwareTabProps) {
               data={radarData}
             >
               <PolarGrid
-                stroke="#00e5ff22"
+                stroke="#6bb99522"
                 gridType="polygon"
               />
               <PolarAngleAxis
                 dataKey="axis"
-                tick={{ fill: "#8eb8d4", fontSize: 10, fontFamily: "monospace" }}
+                tick={{ fill: "#8eb8a6", fontSize: 10, fontFamily: "monospace" }}
               />
               <PolarRadiusAxis
                 angle={90}
@@ -1004,11 +1014,11 @@ export function MilitaryHardwareTab({ country }: MilitaryHardwareTabProps) {
               <Tooltip
                 contentStyle={{
                   backgroundColor: "#0a1628ee",
-                  border: "1px solid #00e5ff44",
+                  border: "1px solid #6bb99544",
                   borderRadius: 4,
                   fontFamily: "monospace",
                   fontSize: 11,
-                  boxShadow: "0 0 12px #00e5ff22",
+                  boxShadow: "none",
                 }}
                 labelStyle={{ color: CYAN }}
                 itemStyle={{ color: "#fff" }}
@@ -1021,12 +1031,12 @@ export function MilitaryHardwareTab({ country }: MilitaryHardwareTabProps) {
             {radarData.map((r) => (
               <div
                 key={r.axis}
-                className="flex flex-col items-center rounded border border-[#00e5ff11] bg-[#00e5ff05] px-2 py-1"
+                className="flex flex-col items-center rounded border border-[#6bb99511] bg-[#6bb99505] px-2 py-1"
               >
-                <span className="font-mono text-sm font-bold text-[#00e5ff]">
+                <span className="font-mono text-sm font-bold text-[#6bb995]">
                   {r.value}
                 </span>
-                <span className="font-mono text-[8px] uppercase tracking-wide text-[#8eb8d4]">
+                <span className="font-mono text-[10px] uppercase tracking-wide text-[#8eb8a6]">
                   {r.axis}
                 </span>
               </div>
@@ -1035,10 +1045,10 @@ export function MilitaryHardwareTab({ country }: MilitaryHardwareTabProps) {
 
           {/* BP Total */}
           <div className="mt-3 flex items-center gap-2">
-            <span className="font-mono text-xs uppercase text-[#8eb8d4]">
+            <span className="font-mono text-xs uppercase text-[#8eb8a6]">
               Боевой потенциал (РБП):
             </span>
-            <span className="font-mono text-lg font-black text-[#00e5ff] drop-shadow-[0_0_8px_#00e5ff44]">
+            <span className="font-mono text-lg font-black text-[#6bb995]">
               {country.bpTotal?.toFixed(1) ?? "—"}
             </span>
             {country.bpRank && (
@@ -1057,8 +1067,219 @@ export function MilitaryHardwareTab({ country }: MilitaryHardwareTabProps) {
         </div>
       </GlassPanel>
 
+      {/* ================================================================ */}
+      {/* STRATEGIC SYSTEMS — missiles, air defense, warships (open est.)  */}
+      {/* ================================================================ */}
+      <GlassPanel title="Стратегические системы" icon={<RadarIcon size={14} />}>
+        {(() => {
+          const missiles = MISSILE_SYSTEMS.filter(m => m.iso === country.isoCode);
+          const airDefense = AIR_DEFENSE_NETWORKS.find(n => n.iso === country.isoCode);
+          const fleet = NAVY_FLEETS.find(f => f.iso === country.isoCode);
+          if (missiles.length === 0 && !airDefense && !fleet) {
+            return (
+              <p className="text-[10px] text-slate-500">
+                Модельные данные по ракетам, ПВО и флоту для этой страны ещё не собраны.
+              </p>
+            );
+          }
+          return (
+            <div className="space-y-3">
+              {missiles.length > 0 && (
+                <div>
+                  <div className="mb-1 flex items-center gap-2 text-[10px] font-semibold text-tactical-secondary/70 tracking-wide uppercase">
+                    Ракетные системы <span className="font-mono text-slate-500">{missiles.length}</span>
+                  </div>
+                  <div className="space-y-0.5">
+                    {missiles.slice(0, 14).map((m, i) => (
+                      <div key={`${m.name}-${i}`} className="flex items-baseline gap-2 text-[10px]">
+                        <span className="min-w-0 flex-1 truncate text-slate-300" title={m.name}>{m.name}</span>
+                        <span className="shrink-0 text-slate-500">{m.type}</span>
+                        <span className="shrink-0 font-mono text-slate-400">
+                          {m.count === null ? "—" : `×${m.count.toLocaleString("ru-RU")}`}
+                        </span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+              {airDefense && (
+                <div>
+                  <div className="mb-1 flex items-center gap-2 text-[10px] font-semibold text-tactical-secondary/70 tracking-wide uppercase">
+                    ПВО / ПРО <span className="font-mono text-slate-500">{airDefense.systems.length}</span>
+                  </div>
+                  <div className="space-y-0.5">
+                    {airDefense.systems.slice(0, 12).map((s, i) => (
+                      <div key={`${s.name}-${i}`} className="flex items-baseline gap-2 text-[10px]">
+                        <span className="min-w-0 flex-1 truncate text-slate-300" title={s.name}>{s.name}</span>
+                        <span className="shrink-0 text-slate-500">{s.tier}</span>
+                        <span className="shrink-0 font-mono text-slate-400">
+                          {s.count === null ? "—" : `×${s.count.toLocaleString("ru-RU")}`}
+                        </span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+              {fleet && (
+                <div>
+                  <div className="mb-1 flex items-center gap-2 text-[10px] font-semibold text-tactical-secondary/70 tracking-wide uppercase">
+                    Корабельный состав <span className="font-mono text-slate-500">{fleet.classes.length}</span>
+                  </div>
+                  <div className="space-y-0.5">
+                    {fleet.classes.slice(0, 14).map((c, i) => (
+                      <div key={`${c.name}-${i}`} className="flex items-baseline gap-2 text-[10px]">
+                        <span className="min-w-0 flex-1 truncate text-slate-300" title={c.name}>{c.name}</span>
+                        <span className="shrink-0 text-slate-500">{c.typeRu}</span>
+                        <span className="shrink-0 font-mono text-slate-400">×{c.units}</span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+              <p className="text-[10px] text-slate-600">Оценки открытых источников (IISS/GFP), округлены.</p>
+            </div>
+          );
+        })()}
+      </GlassPanel>
+
+      {/* ================================================================ */}
+      {/* ORDER OF BATTLE — operational formations (open sources)          */}
+      {/* ================================================================ */}
+      <GlassPanel title="Боевой порядок · формирования" icon={<Swords size={14} />}>
+        {(() => {
+          const formations = ORDER_OF_BATTLE.filter(f => f.iso === country.isoCode);
+          if (formations.length === 0) {
+            return (
+              <p className="text-[10px] text-slate-500">
+                Оргструктура вооружённых сил этой страны ещё не собрана.
+              </p>
+            );
+          }
+          return (
+            <div className="space-y-1">
+              {formations.slice(0, 20).map((f, i) => (
+                <div key={`${f.nameRu}-${i}`} className="rounded border border-slate-700/60 bg-slate-900/40 px-2 py-1.5">
+                  <div className="flex items-baseline justify-between gap-2">
+                    <span className="min-w-0 truncate text-xs font-semibold text-slate-200" title={f.nameRu}>{f.nameRu}</span>
+                    <span className="shrink-0 text-[10px] text-slate-500">{f.typeRu}</span>
+                  </div>
+                  <div className="mt-0.5 flex flex-wrap items-center gap-x-2 text-[10px] text-slate-400">
+                    <span>{f.branchRu}</span>
+                    <span className="text-slate-600">·</span>
+                    <span>{f.locationRu}</span>
+                  </div>
+                  <p className="mt-0.5 text-[10px] text-slate-500">{f.strengthRu}</p>
+                </div>
+              ))}
+            </div>
+          );
+        })()}
+      </GlassPanel>
+
+      {/* ================================================================ */}
+      {/* WEAPON SPECS — detailed TTX of key systems (open sources)       */}
+      {/* ================================================================ */}
+      <GlassPanel title="Ключевые образцы ВВТ · ТТХ" icon={<Boxes size={14} />}>
+        {(() => {
+          const specs = WEAPON_SPECS.filter(w => w.originIso === country.isoCode);
+          if (specs.length === 0) {
+            return (
+              <p className="text-[10px] text-slate-500">
+                Детальные ТТХ образцов, разработанных в этой стране, ещё не собраны.
+              </p>
+            );
+          }
+          return (
+            <div className="space-y-1.5">
+              {specs.slice(0, 18).map(w => (
+                <div key={w.id} className="rounded border border-slate-700/60 bg-slate-900/40 px-2 py-1.5">
+                  <div className="flex items-baseline justify-between gap-2">
+                    <span className="min-w-0 truncate text-xs font-semibold text-slate-200" title={w.name}>{w.nameRu}</span>
+                    <span className="shrink-0 font-mono text-[10px] text-slate-500">{w.category}</span>
+                  </div>
+                  <div className="mt-0.5 grid grid-cols-2 gap-x-2 text-[10px] text-slate-400">
+                    {w.crew !== null && <span>Экипаж: <span className="text-slate-300">{w.crew}</span></span>}
+                    {w.weightTons !== null && <span>Масса: <span className="text-slate-300">{w.weightTons} т</span></span>}
+                    {w.rangeKm !== null && <span>Дальность: <span className="text-slate-300">{w.rangeKm} км</span></span>}
+                    {w.speedKmh !== null && <span>Скорость: <span className="text-slate-300">{w.speedKmh} км/ч</span></span>}
+                    {w.caliberMm !== null && <span>Калибр: <span className="text-slate-300">{w.caliberMm} мм</span></span>}
+                    {w.yearInService !== null && <span>На службе: <span className="text-slate-300">с {w.yearInService}</span></span>}
+                  </div>
+                  {w.armamentRu && (
+                    <p className="mt-1 text-[10px] leading-snug text-slate-500">{w.armamentRu}</p>
+                  )}
+                </div>
+              ))}
+            </div>
+          );
+        })()}
+      </GlassPanel>
+
+      {/* ================================================================ */}
+      {/* EQUIPMENT INVENTORY — model-level, open estimates (IISS/GFP)    */}
+      {/* ================================================================ */}
+      <GlassPanel title="Парк техники · модели" icon={<Boxes size={14} />}>
+        {(() => {
+          const equipment = EQUIPMENT_INDEX[country.isoCode];
+          if (!equipment || equipment.entries.length === 0) {
+            return (
+              <p className="text-[10px] text-slate-500">
+                Модельный состав вооружений этой страны не внесён в базу — суммарные
+                численности см. в разделах выше.
+              </p>
+            );
+          }
+          return (
+            <div className="space-y-2">
+              {EQUIPMENT_GROUPS.map(group => {
+                const entries = equipment.entries.filter(e => group.cats.includes(e.cat));
+                if (entries.length === 0) return null;
+                const units = entries.reduce((s, e) => s + e.count, 0);
+                return (
+                  <details
+                    key={group.label}
+                    className="group rounded border border-slate-700/60 bg-slate-900/40"
+                  >
+                    <summary className="flex cursor-pointer list-none items-center gap-2 px-2 py-1.5 [&::-webkit-details-marker]:hidden">
+                      <ChevronDown size={11} className="shrink-0 text-slate-500 transition-transform group-open:rotate-180" />
+                      <span className="min-w-0 truncate text-[11px] font-semibold text-slate-300">
+                        {group.label}
+                      </span>
+                      <span className="ml-auto shrink-0 font-mono text-[10px] text-slate-500">
+                        {entries.length} мод. · {units.toLocaleString("ru-RU")} ед.
+                      </span>
+                    </summary>
+                    <div className="space-y-0.5 border-t border-slate-700/60 px-2 py-1.5">
+                      {[...entries]
+                        .sort((a, b) => b.count - a.count)
+                        .map(e => (
+                          <div key={`${e.cat}-${e.model}`} className="flex items-baseline gap-2 text-[10px]">
+                            <span
+                              className="min-w-0 flex-1 truncate text-slate-300"
+                              title={`${e.model}${e.note ? ` · ${e.note}` : ""}`}
+                            >
+                              {e.model}
+                            </span>
+                            <span className="shrink-0 font-mono text-slate-400">
+                              {e.count.toLocaleString("ru-RU")}
+                            </span>
+                          </div>
+                        ))}
+                    </div>
+                  </details>
+                );
+              })}
+              <p className="text-[10px] text-slate-600">
+                Оценки открытых источников (IISS/GFP), округлены; находящееся в резерве
+                помечено в примечаниях к модели.
+              </p>
+            </div>
+          );
+        })()}
+      </GlassPanel>
+
       {/* Footer attribution */}
-      <div className="text-center font-mono text-[9px] uppercase tracking-[0.2em] text-[#8eb8d466]">
+      <div className="text-center font-mono text-[10px] uppercase tracking-[0.2em] text-[#8eb8a666]">
         Данные: GFP 2025 · FAS Nuclear Notebook · Оценки РБП-Стратег
       </div>
     </div>

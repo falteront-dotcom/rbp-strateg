@@ -1,14 +1,11 @@
 "use client";
 
 import { useMemo } from "react";
-import {
-  PieChart, Pie, Cell, ResponsiveContainer, Tooltip,
-  BarChart, Bar, XAxis, YAxis, CartesianGrid,
-} from "recharts";
+import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip } from "recharts";
 import { motion } from "framer-motion";
 import type { CountryCompareData } from "@/lib/comparison";
+import { DOSSIER_INDEX } from "@/lib/data/dossiers.generated";
 import { calcTerrainRaw, normalizeTerrain } from "@/lib/bp/terrain-potential";
-import { logNormalize } from "@/lib/bp/normalize";
 
 // ─── Props ──────────────────────────────────────────────────────────────────
 interface GeographyTabProps {
@@ -63,10 +60,10 @@ function computeTerrainComposition(c: CountryCompareData): TerrainBreakdown[] {
 
   return [
     { name: "Равнины", value: terrain[0], color: "#84cc16", description: "Открытая местность, благоприятная для манёвра", militaryImpact: "Бронетехника эффективна, низкое укрытие" },
-    { name: "Горы", value: terrain[1], color: "#22d3ee", description: "Пересечённая местность, ограничивающая движение", militaryImpact: "Оборонительное преимущество, ограниченная логистика" },
+    { name: "Горы", value: terrain[1], color: "#4fb287", description: "Пересечённая местность, ограничивающая движение", militaryImpact: "Оборонительное преимущество, ограниченная логистика" },
     { name: "Леса", value: terrain[2], color: "#059669", description: "Лесистая местность с высоким укрытием", militaryImpact: "Пехота эффективна, броня уязвима, ограниченная видимость" },
     { name: "Пустыни", value: terrain[3], color: "#f59e0b", description: "Аридная местность с минимальным укрытием", militaryImpact: "Высокая видимость, логистика критична, броня доминирует" },
-    { name: "Вода", value: terrain[4], color: "#3b82f6", description: "Реки, озёра, побережья", militaryImpact: "Требует переправочных средств, ограничивает наступление" },
+    { name: "Вода", value: terrain[4], color: "#6b8fa0", description: "Реки, озёра, побережья", militaryImpact: "Требует переправочных средств, ограничивает наступление" },
   ];
 }
 
@@ -214,6 +211,7 @@ export function GeographyTab({ country, allCountries = [] }: GeographyTabProps) 
   const climate = useMemo(() => computeClimateAnalysis(country), [country]);
   const waterway = useMemo(() => computeWaterwayAccess(country), [country]);
   const borders = useMemo(() => computeBorderAnalysis(country), [country]);
+  const dossier = DOSSIER_INDEX[country.isoCode] ?? null;
 
   // Real terrain score from BP model
   const terrainScore = useMemo(() => {
@@ -227,6 +225,49 @@ export function GeographyTab({ country, allCountries = [] }: GeographyTabProps) 
 
   return (
     <div className="space-y-4 font-mono">
+      {dossier && (
+        <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="glass-panel rounded-lg p-4">
+          <h3 className="text-xs font-bold text-tactical-primary tracking-widest uppercase mb-2">
+            ◈ Страновое досье · открытые источники
+          </h3>
+          <p className="text-[11px] leading-relaxed text-slate-300/90 mb-3">
+            {dossier.overviewRu}
+          </p>
+          <div className="grid grid-cols-1 gap-2 text-[10px]">
+            <div className="rounded border border-white/5 bg-slate-900/40 px-2.5 py-1.5">
+              <span className="font-semibold text-tactical-secondary/70">География и ТВД: </span>
+              <span className="text-slate-400">{dossier.geographyRu}</span>
+            </div>
+            <div className="rounded border border-white/5 bg-slate-900/40 px-2.5 py-1.5">
+              <span className="font-semibold text-tactical-secondary/70">ВПК и экономика: </span>
+              <span className="text-slate-400">{dossier.economyRu}</span>
+            </div>
+            <div className="rounded border border-white/5 bg-slate-900/40 px-2.5 py-1.5">
+              <span className="font-semibold text-tactical-secondary/70">Структура ВС: </span>
+              <span className="text-slate-400">{dossier.militaryStructureRu}</span>
+            </div>
+            <div className="rounded border border-white/5 bg-slate-900/40 px-2.5 py-1.5">
+              <span className="font-semibold text-tactical-secondary/70">Стратегическая роль: </span>
+              <span className="text-slate-400">{dossier.strategicRoleRu}</span>
+            </div>
+          </div>
+          {dossier.keyFactsRu.length > 0 && (
+            <div className="mt-3 space-y-1">
+              <div className="text-[10px] font-semibold text-tactical-secondary/70 tracking-wide uppercase">
+                Ключевые факты
+              </div>
+              {dossier.keyFactsRu.map((f, i) => (
+                <div key={i} className="flex items-start gap-2 text-[10px] text-slate-400">
+                  <span className="mt-px font-mono text-[10px] text-tactical-primary/70">
+                    {String(i + 1).padStart(2, "0")}
+                  </span>
+                  <span className="leading-snug">{f}</span>
+                </div>
+              ))}
+            </div>
+          )}
+        </motion.div>
+      )}
       {/* ─── Terrain Score Overview ─────────────────────────────────────────── */}
       <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="glass-panel rounded-lg p-4">
         <div className="flex items-center justify-between mb-2">
@@ -236,7 +277,7 @@ export function GeographyTab({ country, allCountries = [] }: GeographyTabProps) 
           {terrainScore !== null && (
             <div className="flex items-center gap-2">
               <span className="text-2xl font-bold text-tactical-primary">{terrainScore}</span>
-              <span className="text-[9px] text-slate-500">/ 100</span>
+              <span className="text-[10px] text-slate-500">/ 100</span>
             </div>
           )}
         </div>
@@ -261,8 +302,8 @@ export function GeographyTab({ country, allCountries = [] }: GeographyTabProps) 
               </Pie>
               <Tooltip
                 contentStyle={{
-                  backgroundColor: "#0e1520ee",
-                  border: "1px solid #22d3ee40",
+                  backgroundColor: "#0e1710ee",
+                  border: "1px solid #4fb28740",
                   borderRadius: 8,
                   fontSize: 10,
                   fontFamily: "monospace",
@@ -281,7 +322,7 @@ export function GeographyTab({ country, allCountries = [] }: GeographyTabProps) 
             ))}
           </div>
         </div>
-        <div className="mt-2 text-[9px] text-slate-500 border-t border-white/5 pt-2">
+        <div className="mt-2 text-[10px] text-slate-500 border-t border-white/5 pt-2">
           {terrain.find(t => t.value === Math.max(...terrain.map(x => x.value)))?.militaryImpact}
         </div>
       </motion.div>
@@ -297,7 +338,7 @@ export function GeographyTab({ country, allCountries = [] }: GeographyTabProps) 
           </span>
           <div className="text-right">
             <span className="text-2xl font-bold text-tactical-primary">{Math.round(strategicDepth.score)}</span>
-            <span className="text-[9px] text-slate-500"> / 100</span>
+            <span className="text-[10px] text-slate-500"> / 100</span>
           </div>
         </div>
         <div className="h-2 rounded-full bg-slate-800 overflow-hidden">
@@ -333,7 +374,7 @@ export function GeographyTab({ country, allCountries = [] }: GeographyTabProps) 
           </h4>
           <span className="text-xs text-slate-300">{climate.zone}</span>
           <div className="mt-2">
-            <div className="flex items-center justify-between text-[9px] mb-0.5">
+            <div className="flex items-center justify-between text-[10px] mb-0.5">
               <span className="text-slate-500">Суровость</span>
               <span className="text-slate-300">{climate.severity}/100</span>
             </div>
@@ -342,12 +383,12 @@ export function GeographyTab({ country, allCountries = [] }: GeographyTabProps) 
                 className="h-full rounded-full"
                 style={{
                   width: `${climate.severity}%`,
-                  backgroundColor: climate.severity > 50 ? "#ef4444" : climate.severity > 25 ? "#f59e0b" : "#22d3ee",
+                  backgroundColor: climate.severity > 50 ? "#ef4444" : climate.severity > 25 ? "#f59e0b" : "#4fb287",
                 }}
               />
             </div>
           </div>
-          <div className="mt-2 text-[9px] text-slate-500 leading-relaxed">
+          <div className="mt-2 text-[10px] text-slate-500 leading-relaxed">
             {climate.impact}
           </div>
         </motion.div>
@@ -357,13 +398,13 @@ export function GeographyTab({ country, allCountries = [] }: GeographyTabProps) 
             Водные пути
           </h4>
           <div className="text-xs text-slate-300 font-semibold">{waterway.navyPotential}</div>
-          <div className="mt-1 text-[9px] text-slate-400">
+          <div className="mt-1 text-[10px] text-slate-400">
             {waterway.landlocked
               ? "⚠️ Нет выхода к морю — невозможно проектировать морскую силу"
               : `Побережье: ${waterway.coastlineKm.toLocaleString()} км · Портов: ${waterway.ports}`}
           </div>
           {waterway.nearbyChokepoints.length > 0 && (
-            <div className="mt-2 text-[9px] text-amber-400">
+            <div className="mt-2 text-[10px] text-amber-400">
               ⚡ Стратегические проливы:
               {waterway.nearbyChokepoints.map((cp, i) => (
                 <div key={i} className="ml-2 text-amber-300">{cp}</div>
@@ -381,20 +422,20 @@ export function GeographyTab({ country, allCountries = [] }: GeographyTabProps) 
         <div className="grid grid-cols-3 gap-2 text-center mb-2">
           <div className="glass-panel rounded-md p-2">
             <div className="text-lg font-bold text-slate-300">{borders.total}</div>
-            <div className="text-[9px] text-slate-500">Соседей</div>
+            <div className="text-[10px] text-slate-500">Соседей</div>
           </div>
           <div className="glass-panel rounded-md p-2">
             <div className="text-lg font-bold text-emerald-400">{borders.friendly}</div>
-            <div className="text-[9px] text-slate-500">Дружественные</div>
+            <div className="text-[10px] text-slate-500">Дружественные</div>
           </div>
           <div className="glass-panel rounded-md p-2">
             <div className="text-lg font-bold text-red-400">{borders.hostile}</div>
-            <div className="text-[9px] text-slate-500">Враждебные</div>
+            <div className="text-[10px] text-slate-500">Враждебные</div>
           </div>
         </div>
         <div className="text-[10px] text-slate-400">{borders.assessment}</div>
         {borders.fortified && (
-          <div className="mt-1 text-[9px] text-amber-400">⚠️ Укреплённые границы — оборонительная ориентация</div>
+          <div className="mt-1 text-[10px] text-amber-400">⚠️ Укреплённые границы — оборонительная ориентация</div>
         )}
       </motion.div>
 
@@ -421,7 +462,7 @@ export function GeographyTab({ country, allCountries = [] }: GeographyTabProps) 
                   className="h-full rounded-full bg-tactical-primary/60"
                 />
               </div>
-              <div className="text-[8px] text-slate-600">{item.desc}</div>
+              <div className="text-[10px] text-slate-600">{item.desc}</div>
             </div>
           ))}
         </div>

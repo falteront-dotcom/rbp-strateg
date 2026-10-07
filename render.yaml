@@ -1,0 +1,19 @@
+# Render Blueprint — РБП-Стратег 2.0
+# Деплой: Render Dashboard → New → Blueprint → выбрать репозиторий.
+# БД (SQLite) производная и пересоздаётся при каждом старте (instrumentation.ts),
+# поэтому постоянный диск не требуется.
+
+services:
+  - type: web
+    name: rbp-strateg
+    runtime: node
+    plan: free
+    region: frankfurt
+    buildCommand: npm ci && npm run build
+    startCommand: npm run start -- --port $PORT
+    healthCheckPath: /api/countries
+    envVars:
+      - key: NODE_VERSION
+        value: "22"
+      - key: RBP_ADMIN_TOKEN
+        generateValue: true

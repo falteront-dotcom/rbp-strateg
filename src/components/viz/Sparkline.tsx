@@ -1,84 +1,59 @@
 "use client";
 
-import { motion } from "framer-motion";
+/**
+ * Sparkline — компактный инлайн-график тренда для числовых рядов
+ * (идея density #4 из design-review: мини-график вместо крупного чарта).
+ *
+ * Технический стиль: сплошная линия currentColor, без заливок и анимаций,
+ * фиксированный ритм 2px. Числа не рисуются — только форма тренда.
+ */
 
-// ─── Types ────────────────────────────────────────────────────────────────────
-interface SparklineProps {
-  data: number[];
+export interface SparklineProps {
+  /** Значения ряда (≥2 точки). */
+  values: number[];
+  /** Ширина SVG. */
   width?: number;
+  /** Высота SVG. */
   height?: number;
-  color?: string;
-  showDots?: boolean;
+  /** Толщина линии. */
+  strokeWidth?: number;
+  /** Подпись для screen-reader (описание тренда). */
+  label?: string;
 }
 
-// ─── Component ───────────────────────────────────────────────────────────────
 export function Sparkline({
-  data,
-  width = 80,
-  height = 24,
-  color = "#22d3ee",
-  showDots = false,
+  values,
+  width = 120,
+  height = 22,
+  strokeWidth = 1.5,
+  label,
 }: SparklineProps) {
-  if (data.length < 2) return null;
+  if (values.length < 2) return null;
 
-  const max = Math.max(...data);
-  const min = Math.min(...data);
-  const range = max - min || 1;
-  const stepX = width / (data.length - 1);
+  const max = Math.max(...values);
+  const min = Math.min(...values);
+  const span = max - min || 1;
+  const innerW = width - 2;
+  const innerH = height - 4;
 
-  const points = data
-    .map((val, idx) => {
-      const x = idx * stepX;
-      const y = height - ((val - min) / range) * (height - 4) - 2;
-      return `${x},${y}`;
+  const points = values
+    .map((v, i) => {
+      const x = (i / (values.length - 1)) * innerW + 1;
+      const y = height - 2 - ((v - min) / span) * innerH;
+      return `${x.toFixed(1)},${y.toFixed(1)}`;
     })
     .join(" ");
 
-  const fillPoints = `0,${height} ${points} ${width},${height}`;
-
   return (
-    <motion.svg
+    <svg
       width={width}
       height={height}
-      initial={{ opacity: 0 }}
-      animate={{ opacity: 1 }}
-      className="inline-block"
+      className="shrink-0 text-tactical-primary"
+      aria-hidden={label ? undefined : true}
+      role={label ? "img" : undefined}
+      aria-label={label}
     >
-      {/* Fill area */}
-      <motion.polygon
-        points={fillPoints}
-        fill={color}
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 0.15 }}
-      />
-      {/* Line */}
-      <motion.polyline
-        points={points}
-        fill="none"
-        stroke={color}
-        strokeWidth={1.5}
-        strokeLinecap="round"
-        strokeLinejoin="round"
-        initial={{ pathLength: 0 }}
-        animate={{ pathLength: 1 }}
-        transition={{ duration: 0.5 }}
-      />
-      {/* Dots */}
-      {showDots &&
-        data.map((val, idx) => {
-          const x = idx * stepX;
-          const y = height - ((val - min) / range) * (height - 4) - 2;
-          return (
-            <circle
-              key={idx}
-              cx={x}
-              cy={y}
-              r={1.5}
-              fill={color}
-              className="opacity-0"
-            />
-          );
-        })}
-    </motion.svg>
+      <polyline points={points} fill="none" stroke="currentColor" strokeWidth={strokeWidth} />
+    </svg>
   );
 }

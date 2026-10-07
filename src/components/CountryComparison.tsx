@@ -1,6 +1,22 @@
 "use client";
 
-import React, { useState, useCallback, useMemo } from "react";
+import { Flag } from "@/components/Flag";
+import React, { useState, useCallback, useEffect, useMemo } from "react";
+import {
+  COMPARISON_BP_COMPONENTS,
+  COMPARISON_BP_LABELS,
+  COMPARISON_BP_SHORT_LABELS,
+  SIDE_STROKE_COLORS,
+  SIDE_FILL_COLORS,
+  SIDE_TEXT_CLASSES,
+  SIDE_BG_CLASSES,
+  formatLargeNumber,
+  getBPTierColor,
+  getBPTierLabel,
+  type CountryCompareData,
+  type ComparisonResult,
+  type MetricDelta,
+} from "@/lib/comparison";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   Radar,
@@ -36,23 +52,6 @@ import {
   TrendingDown,
   Minus,
 } from "lucide-react";
-import {
-  COMPARISON_BP_COMPONENTS,
-  COMPARISON_BP_LABELS,
-  COMPARISON_BP_SHORT_LABELS,
-  SIDE_STROKE_COLORS,
-  SIDE_FILL_COLORS,
-  SIDE_TEXT_CLASSES,
-  SIDE_BG_CLASSES,
-  isoToFlag,
-  formatLargeNumber,
-  getBPTierColor,
-  getBPTierLabel,
-  type CountryCompareData,
-  type ComparisonResult,
-  type ComponentDelta,
-  type MetricDelta,
-} from "@/lib/comparison";
 import { cn } from "@/lib/utils";
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -103,6 +102,21 @@ export default function CountryComparison({
     "radar",
   );
 
+  useEffect(() => {
+    if (!isOpen) return;
+    setSelectedIsoCodes(initialIsoCodes?.slice(0, 4) ?? []);
+    setComparisonResult(null);
+  }, [isOpen, initialIsoCodes]);
+
+  useEffect(() => {
+    if (!isOpen) return;
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === "Escape") onClose();
+    };
+    document.addEventListener("keydown", handleKeyDown);
+    return () => document.removeEventListener("keydown", handleKeyDown);
+  }, [isOpen, onClose]);
+
   // ─── Fetch comparison from API ──────────────────────────────────────────
   const fetchComparison = useCallback(async () => {
     if (selectedIsoCodes.length < 2) return;
@@ -133,7 +147,7 @@ export default function CountryComparison({
     if (next) {
       setSelectedIsoCodes((prev) => [...prev, next.isoCode]);
     }
-  }, [selectedIsoCodes.length, allCountries]);
+  }, [selectedIsoCodes, allCountries]);
 
   const removeCountry = useCallback(
     (iso: string) => {
@@ -211,27 +225,31 @@ export default function CountryComparison({
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
           onClick={onClose}
-          className="fixed inset-0 bg-black/60 backdrop-blur-md z-50 flex items-center justify-center p-4"
+          className="fixed inset-0 bg-black/60 z-50 flex items-center justify-center p-4"
         >
           <motion.div
             initial={{ opacity: 0, scale: 0.95, y: 20 }}
             animate={{ opacity: 1, scale: 1, y: 0 }}
             exit={{ opacity: 0, scale: 0.95, y: 20 }}
             onClick={(e) => e.stopPropagation()}
-            className="w-full max-w-5xl max-h-[92vh] bg-slate-950 border border-tactical-accent/20 rounded-2xl shadow-2xl overflow-hidden glass-panel flex flex-col"
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="country-comparison-title"
+            data-testid="country-comparison"
+            className="w-full max-w-5xl max-h-[92vh] bg-slate-950 border border-tactical-accent/20 rounded-md shadow-2xl overflow-hidden glass-panel flex flex-col"
           >
             {/* ─── Header ──────────────────────────────────────────────── */}
             <div className="p-4 border-b border-white/5 flex items-center justify-between bg-white/5 shrink-0">
               <div className="flex items-center gap-2 text-tactical-accent">
                 <GitCompareArrows size={18} />
-                <h2 className="font-black tracking-widest uppercase text-sm">
-                  Сравнение Стран
+                <h2 id="country-comparison-title" className="text-sm font-semibold">
+                  Сравнение стран
                 </h2>
               </div>
               <button
                 onClick={onClose}
                 className="text-slate-500 hover:text-white transition-colors cursor-pointer"
-                aria-label="Close comparison"
+                aria-label="Закрыть сравнение стран"
               >
                 <X size={20} />
               </button>
@@ -259,7 +277,7 @@ export default function CountryComparison({
                       )}
                     >
                       <span className="text-lg leading-none">
-                        {isoToFlag(iso)}
+                        <Flag iso={iso} />
                       </span>
                       <div className="relative">
                         <select
@@ -288,7 +306,7 @@ export default function CountryComparison({
                       </div>
                       <span
                         className={cn(
-                          "text-[9px] font-black tracking-widest",
+                          "text-[10px] font-black tracking-widest",
                           sideClass,
                         )}
                       >
@@ -322,7 +340,6 @@ export default function CountryComparison({
                   disabled={selectedIsoCodes.length < 2 || isLoading}
                   className={cn(
                     "ml-auto px-5 py-2 bg-tactical-accent text-slate-950 font-black uppercase tracking-widest text-xs rounded-lg transition-all duration-300 flex items-center gap-2 cursor-pointer",
-                    "shadow-[0_0_20px_rgba(234,179,8,0.3)] hover:shadow-[0_0_30px_rgba(234,179,8,0.5)]",
                     "disabled:opacity-40 disabled:cursor-not-allowed disabled:shadow-none",
                   )}
                 >
@@ -376,8 +393,7 @@ export default function CountryComparison({
                         className="space-y-4"
                       >
                         {/* Overlaid Radar Chart */}
-                        <div className="w-full h-72 bg-slate-900/40 rounded-xl border border-tactical-accent/20 p-2 relative overflow-hidden">
-                          <div className="absolute inset-0 bg-blue-500/5 blur-3xl rounded-full" />
+                        <div className="w-full h-72 bg-slate-900/40 rounded-md border border-tactical-accent/20 p-2 relative overflow-hidden">
                           <ResponsiveContainer width="100%" height="100%">
                             <RadarChart
                               cx="50%"
@@ -390,7 +406,7 @@ export default function CountryComparison({
                                 dataKey="component"
                                 tick={{
                                   fill: "rgba(255,255,255,0.6)",
-                                  fontSize: 9,
+                                  fontSize: 10,
                                   fontFamily: "var(--font-mono)",
                                   fontWeight: "bold",
                                 }}
@@ -435,7 +451,7 @@ export default function CountryComparison({
                         </div>
 
                         {/* BP Bar Chart */}
-                        <div className="w-full h-56 bg-slate-900/40 rounded-xl border border-tactical-accent/20 p-2 relative overflow-hidden">
+                        <div className="w-full h-56 bg-slate-900/40 rounded-md border border-tactical-accent/20 p-2 relative overflow-hidden">
                           <ResponsiveContainer width="100%" height="100%">
                             <BarChart data={barData} barCategoryGap="20%">
                               <CartesianGrid
@@ -446,7 +462,7 @@ export default function CountryComparison({
                                 dataKey="component"
                                 tick={{
                                   fill: "rgba(255,255,255,0.5)",
-                                  fontSize: 8,
+                                  fontSize: 10,
                                   fontFamily: "var(--font-mono)",
                                 }}
                                 axisLine={{ stroke: "rgba(255,255,255,0.1)" }}
@@ -455,7 +471,7 @@ export default function CountryComparison({
                                 domain={[0, 100]}
                                 tick={{
                                   fill: "rgba(255,255,255,0.4)",
-                                  fontSize: 8,
+                                  fontSize: 10,
                                   fontFamily: "var(--font-mono)",
                                 }}
                                 axisLine={{ stroke: "rgba(255,255,255,0.1)" }}
@@ -574,7 +590,7 @@ function OverallWinnerBanner({
 }: {
   result: ComparisonResult;
 }) {
-  const { overallLeader, totalBPValues, countries } = result;
+  const { overallLeader, countries } = result;
 
   if (overallLeader === -1) {
     return (
@@ -603,7 +619,7 @@ function OverallWinnerBanner({
     >
       <Trophy size={18} className="text-tactical-accent" />
       <div className="flex items-center gap-2 flex-1">
-        <span className="text-lg">{isoToFlag(winner.isoCode)}</span>
+        <span className="text-lg"><Flag iso={winner.isoCode} /></span>
         <div>
           <span className={cn("text-sm font-black", sideClass)}>
             {winner.nameRu}
@@ -619,7 +635,7 @@ function OverallWinnerBanner({
         </div>
         <div
           className={cn(
-            "text-[9px] font-bold tracking-widest uppercase",
+            "text-[10px] font-bold tracking-widest uppercase",
             getBPTierColor(winner.bpTotal),
           )}
         >
@@ -646,10 +662,10 @@ function ComparisonTable({
       <table className="w-full text-xs font-mono border-collapse">
         <thead>
           <tr className="border-b border-white/10">
-            <th className="text-left text-tactical-secondary/60 tracking-widest uppercase py-2 px-3 text-[9px]">
+            <th className="text-left text-tactical-secondary/60 tracking-widest uppercase py-2 px-3 text-[10px]">
               Компонент
             </th>
-            {countries.map((c, idx) => {
+            {countries.map((c) => {
               const side = c.side ?? "NEUTRAL";
               const sideClass =
                 SIDE_TEXT_CLASSES[side] ?? SIDE_TEXT_CLASSES.NEUTRAL;
@@ -661,15 +677,15 @@ function ComparisonTable({
                     sideClass,
                   )}
                 >
-                  <span className="mr-1">{isoToFlag(c.isoCode)}</span>
+                  <span className="mr-1"><Flag iso={c.isoCode} /></span>
                   {c.nameRu}
                 </th>
               );
             })}
-            <th className="text-center text-tactical-accent/60 tracking-widest uppercase py-2 px-3 text-[9px]">
+            <th className="text-center text-tactical-accent/60 tracking-widest uppercase py-2 px-3 text-[10px]">
               Δ
             </th>
-            <th className="text-center text-tactical-secondary/40 tracking-widest uppercase py-2 px-3 text-[9px]">
+            <th className="text-center text-tactical-secondary/40 tracking-widest uppercase py-2 px-3 text-[10px]">
               Лидер
             </th>
           </tr>
@@ -697,7 +713,7 @@ function ComparisonTable({
               {result.overallLeader >= 0 ? (
                 <span className="text-tactical-accent">
                   <Trophy size={12} className="inline" />{" "}
-                  {isoToFlag(countries[result.overallLeader].isoCode)}
+                  <Flag iso={countries[result.overallLeader].isoCode} />
                 </span>
               ) : (
                 <Minus size={12} className="inline text-white/30" />
@@ -721,11 +737,11 @@ function ComparisonTable({
               >
                 <td className="py-2 px-3 text-white/60 flex items-center gap-1.5">
                   {BP_ICONS[comp]}
-                  <span className="tracking-wider uppercase text-[9px]">
+                  <span className="tracking-wider uppercase text-[10px]">
                     {COMPARISON_BP_LABELS[comp]}
                   </span>
                 </td>
-                {countries.map((c, idx) => {
+                {countries.map((c) => {
                   const val = c[comp] as number;
                   const isMax = val === maxVal && maxVal !== minVal;
                   const isMin = val === minVal && maxVal !== minVal;
@@ -780,7 +796,7 @@ function ComparisonTable({
                 <td className="text-center py-2 px-3">
                   {delta && delta.advantage >= 0 ? (
                     <span className={SIDE_TEXT_CLASSES[countries[delta.advantage].side] ?? "text-white/60"}>
-                      {isoToFlag(countries[delta.advantage].isoCode)}
+                      <Flag iso={countries[delta.advantage].isoCode} />
                     </span>
                   ) : (
                     <Minus size={10} className="inline text-white/20" />
@@ -828,7 +844,7 @@ function MetricRow({
 
   return (
     <div className="bg-white/[0.03] border border-white/5 rounded-lg p-3 space-y-2">
-      <div className="text-[9px] text-tactical-secondary/60 tracking-widest uppercase font-bold">
+      <div className="text-[10px] text-tactical-secondary/60 tracking-widest uppercase font-bold">
         {metric.label}
       </div>
       <div className="space-y-1.5">
@@ -842,7 +858,7 @@ function MetricRow({
 
           return (
             <div key={c.isoCode} className="flex items-center gap-2">
-              <span className="text-xs w-6">{isoToFlag(c.isoCode)}</span>
+              <span className="text-xs w-6"><Flag iso={c.isoCode} /></span>
               <div className="flex-1 h-5 bg-white/5 rounded overflow-hidden relative">
                 <motion.div
                   initial={{ width: 0 }}
@@ -855,7 +871,7 @@ function MetricRow({
                   }}
                 />
                 <div className="absolute inset-0 flex items-center px-2">
-                  <span className="text-[9px] font-bold font-mono text-white tabular-nums">
+                  <span className="text-[10px] font-bold font-mono text-white tabular-nums">
                     {formatLargeNumber(val)} {metric.unit}
                   </span>
                 </div>

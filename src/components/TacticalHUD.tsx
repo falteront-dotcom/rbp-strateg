@@ -1,15 +1,12 @@
 "use client"
 
 import React, { useState, useEffect, useRef, useMemo } from 'react';
-import { motion, AnimatePresence, useSpring } from 'framer-motion';
+import { motion, AnimatePresence } from 'framer-motion';
 import {
-    Plane, Shield, Zap,
-    CloudIcon as WeatherCloud, Activity,
-    Crosshair, Radio, Settings,
-    Navigation, Trash2, AlertTriangle,
-    MoveUpRight, Swords, Radar, Target
+    Activity, Crosshair, Radio, Settings, Trash2, AlertTriangle,
+    MoveUpRight, Target
 } from 'lucide-react';
-import { ARSENAL, MODIFIERS, UnitInfo, Country, IconType, Side } from '@/lib/unit-database';
+import { ARSENAL, MODIFIERS, IconType } from '@/lib/unit-database';
 import { RBPEngine, ActiveUnit, FormationType } from '@/lib/rbp-engine';
 import { cn } from '@/lib/utils';
 import { TRANSLATIONS } from '@/lib/i18n';
@@ -93,7 +90,7 @@ export const TacticalUnitIcon = ({ type, side, size = 32 }: { type: IconType, si
     }
 };
 
-const UnitMarker = React.memo(({ u, removeUnit, isSelected, onSelect, onDoubleClick, registerNode }: { u: ActiveUnit, removeUnit: (id: string) => void, isSelected: boolean, onSelect: () => void, onDoubleClick?: () => void, registerNode: (id: string, node: HTMLDivElement | null) => void }) => {
+const UnitMarker = React.memo(({ u, isSelected, onSelect, onDoubleClick, registerNode }: { u: ActiveUnit, isSelected: boolean, onSelect: () => void, onDoubleClick?: () => void, registerNode: (id: string, node: HTMLDivElement | null) => void }) => {
     // Initial static values (will be immediately taken over by 60FPS DOM manipulation loop)
     const initialRot = Math.atan2(u.vy, u.vx) * (180 / Math.PI) + 90;
 
@@ -146,7 +143,7 @@ const UnitMarker = React.memo(({ u, removeUnit, isSelected, onSelect, onDoubleCl
                         transition: 'transform 0.1s linear'
                     } as React.CSSProperties}
                     className={cn(
-                        "drop-shadow-[0_0_15px_currentColor] cursor-pointer",
+                        "cursor-pointer",
                         u.unit.side === 'NATO' ? "text-tactical-nato" :
                             u.unit.side === 'RUS' ? "text-tactical-rus" :
                                 "text-tactical-china",
@@ -158,7 +155,7 @@ const UnitMarker = React.memo(({ u, removeUnit, isSelected, onSelect, onDoubleCl
 
                 {/* Tactical Data Label */}
                 <div className="absolute top-10 left-1/2 -translate-x-1/2 flex flex-col items-center pointer-events-none whitespace-nowrap min-w-[80px]">
-                    <div className="bg-slate-950/90 px-2 py-0.5 rounded-sm border border-white/10 text-[9px] font-black uppercase text-white/90 backdrop-blur-md shadow-2xl flex items-center gap-1.5">
+                    <div className="bg-slate-950/90 px-2 py-0.5 rounded-sm border border-white/10 text-[10px] font-black uppercase text-white/90 shadow-2xl flex items-center gap-1.5">
                         <span className="opacity-50 font-mono">{u.unit.country}</span>
                         <span className="w-px h-2 bg-white/20" />
                         {u.unit.displayName || u.unit.name}
@@ -166,7 +163,7 @@ const UnitMarker = React.memo(({ u, removeUnit, isSelected, onSelect, onDoubleCl
                     {u.targetId && (
                         <div className="mt-1 flex items-center gap-1 bg-tactical-accent/10 px-1.5 py-0.5 rounded-full border border-tactical-accent/30">
                             <AlertTriangle size={8} className="text-tactical-accent" />
-                            <span className="text-[7px] text-tactical-accent font-black tracking-widest animate-pulse italic">ЗАХВАТ ЦЕЛИ</span>
+                            <span className="text-[10px] text-tactical-accent font-black tracking-widest animate-pulse italic">ЗАХВАТ ЦЕЛИ</span>
                         </div>
                     )}
                 </div>
@@ -387,17 +384,14 @@ export default function TacticalHUD() {
         <div className="relative h-screen w-screen bg-tactical-bg flex overflow-hidden font-sans text-slate-100 selection:bg-tactical-primary/30">
             {/* HolographicMap is now inside the main content area */}
 
-            {/* Vignette Overlay (Animated Flicker) */}
-            <div className="absolute inset-0 pointer-events-none shadow-[inset_0_0_200px_oklch(0%_0_0_/_80%)] z-10 animate-flicker" />
-
             {/* TOP HEADER BAR */}
             <header className="absolute top-0 left-0 right-0 h-16 glass-panel z-50 flex items-center justify-between px-8 border-b border-white/5 tactical-corner bl br">
                 <div className="flex items-center gap-6">
                     <div className="flex items-center gap-2">
                         <div className="p-2 bg-tactical-primary/10 rounded-sm">
-                            <Radio className="w-4 h-4 text-tactical-primary animate-flicker" />
+                            <Radio className="h-4 w-4 text-tactical-primary" />
                         </div>
-                        <span className="font-black tracking-[.25em] text-lg uppercase italic bg-clip-text text-transparent bg-gradient-to-r from-tactical-primary via-tactical-secondary to-tactical-accent">
+                        <span className="text-lg font-semibold text-[#e5edef]">
                             {t.header.title}
                         </span>
                     </div>
@@ -405,14 +399,14 @@ export default function TacticalHUD() {
                     <div className="flex flex-col">
                         <span className="text-[10px] text-slate-500 font-mono tracking-wider">{t.header.status}</span>
                         <span className="text-[10px] font-bold text-green-500 flex items-center gap-1">
-                            <span className="w-1.5 h-1.5 rounded-full bg-green-500 animate-pulse" /> {t.header.live_feed}
+                            <span className="h-1.5 w-1.5 rounded-full bg-green-500" /> {t.header.live_feed}
                         </span>
                     </div>
                 </div>
 
                 <div className="flex items-center gap-8 font-mono">
                     <div className="text-right">
-                        <div className="text-[9px] text-slate-500 italic tracking-widest">{t.header.coord_precision}</div>
+                        <div className="text-[10px] text-slate-500 italic tracking-widest">{t.header.coord_precision}</div>
                         <div className="text-[10px] text-tactical-primary font-bold">WGS-84 / GLONASS-M</div>
                     </div>
                     <div className="h-10 w-px bg-white/10" />
@@ -434,11 +428,11 @@ export default function TacticalHUD() {
                         <h2 className="text-[10px] font-bold text-tactical-primary mb-4 tracking-[.3em] uppercase opacity-70 flex items-center gap-2">
                             <MoveUpRight size={12} /> {t.deployment.title}
                         </h2>
-                        <div className="space-y-4 bg-white/5 p-4 rounded-lg border border-white/5 backdrop-blur-md relative overflow-hidden">
+                        <div className="space-y-4 bg-white/5 p-4 rounded-lg border border-white/5 relative overflow-hidden">
                             <div className="absolute top-0 left-0 w-1 h-full bg-tactical-primary/50" />
                             <div className="flex gap-2">
                                 <div className="flex-1 space-y-1">
-                                    <label className="text-[9px] text-slate-500 font-mono uppercase tracking-[.1em]">{t.deployment.platform_type}</label>
+                                    <label className="text-[10px] text-slate-500 font-mono uppercase tracking-[.1em]">{t.deployment.platform_type}</label>
                                     <select
                                         className="w-full bg-slate-950/80 border border-white/10 text-xs p-2.5 rounded-md outline-none focus:border-tactical-primary/50 transition-all text-slate-200"
                                         value={selectedUnit}
@@ -452,7 +446,7 @@ export default function TacticalHUD() {
                                     </select>
                                 </div>
                                 <div className="w-16 space-y-1">
-                                    <label className="text-[9px] text-slate-500 font-mono uppercase tracking-[.1em]">МАСШ.</label>
+                                    <label className="text-[10px] text-slate-500 font-mono uppercase tracking-[.1em]">МАСШ.</label>
                                     <select
                                         className="w-full bg-slate-950/80 border border-white/10 text-xs p-2.5 rounded-md outline-none focus:border-tactical-primary/50 transition-all text-tactical-primary font-bold shadow-inner"
                                         value={deployQuantity}
@@ -469,21 +463,21 @@ export default function TacticalHUD() {
                             <button
                                 onClick={handleDeploy}
                                 data-testid="deploy-button"
-                                className="w-full py-3 bg-tactical-primary hover:bg-tactical-primary/90 text-black font-black tracking-widest text-xs rounded-md transition-all duration-300 active:scale-[0.98] shadow-[0_0_15px_rgba(0,168,255,0.4)] flex items-center justify-center gap-2 cursor-pointer"
+                                className="w-full py-3 bg-tactical-primary hover:bg-tactical-primary/90 text-black font-black tracking-widest text-xs rounded-md transition-all duration-300 active:scale-[0.98] flex items-center justify-center gap-2 cursor-pointer"
                             >
                                 <Crosshair size={14} /> {t.deployment.deploy_btn}
                             </button>
 
                             <button
                                 onClick={() => setIsBuilderOpen(true)}
-                                className="w-full py-2 bg-transparent hover:bg-white/5 border border-white/10 text-tactical-primary font-bold tracking-widest text-[9px] rounded-md transition-all duration-300 uppercase flex items-center justify-center gap-2"
+                                className="w-full py-2 bg-transparent hover:bg-white/5 border border-white/10 text-tactical-primary font-bold tracking-widest text-[10px] rounded-md transition-all duration-300 uppercase flex items-center justify-center gap-2"
                             >
                                 + Создать Кастомный Юнит
                             </button>
 
                             <button
                                 onClick={() => setIsMatrixOpen(true)}
-                                className="w-full py-2 bg-transparent hover:bg-tactical-accent/10 border border-tactical-accent/30 text-tactical-accent font-bold tracking-widest text-[9px] rounded-md transition-all duration-300 uppercase flex items-center justify-center gap-2 mt-2 shadow-[0_0_10px_rgba(234,179,8,0.1)]"
+                                className="w-full py-2 bg-transparent hover:bg-tactical-accent/10 border border-tactical-accent/30 text-tactical-accent font-bold tracking-widest text-[10px] rounded-md transition-all duration-300 uppercase flex items-center justify-center gap-2 mt-2"
                             >
                                 <Activity size={12} /> Аналитика (Сравнение)
                             </button>
@@ -493,7 +487,7 @@ export default function TacticalHUD() {
                                 <div className="space-y-2">
                                     <div className="flex items-center gap-2">
                                         <div className="h-px flex-1 bg-white/10" />
-                                        <span className="text-[8px] font-black tracking-widest text-tactical-primary opacity-60 uppercase">Построение</span>
+                                        <span className="text-[10px] font-black tracking-widest text-tactical-primary opacity-60 uppercase">Построение</span>
                                         <div className="h-px flex-1 bg-white/10" />
                                     </div>
                                     <div className="grid grid-cols-5 gap-1">
@@ -509,7 +503,7 @@ export default function TacticalHUD() {
                                                     onClick={() => setSelectedFormation(f)}
                                                     title={label}
                                                     className={cn(
-                                                        'py-1.5 rounded text-[8px] font-black tracking-tight transition-all border flex flex-col items-center gap-0.5 cursor-pointer',
+                                                        'py-1.5 rounded text-[10px] font-black tracking-tight transition-all border flex flex-col items-center gap-0.5 cursor-pointer',
                                                         isActive
                                                             ? 'bg-tactical-primary text-black border-tactical-primary'
                                                             : 'bg-white/5 border-white/10 text-slate-400 hover:border-tactical-primary/50 hover:text-tactical-primary'
@@ -540,7 +534,7 @@ export default function TacticalHUD() {
                                     <div key={country} className="space-y-2">
                                         <div className="flex items-center gap-2 opacity-50">
                                             <div className="h-px flex-1 bg-gradient-to-r from-white/10 to-transparent" />
-                                            <span className="text-[9px] font-black tracking-tighter whitespace-nowrap">{country}</span>
+                                            <span className="text-[10px] font-black tracking-tighter whitespace-nowrap">{country}</span>
                                         </div>
                                         {units.map(u => (
                                             <motion.div
@@ -571,14 +565,14 @@ export default function TacticalHUD() {
                                                     <div>
                                                         <p className="text-[10px] font-bold tracking-tight text-slate-200">{u.unit.displayName || u.unit.name}</p>
                                                         <div className="flex items-center gap-1 mt-0.5">
-                                                            <p className="text-[7px] font-mono text-slate-500 uppercase leading-none">{t.icons[u.unit.iconType]}</p>
+                                                            <p className="text-[10px] font-mono text-slate-500 uppercase leading-none">{t.icons[u.unit.iconType]}</p>
                                                             {u.unitState === 'FORMATION' && (
-                                                                <span className="text-[6px] font-black tracking-widest text-tactical-primary bg-tactical-primary/10 px-1 rounded uppercase">
+                                                                <span className="text-[10px] font-black tracking-widest text-tactical-primary bg-tactical-primary/10 px-1 rounded uppercase">
                                                                     {u.formationType ?? '◇'}
                                                                 </span>
                                                             )}
                                                             {u.unitState === 'MOVING' && (
-                                                                <span className="text-[6px] font-black tracking-widest text-tactical-secondary bg-tactical-secondary/10 px-1 rounded uppercase animate-pulse">
+                                                                <span className="text-[10px] font-black tracking-widest text-tactical-secondary bg-tactical-secondary/10 px-1 rounded uppercase animate-pulse">
                                                                     ▶ ДВИЖ
                                                                 </span>
                                                             )}
@@ -602,13 +596,13 @@ export default function TacticalHUD() {
                                     initial={{ opacity: 0, y: 20 }}
                                     animate={{ opacity: 1, y: 0 }}
                                     exit={{ opacity: 0, y: 20 }}
-                                    className="mt-4 shrink-0 bg-slate-950/80 border border-tactical-primary/30 rounded-lg p-4 shadow-[0_0_20px_rgba(0,168,255,0.1)] relative overflow-hidden"
+                                    className="mt-4 shrink-0 bg-slate-950/80 border border-tactical-primary/30 rounded-lg p-4 relative overflow-hidden"
                                 >
                                     <div className="absolute top-0 left-0 w-1 h-full bg-tactical-primary" />
 
                                     <div className="flex items-center gap-2 mb-3 px-1">
-                                        <Crosshair size={12} className="text-tactical-primary animate-flicker" />
-                                        <h3 className="text-[9px] font-black tracking-[0.2em] text-tactical-primary uppercase">Боевой Анализ (Intel)</h3>
+                                        <Crosshair size={12} className="text-tactical-primary" />
+                                        <h3 className="text-[10px] font-black tracking-[0.2em] text-tactical-primary uppercase">Боевой Анализ (Intel)</h3>
                                     </div>
 
                                     {(() => {
@@ -641,14 +635,14 @@ export default function TacticalHUD() {
                                         return (
                                             <div className="space-y-3 px-1">
                                                 <div className="flex justify-between items-end border-b border-white/10 pb-2">
-                                                    <span className="text-[9px] text-slate-500 font-mono tracking-widest uppercase">Тактическая Роль</span>
+                                                    <span className="text-[10px] text-slate-500 font-mono tracking-widest uppercase">Тактическая Роль</span>
                                                     <span className="text-[10px] font-bold text-slate-200">{groupRole}</span>
                                                 </div>
 
                                                 {/* SIMULATION-GRADE: Unit Status for primary selected unit */}
                                                 <div className="grid grid-cols-3 gap-2 bg-black/40 p-2 rounded border border-white/5">
                                                     <div className="flex flex-col items-center" data-testid="fuel-stat">
-                                                        <span className="text-[7px] text-slate-500 uppercase font-mono">Fuel</span>
+                                                        <span className="text-[10px] text-slate-500 uppercase font-mono">Fuel</span>
                                                         <div className="text-[10px] font-bold text-tactical-primary" data-testid="fuel-value">
                                                             {((primary.logistics.state.fuel.current / primary.logistics.state.fuel.capacity) * 100).toFixed(0)}%
                                                         </div>
@@ -657,7 +651,7 @@ export default function TacticalHUD() {
                                                         </div>
                                                     </div>
                                                     <div className="flex flex-col items-center" data-testid="wear-stat">
-                                                        <span className="text-[7px] text-slate-500 uppercase font-mono">Wear</span>
+                                                        <span className="text-[10px] text-slate-500 uppercase font-mono">Wear</span>
                                                         <div className="text-[10px] font-bold text-tactical-accent" data-testid="wear-value">
                                                             {primary.logistics.state.maintenance.wear.toFixed(1)}%
                                                         </div>
@@ -666,7 +660,7 @@ export default function TacticalHUD() {
                                                         </div>
                                                     </div>
                                                     <div className="flex flex-col items-center" data-testid="crew-stat">
-                                                        <span className="text-[7px] text-slate-500 uppercase font-mono">Crew</span>
+                                                        <span className="text-[10px] text-slate-500 uppercase font-mono">Crew</span>
                                                         <div className="text-[10px] font-bold text-slate-200" data-testid="crew-value">
                                                             {(primary.logistics.state.crew.fatigue * 100).toFixed(0)}%
                                                         </div>
@@ -678,11 +672,11 @@ export default function TacticalHUD() {
 
                                                 <div className="grid grid-cols-2 gap-2">
                                                     <div>
-                                                        <div className="text-[8px] text-slate-500 font-mono tracking-widest uppercase mb-1">Базовая Мощь</div>
+                                                        <div className="text-[10px] text-slate-500 font-mono tracking-widest uppercase mb-1">Базовая Мощь</div>
                                                         <div className="text-lg font-black font-mono text-slate-400">{basePotential.toFixed(1)}</div>
                                                     </div>
                                                     <div className="text-right">
-                                                        <div className="text-[8px] text-slate-500 font-mono tracking-widest uppercase mb-1">Среда / РЭБ</div>
+                                                        <div className="text-[10px] text-slate-500 font-mono tracking-widest uppercase mb-1">Среда / РЭБ</div>
                                                         <div className={cn("text-xs font-bold font-mono", penaltyPercent > 0 ? "text-tactical-accent" : "text-slate-500")}>
                                                             {penaltyPercent > 0 ? `-${penaltyPercent.toFixed(0)}% ЭФФ.` : "ОПТИМАЛЬНО"}
                                                         </div>
@@ -691,7 +685,7 @@ export default function TacticalHUD() {
 
                                                 <div className="bg-tactical-primary/10 rounded p-2 border border-tactical-primary/20 flex justify-between items-center">
                                                     <span className="text-[10px] font-bold text-tactical-primary tracking-widest uppercase">ИТОГО (ОБС)</span>
-                                                    <span className="text-2xl font-black font-mono text-tactical-primary tracking-tighter drop-shadow-[0_0_8px_var(--color-tactical-primary)]">
+                                                    <span className="text-2xl font-black font-mono text-tactical-primary tracking-tighter">
                                                         {effectivePotential.toFixed(1)}
                                                     </span>
                                                 </div>
@@ -706,7 +700,7 @@ export default function TacticalHUD() {
 
                 {/* CENTER: THEATER VIEW */}
                 <main className="flex-1 p-8 overflow-hidden relative">
-                    <div className="w-full h-full relative rounded-3xl overflow-hidden bg-slate-900/10 border border-white/5 backdrop-blur-[2px]">
+                    <div className="w-full h-full relative rounded-md overflow-hidden bg-slate-900/10 border border-white/5">
                         {/* HUD Coordinate Frame */}
                         <div className="absolute inset-4 border border-white/5 pointer-events-none z-10">
                             <div className="absolute top-0 left-0 w-4 h-4 border-t border-l border-tactical-primary" />
@@ -724,6 +718,21 @@ export default function TacticalHUD() {
                             onMouseUp={handleMapMouseUp}
                         >
                             <HolographicMap units={activeUnits} />
+
+                            {activeUnits.length === 0 && (
+                                <div className="pointer-events-none absolute inset-0 z-20 grid place-items-center">
+                                    <div className="pointer-events-auto w-72 border border-[#355146] bg-[#091820] p-5 text-center">
+                                        <Crosshair size={22} className="mx-auto text-[#4fb287]" />
+                                        <h2 className="mt-3 text-sm font-semibold text-[#e2ecee]">Театр не развёрнут</h2>
+                                        <p className="mt-2 text-[11px] leading-relaxed text-[#86a091]">
+                                            Выберите тип платформы слева и разместите первый юнит на координатной сетке.
+                                        </p>
+                                        <button onClick={handleDeploy} className="mt-4 h-9 border border-[#4fb287] bg-[#4fb287] px-4 text-[11px] font-semibold text-[#061219] hover:bg-[#72d5e2]">
+                                            Развернуть выбранный юнит
+                                        </button>
+                                    </div>
+                                </div>
+                            )}
 
                             {/* Selection Box UI */}
                             {selectionBox && (
@@ -774,7 +783,6 @@ export default function TacticalHUD() {
                                 <UnitMarker
                                     key={u.id}
                                     u={u}
-                                    removeUnit={removeUnit}
                                     isSelected={selectedIds.includes(u.id)}
                                     registerNode={registerNode}
                                     onSelect={() => {
@@ -803,12 +811,12 @@ export default function TacticalHUD() {
                 <aside className="w-80 glass-panel border-l border-white/5 flex flex-col p-4 z-40 gap-4">
                     <div className="space-y-4">
                         <h2 className="text-[10px] font-bold text-slate-500 tracking-[.3em] uppercase mb-4 flex items-center gap-2">
-                            <Activity size={12} className="text-tactical-primary animate-pulse" /> {t.summary.title}
+                            <Activity size={12} className="text-tactical-primary" /> {t.summary.title}
                         </h2>
                         <div className="space-y-4">
-                            <PotentialIndicator side={t.summary.nato} value={summary.NATO} color="text-tactical-nato" barColor="bg-tactical-nato" glowColor="var(--color-tactical-nato)" />
-                            <PotentialIndicator side={t.summary.rus} value={summary.RUS} color="text-tactical-rus" barColor="bg-tactical-rus" glowColor="var(--color-tactical-rus)" />
-                            <PotentialIndicator side={t.summary.china} value={summary.CHINA} color="text-tactical-china" barColor="bg-tactical-china" glowColor="var(--color-tactical-china)" />
+                            <PotentialIndicator side={t.summary.nato} value={summary.NATO} color="text-tactical-nato" barColor="bg-tactical-nato" />
+                            <PotentialIndicator side={t.summary.rus} value={summary.RUS} color="text-tactical-rus" barColor="bg-tactical-rus" />
+                            <PotentialIndicator side={t.summary.china} value={summary.CHINA} color="text-tactical-china" barColor="bg-tactical-china" />
                         </div>
                     </div>
 
@@ -820,7 +828,7 @@ export default function TacticalHUD() {
                         </h2>
                         <div className="space-y-3">
                             <div>
-                                <label className="text-[8px] text-slate-600 font-mono uppercase tracking-widest ml-1">{t.environment.atmospherics}</label>
+                                <label className="text-[10px] text-slate-600 font-mono uppercase tracking-widest ml-1">{t.environment.atmospherics}</label>
                                 <select
                                     data-testid="weather-select"
                                     className="mt-1 w-full bg-slate-950/80 border border-white/5 text-[10px] p-2 rounded-md outline-none text-tactical-primary font-bold shadow-inner"
@@ -831,7 +839,7 @@ export default function TacticalHUD() {
                                 </select>
                             </div>
                             <div>
-                                <label className="text-[8px] text-slate-600 font-mono uppercase tracking-widest ml-1">{t.environment.interference}</label>
+                                <label className="text-[10px] text-slate-600 font-mono uppercase tracking-widest ml-1">{t.environment.interference}</label>
                                 <select
                                     data-testid="ew-select"
                                     className="mt-1 w-full bg-slate-950/80 border border-white/5 text-[10px] p-2 rounded-md outline-none text-tactical-accent font-bold shadow-inner"
@@ -849,9 +857,9 @@ export default function TacticalHUD() {
                     {/* TACTICAL LOG */}
                     <div className="flex-1 flex flex-col min-h-0">
                         <h2 className="text-[10px] font-bold text-slate-500 tracking-[.3em] uppercase flex items-center gap-2 mb-2 px-1">
-                            <Activity size={12} className="text-tactical-accent animate-pulse" /> TACTICAL_LOG
+                            <Activity size={12} className="text-tactical-accent" /> Журнал событий
                         </h2>
-                        <div className="flex-1 bg-slate-950/50 border border-white/5 rounded-md p-3 font-mono text-[9px] overflow-y-auto space-y-2 scrollbar-hide select-text">
+                        <div className="flex-1 bg-slate-950/50 border border-white/5 rounded-md p-3 font-mono text-[10px] overflow-y-auto space-y-2 scrollbar-hide select-text">
                             {logs.length === 0 ? (
                                 <div className="text-slate-700 italic opacity-50 flex items-center justify-center h-full">
                                     [ОЖИДАНИЕ ДАННЫХ...]
@@ -876,7 +884,7 @@ export default function TacticalHUD() {
 
                     <div className="mt-auto space-y-4">
                         <div className="flex justify-between items-center p-3 bg-slate-950/80 rounded-lg border border-white/5 shadow-2xl">
-                            <span className="text-[9px] text-slate-500 font-bold uppercase tracking-widest">{t.simulation.threat_level}</span>
+                            <span className="text-[10px] text-slate-500 font-bold uppercase tracking-widest">{t.simulation.threat_level}</span>
                             <span className={cn(
                                 "text-xs font-black font-mono px-2 py-0.5 rounded",
                                 (summary.RUS / (summary.NATO || 1)) > 1.2 ? "bg-tactical-rus/20 text-tactical-rus animate-pulse" : "bg-green-500/10 text-green-500"
@@ -912,19 +920,18 @@ export default function TacticalHUD() {
     );
 }
 
-function PotentialIndicator({ side, value, color, barColor, glowColor }: { side: string, value: number, color: string, barColor: string, glowColor: string }) {
+function PotentialIndicator({ side, value, color, barColor }: { side: string, value: number, color: string, barColor: string }) {
     return (
         <div className="space-y-2">
             <div className="flex justify-between items-end px-1">
-                <span className="text-[9px] font-mono text-slate-500 tracking-[0.2em]">{side} ОБС</span>
+                <span className="text-[10px] font-mono text-slate-500 tracking-[0.2em]">{side} ОБС</span>
                 <span className={cn("text-xl font-black font-mono italic tracking-tighter", color)}>{value.toFixed(2)}</span>
             </div>
             <div className="h-1.5 w-full bg-slate-900 rounded-full overflow-hidden border border-white/5 p-[1px]">
                 <motion.div
                     initial={{ width: 0 }}
                     animate={{ width: `${Math.min(value * 10, 100)}%` }}
-                    className={cn("h-full rounded-full transition-all duration-1000", barColor)}
-                    style={{ boxShadow: `0 0 15px ${glowColor}` }}
+                    className={cn("h-full rounded-full transition-all duration-300", barColor)}
                 />
             </div>
         </div>
@@ -934,8 +941,8 @@ function PotentialIndicator({ side, value, color, barColor, glowColor }: { side:
 function SmallMetric({ label, val, color = "text-slate-400" }: { label: string, val: string, color?: string }) {
     return (
         <div className="flex flex-col items-center justify-center py-2 glass-panel border border-white/5 rounded-md bg-white/5">
-            <span className="text-[7px] text-slate-600 font-black tracking-widest uppercase">{label}</span>
-            <span className={cn("text-[9px] font-mono mt-0.5 font-bold", color)}>{val}</span>
+            <span className="text-[10px] text-slate-600 font-black tracking-widest uppercase">{label}</span>
+            <span className={cn("text-[10px] font-mono mt-0.5 font-bold", color)}>{val}</span>
         </div>
     );
 }

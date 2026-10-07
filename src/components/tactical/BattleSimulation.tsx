@@ -164,7 +164,7 @@ export function BattleSimulation({
                     key={idx}
                     initial={{ opacity: 0, x: -10 }}
                     animate={{ opacity: 1, x: 0 }}
-                    className={`text-[9px] flex items-start gap-2 py-1 px-2 rounded ${
+                    className={`text-[10px] flex items-start gap-2 py-1 px-2 rounded ${
                       evt.phase === "result"
                         ? "bg-tactical-primary/5 border-l-2 border-tactical-primary"
                         : evt.phase === "fire"
@@ -183,7 +183,7 @@ export function BattleSimulation({
                   </motion.div>
                 ))
               ) : (
-                <div className="text-[9px] text-slate-500">
+                <div className="text-[10px] text-slate-500">
                   Нет событий. Нажмите &quot;Следующий тур&quot; для начала.
                 </div>
               )}
@@ -194,10 +194,10 @@ export function BattleSimulation({
 
       {/* ─── Victory Conditions ─────────────────────────────────────────── */}
       <div className="glass-panel rounded-md p-2">
-        <h4 className="text-[9px] font-bold text-tactical-primary tracking-widest uppercase mb-1">
+        <h4 className="text-[10px] font-bold text-tactical-primary tracking-widest uppercase mb-1">
           Условия победы
         </h4>
-        <div className="space-y-0.5 text-[9px] text-slate-400">
+        <div className="space-y-0.5 text-[10px] text-slate-400">
           <div className={blueStrength <= 10 ? "text-red-400" : ""}>
             • Синие побеждены: сила ≤ 10% {blueStrength <= 10 ? "✓" : ""}
           </div>

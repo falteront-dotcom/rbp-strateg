@@ -11,16 +11,16 @@ interface RankBadgeProps {
 // ─── Helpers ─────────────────────────────────────────────────────────────────
 function getRankStyle(rank: number): { color: string; bg: string; stars: number; chevrons: number } {
   if (rank <= 3) return { color: "#fbbf24", bg: "#fbbf2420", stars: 5 - Math.floor((rank - 1) / 1), chevrons: 0 };
-  if (rank <= 10) return { color: "#94a3b8", bg: "#94a3b820", stars: 4, chevrons: 0 };
+  if (rank <= 10) return { color: "#94a3a4", bg: "#94a3a420", stars: 4, chevrons: 0 };
   if (rank <= 25) return { color: "#b45309", bg: "#b4530920", stars: 3, chevrons: 0 };
-  if (rank <= 50) return { color: "#64748b", bg: "#64748b20", stars: 2, chevrons: 1 };
-  return { color: "#475569", bg: "#47556920", stars: 1, chevrons: 2 };
+  if (rank <= 50) return { color: "#647a72", bg: "#647a7220", stars: 2, chevrons: 1 };
+  return { color: "#47584c", bg: "#47584c20", stars: 1, chevrons: 2 };
 }
 
 const SIZES = {
-  sm: { badge: "w-6 h-6 text-[9px]", stars: "text-[7px]" },
-  md: { badge: "w-8 h-8 text-[10px]", stars: "text-[8px]" },
-  lg: { badge: "w-10 h-10 text-xs", stars: "text-[9px]" },
+  sm: { badge: "w-6 h-6 text-[10px]", stars: "text-[10px]" },
+  md: { badge: "w-8 h-8 text-[10px]", stars: "text-[10px]" },
+  lg: { badge: "w-10 h-10 text-xs", stars: "text-[10px]" },
 };
 
 // ─── Component ───────────────────────────────────────────────────────────────

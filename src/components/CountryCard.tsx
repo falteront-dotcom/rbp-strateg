@@ -83,28 +83,25 @@ interface CountryCardProps {
   country: CountryData;
   onClose: () => void;
   onCompare: (isoCode: string) => void;
-}
-
-/** Convert ISO-3166-1 alpha-3 code to flag emoji */
-function isoToFlag(iso: string): string {
-  if (iso.length !== 3) return "🏳️";
-  const base = 0x1f1e6;
-  const codePointA = 65;
-  const ch1 = iso.charCodeAt(0) - codePointA + base;
-  const ch2 = iso.charCodeAt(1) - codePointA + base;
-  return String.fromCodePoint(ch1, ch2);
+  embedded?: boolean;
 }
 
 /** BP tier label/color come from the shared canonical tiers module. */
 
-/** Format large numbers with K/M/B suffixes */
+/** Русский компактный формат чисел: 1,4 млн / 5,2 тыс. / 4631 */
 function formatLargeNumber(value: number): string {
-  if (value >= 1_000_000) return `${(value / 1_000_000).toFixed(1)}M`;
-  if (value >= 1_000) return `${(value / 1_000).toFixed(1)}K`;
-  return value.toFixed(0);
+  if (value >= 1_000_000) return `${(value / 1_000_000).toFixed(1).replace(".", ",")} млн`;
+  if (value >= 10_000) return `${(value / 1_000).toFixed(1).replace(".", ",")} тыс.`;
+  return value.toLocaleString("ru-RU");
 }
 
-export function CountryCard({ country, onClose, onCompare }: CountryCardProps) {
+/** Млрд/трлн долларов без английских суффиксов */
+function formatUsdBn(value: number): string {
+  if (value >= 1000) return `$${(value / 1000).toFixed(1).replace(".", ",")} трлн`;
+  return `$${value.toFixed(0)} млрд`;
+}
+
+export function CountryCard({ country, onClose, onCompare, embedded = false }: CountryCardProps) {
   /** Build radar chart data from BP components */
   const radarData = useMemo(
     () =>
@@ -119,14 +116,14 @@ export function CountryCard({ country, onClose, onCompare }: CountryCardProps) {
   /** Key metrics for the grid */
   const keyMetrics = useMemo(
     () => [
-      { label: "Население", value: `${formatLargeNumber(country.populationM)}M`, accent: false },
-      { label: "ВВП (ППС)", value: `$${formatLargeNumber(country.gdpPppBn)}B`, accent: false },
-      { label: "Воен. Бюджет", value: `$${formatLargeNumber(country.militaryBudgetBn)}B`, accent: true },
-      { label: "Актив. Состав", value: formatLargeNumber(country.activePersonnel), accent: false },
-      { label: "Танки", value: formatLargeNumber(country.totalTanks), accent: false },
-      { label: "Авиация", value: formatLargeNumber(country.totalAircraft), accent: false },
-      { label: "Флот", value: formatLargeNumber(country.totalNavy), accent: false },
-      { label: "Ядерные БГ", value: formatLargeNumber(country.nuclearWarheads), accent: country.nuclearWarheads > 0 },
+      { label: "Население", value: `${country.populationM.toFixed(0)} млн чел.` },
+      { label: "ВВП (ППС)", value: formatUsdBn(country.gdpPppBn) },
+      { label: "Воен. Бюджет", value: formatUsdBn(country.militaryBudgetBn) },
+      { label: "Актив. Состав", value: formatLargeNumber(country.activePersonnel) },
+      { label: "Танки", value: formatLargeNumber(country.totalTanks) },
+      { label: "Авиация", value: formatLargeNumber(country.totalAircraft) },
+      { label: "Флот", value: formatLargeNumber(country.totalNavy) },
+      { label: "Ядерные БГ", value: formatLargeNumber(country.nuclearWarheads) },
     ],
     [country],
   );
@@ -156,25 +153,25 @@ export function CountryCard({ country, onClose, onCompare }: CountryCardProps) {
         animate={{ opacity: 1, x: 0 }}
         exit={{ opacity: 0, x: 60 }}
         transition={{ duration: 0.3, ease: [0.25, 0.46, 0.45, 0.94] }}
-        className="h-full flex flex-col font-mono"
+        className="flex min-h-full flex-col"
       >
-        {/* ─── Header ─── */}
-        <div className="glass-panel rounded-t-lg p-4 border-b border-white/5">
+        {/* Standalone cards own their header; embedded panels provide one. */}
+        {!embedded && <div className="border-b border-[#294138] bg-[#0a1712] p-4">
           <div className="flex items-start justify-between">
             <div className="flex items-center gap-3">
-              <span className="text-3xl leading-none">{isoToFlag(country.isoCode)}</span>
+              <span className="grid h-10 min-w-12 place-items-center border border-[#355146] px-2 font-mono text-xs font-semibold text-[#d8e4e7]">{country.isoCode}</span>
               <div>
                 <h2 className="text-base font-bold text-tactical-primary tracking-wider uppercase leading-tight">
                   {country.nameRu}
                 </h2>
                 <div className="flex items-center gap-2 mt-1">
                   <span
-                    className={`text-[9px] font-black tracking-widest px-2 py-0.5 rounded border ${sideColor[country.side] ?? sideColor.NEUTRAL}`}
+                    className={`text-[10px] font-black tracking-widest px-2 py-0.5 rounded border ${sideColor[country.side] ?? sideColor.NEUTRAL}`}
                   >
                     {country.side}
                   </span>
                   {country.coalition && (
-                    <span className="text-[9px] text-tactical-secondary/70 tracking-wider">
+                    <span className="text-[10px] text-tactical-secondary/70 tracking-wider">
                       {country.coalition}
                     </span>
                   )}
@@ -189,21 +186,18 @@ export function CountryCard({ country, onClose, onCompare }: CountryCardProps) {
               <X size={16} />
             </button>
           </div>
-        </div>
+        </div>}
 
         {/* ─── BP Score ─── */}
-        <div className="glass-panel p-4 border-b border-white/5">
+        <div className="border-b border-[#294138] pb-4">
           <div className="flex items-end justify-between">
             <div>
-              <div className="text-[9px] text-tactical-secondary/60 tracking-widest uppercase mb-1">
+              <div className="text-[10px] text-tactical-secondary/60 tracking-widest uppercase mb-1">
                 Боевой Потенциал
               </div>
               <div className="flex items-baseline gap-3">
                 <span
                   className={`text-4xl font-black tabular-nums tracking-tight ${tierColor}`}
-                  style={{
-                    textShadow: `0 0 20px currentColor`,
-                  }}
                 >
                   {country.bpTotal.toFixed(1)}
                 </span>
@@ -213,7 +207,7 @@ export function CountryCard({ country, onClose, onCompare }: CountryCardProps) {
               </div>
             </div>
             <div className="text-right">
-              <div className="text-[9px] text-tactical-secondary/60 tracking-widest uppercase">
+              <div className="text-[10px] text-tactical-secondary/60 tracking-widest uppercase">
                 Ранг
               </div>
               <div className="text-xl font-black text-tactical-primary tabular-nums">
@@ -225,16 +219,16 @@ export function CountryCard({ country, onClose, onCompare }: CountryCardProps) {
           {/* BP progress bar */}
           <div className="mt-3 h-1.5 w-full bg-white/5 rounded-full overflow-hidden border border-white/5">
             <div
-              className="h-full rounded-full bg-gradient-to-r from-teal-400 via-yellow-400 to-red-400 transition-all duration-700"
+              className="h-full rounded-full bg-[#6bb995] transition-all duration-700"
               style={{ width: `${Math.min(country.bpTotal, 100)}%` }}
             />
           </div>
         </div>
 
         {/* ─── Radar Chart ─── */}
-        <div className="glass-panel p-4 border-b border-white/5">
-          <div className="text-[9px] text-tactical-secondary/60 tracking-widest uppercase mb-2">
-            Профиль Компонентов
+        <div className="border-b border-[#294138] py-4">
+          <div className="mb-2 text-[11px] font-medium text-[#9bb0a2]">
+            Профиль компонентов
           </div>
           <div className="w-full h-56">
             <ResponsiveContainer width="100%" height="100%">
@@ -246,8 +240,8 @@ export function CountryCard({ country, onClose, onCompare }: CountryCardProps) {
                 <PolarAngleAxis
                   dataKey="component"
                   tick={{
-                    fill: "oklch(75% 0.18 200 / 70%)",
-                    fontSize: 8,
+                    fill: "oklch(75% 0.06 155 / 70%)",
+                    fontSize: 10,
                     fontFamily: "var(--font-mono)",
                   }}
                 />
@@ -260,12 +254,12 @@ export function CountryCard({ country, onClose, onCompare }: CountryCardProps) {
                 <Radar
                   name="БП"
                   dataKey="value"
-                  stroke="oklch(75% 0.18 200)"
-                  fill="oklch(75% 0.18 200 / 20%)"
+                  stroke="oklch(72% 0.07 155)"
+                  fill="oklch(72% 0.07 155 / 20%)"
                   strokeWidth={1.5}
                   dot={{
                     r: 2,
-                    fill: "oklch(75% 0.18 200)",
+                    fill: "oklch(72% 0.07 155)",
                   }}
                 />
               </RadarChart>
@@ -274,7 +268,7 @@ export function CountryCard({ country, onClose, onCompare }: CountryCardProps) {
         </div>
 
         {/* ─── Component Scores Mini Grid ─── */}
-        <div className="glass-panel p-3 border-b border-white/5">
+        <div className="border-b border-[#294138] py-4">
           <div className="grid grid-cols-4 gap-1.5">
             {BP_COMPONENTS_META.map((meta) => {
               const val = country[meta.key as keyof CountryData] as number;
@@ -285,11 +279,11 @@ export function CountryCard({ country, onClose, onCompare }: CountryCardProps) {
                 >
                   <span className="text-tactical-primary/50 mb-0.5">{meta.icon}</span>
                   <span
-                    className={`text-[10px] font-bold tabular-nums ${getBPTierColor(val)}`}
+                    className="text-[10px] font-bold tabular-nums text-slate-100"
                   >
                     {val.toFixed(1)}
                   </span>
-                  <span className="text-[7px] text-tactical-secondary/40 tracking-wider uppercase truncate w-full text-center">
+                  <span className="w-full truncate text-center text-[10px] text-[#86a091]">
                     {meta.label}
                   </span>
                 </div>
@@ -299,9 +293,9 @@ export function CountryCard({ country, onClose, onCompare }: CountryCardProps) {
         </div>
 
         {/* ─── Key Metrics Grid ─── */}
-        <div className="glass-panel p-3 border-b border-white/5">
-          <div className="text-[9px] text-tactical-secondary/60 tracking-widest uppercase mb-2">
-            Ключевые Показатели
+        <div className="border-b border-[#294138] py-4">
+          <div className="mb-2 text-[11px] font-medium text-[#9bb0a2]">
+            Ключевые показатели
           </div>
           <div className="grid grid-cols-2 gap-1.5">
             {keyMetrics.map((metric) => (
@@ -309,12 +303,12 @@ export function CountryCard({ country, onClose, onCompare }: CountryCardProps) {
                 key={metric.label}
                 className="flex justify-between items-center bg-white/5 px-2 py-1.5 rounded border border-white/5"
               >
-                <span className="text-[8px] text-tactical-secondary/50 tracking-wider uppercase">
+                <span className="text-[10px] text-[#86a091]">
                   {metric.label}
                 </span>
                 <span
                   className={`text-[10px] font-bold tabular-nums ${
-                    metric.accent ? "text-tactical-accent" : "text-white/80"
+                    "text-white/80"
                   }`}
                 >
                   {metric.value}
@@ -325,9 +319,9 @@ export function CountryCard({ country, onClose, onCompare }: CountryCardProps) {
         </div>
 
         {/* ─── Qualitative Scores ─── */}
-        <div className="glass-panel p-3 border-b border-white/5">
-          <div className="text-[9px] text-tactical-secondary/60 tracking-widest uppercase mb-2">
-            Качественные Оценки
+        <div className="border-b border-[#294138] py-4">
+          <div className="mb-2 text-[11px] font-medium text-[#9bb0a2]">
+            Качественные оценки
           </div>
           <div className="grid grid-cols-5 gap-1.5">
             {[
@@ -344,7 +338,7 @@ export function CountryCard({ country, onClose, onCompare }: CountryCardProps) {
                 <span className="text-[10px] font-bold text-tactical-primary tabular-nums">
                   {item.value}/10
                 </span>
-                <span className="text-[6px] text-tactical-secondary/40 tracking-wider uppercase">
+                <span className="text-[10px] text-[#86a091]">
                   {item.label}
                 </span>
               </div>
@@ -353,8 +347,8 @@ export function CountryCard({ country, onClose, onCompare }: CountryCardProps) {
         </div>
 
         {/* ─── Data Quality ─── */}
-        <div className="px-4 pb-2">
-          <div className="text-[9px] tracking-[0.2em] text-tactical-primary/40 uppercase font-mono mb-1.5">
+        <div className="py-4">
+          <div className="mb-2 text-[11px] font-medium text-[#9bb0a2]">
             Источники данных
           </div>
           <div className="flex items-center gap-3">
@@ -366,10 +360,10 @@ export function CountryCard({ country, onClose, onCompare }: CountryCardProps) {
                 const score = (hasWB ? 2 : 0) + (hasGFP ? 2 : 0) + (hasFAS ? 1 : 0);
                 return (
                   <>
-                    <span className={`text-[9px] font-mono px-1.5 py-0.5 rounded border ${hasWB ? 'border-blue-400/30 bg-blue-400/10 text-blue-400' : 'border-white/5 bg-white/5 text-white/20'}`} title="World Bank API">WB</span>
-                    <span className={`text-[9px] font-mono px-1.5 py-0.5 rounded border ${hasGFP ? 'border-emerald-400/30 bg-emerald-400/10 text-emerald-400' : 'border-white/5 bg-white/5 text-white/20'}`} title="Global Firepower">GFP</span>
-                    <span className={`text-[9px] font-mono px-1.5 py-0.5 rounded border ${hasFAS ? 'border-red-400/30 bg-red-400/10 text-red-400' : 'border-white/5 bg-white/5 text-white/20'}`} title="FAS Nuclear Notebook">FAS</span>
-                    <span className="text-[9px] font-mono text-white/30 ml-1">
+                    <span className={`text-[10px] font-mono px-1.5 py-0.5 rounded border ${hasWB ? 'border-blue-400/30 bg-blue-400/10 text-blue-400' : 'border-white/5 bg-white/5 text-white/20'}`} title="World Bank API">WB</span>
+                    <span className={`text-[10px] font-mono px-1.5 py-0.5 rounded border ${hasGFP ? 'border-emerald-400/30 bg-emerald-400/10 text-emerald-400' : 'border-white/5 bg-white/5 text-white/20'}`} title="Global Firepower">GFP</span>
+                    <span className={`text-[10px] font-mono px-1.5 py-0.5 rounded border ${hasFAS ? 'border-red-400/30 bg-red-400/10 text-red-400' : 'border-white/5 bg-white/5 text-white/20'}`} title="FAS Nuclear Notebook">FAS</span>
+                    <span className="text-[10px] font-mono text-white/30 ml-1">
                       {'★'.repeat(score)}{'☆'.repeat(5 - score)}
                     </span>
                   </>
@@ -379,8 +373,8 @@ export function CountryCard({ country, onClose, onCompare }: CountryCardProps) {
           </div>
         </div>
 
-        {/* ─── Actions ─── */}
-        <div className="mt-auto p-4 flex gap-2">
+        {/* Standalone card actions; the detail panel owns these when embedded. */}
+        {!embedded && <div className="mt-auto flex gap-2 p-4">
           <button
             onClick={handleCompare}
             className="flex-1 py-2.5 bg-tactical-accent/10 hover:bg-tactical-accent/20 border border-tactical-accent/30 text-tactical-accent font-bold tracking-widest text-[10px] rounded-md transition-all duration-200 flex items-center justify-center gap-2 cursor-pointer uppercase"
@@ -394,7 +388,7 @@ export function CountryCard({ country, onClose, onCompare }: CountryCardProps) {
           >
             Закрыть
           </button>
-        </div>
+        </div>}
       </motion.div>
     </AnimatePresence>
   );

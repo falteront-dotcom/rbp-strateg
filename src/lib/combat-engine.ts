@@ -12,7 +12,7 @@
  *   6. Повреждение  (критический урон)
  */
 
-import { UnitInfo, GroundStats, AirStats, AirDefenseStats, ModuleType } from './unit-database';
+import { UnitInfo, GroundStats, AirStats, AirDefenseStats } from './unit-database';
 
 // ============================================================================
 // Новые боевые параметры (добавлены в Phase 1)
@@ -154,16 +154,6 @@ function checkRicochet(angleDeg: number, shellType: string): boolean {
   return Math.random() < prob;
 }
 
-/**
- * De Marre simplified penetration power calculation.
- */
-function calculatePenetrationPower(massKg: number, diameterMm: number, velocityMps: number): number {
-  const K = 0.015; // Empirical constant
-  const diameterM = diameterMm / 1000;
-  const pen = K * (Math.sqrt(massKg) * velocityMps) / Math.pow(diameterM, 0.75);
-  return pen * 1000; // result in mm
-}
-
 // ============================================================================
 // Формулы баллистики
 // ============================================================================
@@ -302,8 +292,7 @@ export function simulateEngagementAtDistance(
   combatA: CombatCapabilities,
   combatB: CombatCapabilities,
   weatherFactor: number = 1.0,
-  ewFactor: number = 1.0,
-  iterations: number = 1000
+  ewFactor: number = 1.0
 ): EngagementResult {
   // Обнаружение
   const rcsA = unitA.stats?.type === 'aircraft' ? (unitA.stats as AirStats).rcs : 

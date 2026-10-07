@@ -1,6 +1,8 @@
 "use client";
 
 import type { Feature, FeatureCollection, Polygon, MultiPolygon, Position } from "geojson";
+import { COUNTRY_ALLIANCES, COUNTRY_NAMES_RU, COUNTRY_REGIONS_RU } from "./country-names-ru";
+import { WORLD_ALLIANCES, WORLD_REGIONS_RU } from "./world-registry.generated";
 
 /** ISO 3166-1 alpha-3 country code */
 export type ISO3 = string;
@@ -58,7 +60,13 @@ export interface NaturalEarthProperties {
   REGION_UN: string;
   SUBREGION: string;
   REGION_WB: string;
-  [key: string]: string | number | unknown;
+  bpScore?: number;
+  bpRank?: number | null;
+  nameRu?: string;
+  region?: string;
+  alliance?: string | null;
+  alliances?: readonly string[];
+  [key: string]: string | number | readonly string[] | null | unknown;
 }
 
 export type CountryFeature = Feature<Polygon | MultiPolygon, NaturalEarthProperties>;
@@ -106,14 +114,40 @@ export function buildISOLookup(
   return map;
 }
 
-/** Extract the ISO-A3 code from a feature, trying multiple property names */
-function extractISO(feature: CountryFeature): ISO3 | null {
+/** Normalize an ISO-3 value, including the project's legacy Philippines code. */
+export function normalizeISO3(value: unknown): ISO3 | null {
+  if (typeof value !== "string") return null;
+  const code = value.trim().toUpperCase();
+  if (!/^[A-Z]{3}$/.test(code) || code === "-99") return null;
+  if (code === "PHI") return "PHL";
+  if (code === "KOS" || code === "KSV") return "XKX";
+  return code;
+}
+
+/** Extract ISO-A3 from Natural Earth, tolerating its -99 sentinel values. */
+export function getISOFromFeature(feature: CountryFeature): ISO3 | null {
   const props = feature.properties;
-  // ISO_A3 is the most standard ISO 3166-1 alpha-3 code
-  if (props.ISO_A3 && props.ISO_A3 !== "-99") return props.ISO_A3 as ISO3;
-  if (props.ADM0_A3 && props.ADM0_A3 !== "-99") return props.ADM0_A3 as ISO3;
-  if (props.GU_A3 && props.GU_A3 !== "-99") return props.GU_A3 as ISO3;
+  const candidates = [
+    props.ISO_A3,
+    props.ISO_A3_EH,
+    props.ADM0_A3,
+    props.GU_A3,
+    props.SU_A3,
+    props.WB_A3,
+    props.BRK_A3,
+  ];
+  for (const candidate of candidates) {
+    const iso = normalizeISO3(candidate);
+    if (iso) return iso;
+  }
+  // Natural Earth may use a non-ISO name for records without an A3 code.
+  const name = typeof props.NAME === "string" ? props.NAME.trim().toLowerCase() : "";
+  if (name === "kosovo") return "XKX";
   return null;
+}
+
+function extractISO(feature: CountryFeature): ISO3 | null {
+  return getISOFromFeature(feature);
 }
 
 /** Point-in-polygon check using ray casting algorithm */
@@ -143,12 +177,14 @@ function pointInGeometry(
 ): boolean {
   const pt: [number, number] = [lon, lat];
   if (geometry.type === "Polygon") {
-    // Point must be inside the outer ring and outside all holes
-    return pointInPolygonRing(pt, geometry.coordinates[0]);
+    // Point must be inside the outer ring and outside every interior hole.
+    return pointInPolygonRing(pt, geometry.coordinates[0]) &&
+      geometry.coordinates.slice(1).every((hole) => !pointInPolygonRing(pt, hole));
   }
   if (geometry.type === "MultiPolygon") {
     return geometry.coordinates.some((polygon) =>
-      pointInPolygonRing(pt, polygon[0])
+      pointInPolygonRing(pt, polygon[0]) &&
+      polygon.slice(1).every((hole) => !pointInPolygonRing(pt, hole))
     );
   }
   return false;
@@ -175,7 +211,8 @@ export function mergeWithBPData(
 ): CountryCollection {
   const bpMap = new Map<ISO3, CountryBPRecord>();
   for (const record of bpData) {
-    bpMap.set(record.iso, record);
+    const iso = normalizeISO3(record.iso);
+    if (iso) bpMap.set(iso, record);
   }
 
   return {
@@ -189,6 +226,10 @@ export function mergeWithBPData(
           ...feature.properties,
           bpScore: bp?.bpScore ?? 0,
           bpRank: bp?.bpRank ?? null,
+          nameRu: iso ? COUNTRY_NAMES_RU[iso] ?? feature.properties.NAME : feature.properties.NAME,
+          region: iso ? COUNTRY_REGIONS_RU[iso] ?? WORLD_REGIONS_RU[iso] ?? feature.properties.CONTINENT : feature.properties.CONTINENT,
+          alliance: iso ? COUNTRY_ALLIANCES[iso]?.[0] ?? WORLD_ALLIANCES[iso]?.[0] ?? null : null,
+          alliances: iso ? COUNTRY_ALLIANCES[iso] ?? WORLD_ALLIANCES[iso] ?? [] : [],
         },
       };
     }),
@@ -205,10 +246,10 @@ export interface CountryBPRecord {
 
 /** Get the list of all unique ISO codes in the collection */
 export function getAllISOCodes(collection: CountryCollection): ISO3[] {
-  const codes: ISO3[] = [];
+  const codes = new Set<ISO3>();
   for (const feature of collection.features) {
     const iso = extractISO(feature);
-    if (iso) codes.push(iso);
+    if (iso) codes.add(iso);
   }
-  return codes;
+  return [...codes];
 }

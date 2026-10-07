@@ -11,6 +11,9 @@ import {
   Users,
   GitCompareArrows,
 } from "lucide-react";
+import { exportCountryCSV, exportCountryJSON } from "@/lib/export";
+import { Flag } from "@/components/Flag";
+import { ActiveCompareWindow } from "@/components/ActiveCompareWindow";
 
 import TacticalHUD from "@/components/TacticalHUD";
 import dynamic from "next/dynamic";
@@ -38,25 +41,31 @@ import {
   DoctrineTab,
   GeographyTab,
 } from "@/components/strategic";
+import { FacilitiesTab } from "@/components/strategic/FacilitiesTab";
+import { HistoryTab } from "@/components/strategic/HistoryTab";
+import { IndustryTab } from "@/components/strategic/IndustryTab";
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Types
 // ─────────────────────────────────────────────────────────────────────────────
 
 type AppMode = "strategic" | "tactical";
-type StrategicTab = "summary" | "bp" | "economics" | "military" | "coalition" | "comparison" | "analytics" | "whatif" | "doctrine" | "geography";
+type StrategicTab = "summary" | "bp" | "economics" | "military" | "coalition" | "comparison" | "analytics" | "whatif" | "doctrine" | "geography" | "facilities" | "history" | "industry";
 
-const STRATEGIC_TABS: { key: StrategicTab; label: string; icon: string }[] = [
-  { key: "summary", label: "Сводка", icon: "◉" },
-  { key: "bp", label: "БП Модель", icon: "◈" },
-  { key: "economics", label: "Экономика", icon: "$" },
-  { key: "military", label: "Вооружение", icon: "⚔" },
-  { key: "coalition", label: "Коалиции", icon: "⊞" },
-  { key: "comparison", label: "Сравнение", icon: "⟺" },
-  { key: "analytics", label: "Аналитика", icon: "◈" },
-  { key: "whatif", label: "Что-Если", icon: "?" },
-  { key: "doctrine", label: "Доктрина", icon: "☆" },
-  { key: "geography", label: "География", icon: "◙" },
+const STRATEGIC_TABS: { key: StrategicTab; label: string }[] = [
+  { key: "summary", label: "Сводка" },
+  { key: "bp", label: "Модель БП" },
+  { key: "economics", label: "Экономика" },
+  { key: "military", label: "Вооружение" },
+  { key: "coalition", label: "Коалиции" },
+  { key: "comparison", label: "Сравнение" },
+  { key: "analytics", label: "Аналитика" },
+  { key: "whatif", label: "Сценарий" },
+  { key: "doctrine", label: "Доктрина" },
+  { key: "geography", label: "География" },
+  { key: "facilities", label: "Объекты" },
+  { key: "history", label: "История" },
+  { key: "industry", label: "ОПК" },
 ];
 
 function StrategicDetailPanel({
@@ -64,52 +73,72 @@ function StrategicDetailPanel({
   allCountries,
   onClose,
   onCompare,
+  onLocateFacility,
 }: {
   country: CountryData;
   allCountries: CountryCompareData[];
   onClose: () => void;
   onCompare: (iso: string) => void;
+  onLocateFacility: (lat: number, lng: number) => void;
 }) {
   const [activeTab, setActiveTab] = useState<StrategicTab>("summary");
+  const [showActiveCompare, setShowActiveCompare] = useState(false);
   const compareData = country as unknown as CountryCompareData;
 
   return (
-    <div className="flex flex-col h-full">
-      {/* Header with close + name */}
-      <div className="flex items-center justify-between px-3 py-2 border-b border-white/5">
-        <div className="flex items-center gap-2 min-w-0">
-          <button onClick={onClose} className="text-slate-500 hover:text-slate-300 transition-colors flex-shrink-0">
-            <X size={14} />
-          </button>
-          <span className="text-xs font-bold text-tactical-primary truncate">{country.nameRu || country.name}</span>
-          <span className="text-[9px] text-slate-500 flex-shrink-0">{country.isoCode}</span>
+    <div className="flex h-full flex-col" data-testid="country-detail-panel">
+      <div className="border-b border-[#294138] bg-[#0a1712] px-4 py-3">
+        <div className="flex items-start justify-between gap-3">
+          <div className="flex min-w-0 items-center gap-3">
+            <span data-testid="country-code" className="grid h-9 min-w-11 place-items-center border border-[#355146] bg-[#102621] px-2 font-mono text-xs font-semibold text-[#d8e4e7]">
+              {country.isoCode}
+            </span>
+            <div className="min-w-0">
+              <h2 className="truncate text-base font-semibold text-[#eef3f4]">{country.nameRu || country.name}</h2>
+              <p className="mt-0.5 font-mono text-[10px] text-[#7c9687]">{country.side} · {country.region}</p>
+            </div>
+          </div>
+          <div className="flex items-center gap-1">
+            <button onClick={() => onCompare(country.isoCode)} className="h-8 border border-[#355146] px-2.5 text-[10px] font-medium text-[#afc2c8] hover:border-[#5b7b87] hover:text-white">
+              Сравнить
+            </button>
+            <button onClick={() => setShowActiveCompare(true)} aria-label="Активное сравнение" title="Активное сравнение — Δ факторы" className="grid h-8 w-8 place-items-center border border-[#355146] font-mono text-[11px] text-[#86a091] hover:border-[#5b7b87] hover:text-white">
+              Δ
+            </button>
+            <button onClick={() => exportCountryCSV(compareData)} aria-label="Экспорт CSV" title="Экспорт CSV" className="grid h-8 w-8 place-items-center border border-[#355146] text-[#86a091] hover:border-[#5b7b87] hover:text-white">
+              CSV
+            </button>
+            <button onClick={() => exportCountryJSON(compareData)} aria-label="Экспорт JSON" title="Экспорт JSON" className="grid h-8 w-8 place-items-center border border-[#355146] text-[#86a091] hover:border-[#5b7b87] hover:text-white">
+              JSON
+            </button>
+            <button onClick={onClose} aria-label="Закрыть анализ страны" title="Закрыть" className="grid h-8 w-8 place-items-center text-[#86a091] hover:bg-[#172b35] hover:text-white">
+              <X size={15} />
+            </button>
+          </div>
         </div>
-        <button onClick={() => onCompare(country.isoCode)} className="text-[9px] text-slate-400 hover:text-tactical-primary border border-white/10 rounded px-1.5 py-0.5 transition-colors flex-shrink-0">
-          Сравнить
-        </button>
       </div>
 
-      {/* Tab bar */}
-      <div className="flex overflow-x-auto border-b border-white/5 custom-scrollbar px-1">
+      <div role="tablist" aria-label="Разделы анализа" className="sticky top-0 z-10 grid shrink-0 grid-cols-5 border-b border-[#294138] bg-[#0d2019]">
         {STRATEGIC_TABS.map((tab) => (
           <button
+            role="tab"
+            aria-selected={activeTab === tab.key}
             key={tab.key}
             onClick={() => setActiveTab(tab.key)}
-            className={`px-2 py-1.5 text-[9px] font-mono whitespace-nowrap border-b-2 transition-colors ${
+            className={`min-h-9 border-r border-b border-[#1e332a] px-1.5 py-1.5 text-[10px] leading-tight ${
               activeTab === tab.key
-                ? "border-tactical-primary text-tactical-primary"
-                : "border-transparent text-slate-500 hover:text-slate-300"
+                ? "bg-[#173127] font-semibold text-[#5fc398]"
+                : "text-[#86a091] hover:bg-[#132620] hover:text-[#d3dfe2]"
             }`}
           >
-            {tab.icon} {tab.label}
+            {tab.label}
           </button>
         ))}
       </div>
 
-      {/* Tab content */}
-      <div className="flex-1 overflow-y-auto custom-scrollbar p-3">
+      <div className="min-h-0 flex-1 overflow-y-auto custom-scrollbar p-4">
         {activeTab === "summary" && (
-          <CountryCard country={country as any} onClose={() => {}} onCompare={(iso: string) => onCompare(iso)} />
+          <CountryCard country={country as any} onClose={onClose} onCompare={(iso: string) => onCompare(iso)} embedded />
         )}
         {activeTab === "bp" && (
           <BPDetailTab country={compareData as any} />
@@ -126,21 +155,37 @@ function StrategicDetailPanel({
         {activeTab === "comparison" && (
           <ComparisonTab
             countries={[compareData]}
-            onRemoveCountry={(_iso: string) => {}}
-            onAddCountry={(_iso: string) => {}}
+            onRemoveCountry={() => {}}
+            onAddCountry={() => {}}
           />
         )}
         {activeTab === "analytics" && (
           <AnalyticsTab countries={allCountries} selectedISO={country.isoCode} />
         )}
         {activeTab === "whatif" && (
-          <WhatIfTab isOpen={true} onClose={() => {}} allCountries={allCountries} initialIsoCode={country.isoCode} />
+          <WhatIfTab isOpen={true} onClose={() => {}} allCountries={allCountries} initialIsoCode={country.isoCode} embedded />
         )}
         {activeTab === "doctrine" && (
           <DoctrineTab country={compareData as any} />
         )}
         {activeTab === "geography" && (
           <GeographyTab country={compareData as any} allCountries={allCountries} />
+        )}
+        {activeTab === "facilities" && (
+          <FacilitiesTab isoCode={country.isoCode} onLocate={onLocateFacility} />
+        )}
+        {activeTab === "history" && (
+          <HistoryTab isoCode={country.isoCode} />
+        )}
+        {activeTab === "industry" && (
+          <IndustryTab isoCode={country.isoCode} />
+        )}
+        {showActiveCompare && (
+          <ActiveCompareWindow
+            a={compareData}
+            allCountries={allCountries}
+            onClose={() => setShowActiveCompare(false)}
+          />
         )}
       </div>
     </div>
@@ -247,6 +292,7 @@ export default function Home() {
   const [comparisonOpen, setComparisonOpen] = useState(false);
   const [compareInitialIsos, setCompareInitialIsos] = useState<string[]>([]);
   const [activeLayer, setActiveLayer] = useState<AnalyticsLayerKey>("bp");
+  const [mapFocus, setMapFocus] = useState<{ lat: number; lng: number; seq: number } | null>(null);
 
   // ─── Clock tick — mount-only to avoid hydration mismatch ───────────────
   useEffect(() => {
@@ -435,49 +481,46 @@ export default function Home() {
   return (
     <main className="h-screen w-screen bg-tactical-bg flex flex-col overflow-hidden font-sans text-slate-100">
       {/* ═══ TOP BAR ═══ */}
-      <header className="h-14 glass-panel z-50 flex items-center justify-between px-6 border-b border-white/5 shrink-0">
+      <header className="glass-panel z-50 flex min-h-14 shrink-0 items-center justify-between gap-2 border-b border-white/5 px-3 py-2 md:px-6">
         <div className="flex items-center gap-4">
           <div className="flex items-center gap-2">
             <div className="p-1.5 bg-tactical-primary/10 rounded-sm">
-              <Radio className="w-3.5 h-3.5 text-tactical-primary animate-flicker" />
+              <Radio className="h-3.5 w-3.5 text-tactical-primary" />
             </div>
-            <span className="font-black tracking-[0.2em] text-sm uppercase italic bg-clip-text text-transparent bg-gradient-to-r from-tactical-primary via-tactical-secondary to-tactical-accent">
+            <span className="text-sm font-semibold text-[#e5edef]">
               РБП Центр
             </span>
           </div>
           <div className="h-5 w-px bg-white/10" />
-          <span className="text-[9px] font-mono text-tactical-primary/60 tracking-widest uppercase">
+          <span className="hidden xl:inline text-[10px] font-mono text-tactical-primary/60 tracking-widest uppercase">
             Стратегический Режим
           </span>
-          <div className="live-badge">
-            <span className="live-dot" />
-            <span className="text-[8px] font-black tracking-[0.2em] text-red-400/90 uppercase">LIVE</span>
-          </div>
+          <span className="hidden xl:inline text-[10px] font-mono text-slate-400">АНАЛИТИЧЕСКАЯ МОДЕЛЬ</span>
         </div>
 
-        <div className="flex items-center gap-4">
+        <div className="flex min-w-0 flex-1 items-center justify-end gap-2 md:gap-4">
           {/* ─── Layer Selector ─── */}
           <LayerSelector
             activeLayer={activeLayer}
             onLayerChange={handleLayerChange}
           />
 
-          <div className="h-6 w-px bg-white/10" />
+          <div className="hidden h-6 w-px bg-white/10 lg:block" />
 
           {/* Mode Toggle */}
           <button
             onClick={handleModeToggle}
-            className="glass-panel rounded-md px-3 py-1.5 font-mono text-[9px] tracking-widest uppercase text-tactical-accent/80 hover:text-tactical-accent hover:border-tactical-accent/30 transition-all cursor-pointer flex items-center gap-1.5"
+            className="hidden lg:flex glass-panel rounded-md px-3 py-1.5 font-mono text-[10px] tracking-widest uppercase text-tactical-accent/80 hover:text-tactical-accent hover:border-tactical-accent/30 transition-all cursor-pointer flex items-center gap-1.5"
           >
             <Crosshair size={12} />
             Тактический
           </button>
 
-          <div className="h-6 w-px bg-white/10" />
+          <div className="hidden h-6 w-px bg-white/10 xl:block" />
 
           {/* Clock */}
-          <div className="text-right font-mono">
-            <div className="text-[9px] text-slate-500">
+          <div className="hidden xl:block text-right font-mono">
+            <div className="text-[10px] text-slate-500">
               {clock ? clock.toLocaleDateString("ru-RU") : "\u2014"}
             </div>
             <div className="text-sm font-black text-white tabular-nums tracking-tight">
@@ -490,7 +533,7 @@ export default function Home() {
       {/* ═══ MAIN CONTENT ═══ */}
       <div className="flex-1 flex min-h-0">
         {/* ─── LEFT SIDEBAR: Country List ─── */}
-        <nav className="w-72 glass-panel border-r border-white/5 flex flex-col shrink-0 z-30">
+        <nav className="hidden md:flex w-56 xl:w-64 glass-panel border-r border-white/5 flex flex-col shrink-0 z-30">
           {/* Search */}
           <div className="p-3 border-b border-white/5">
             <div className="relative">
@@ -514,7 +557,7 @@ export default function Home() {
                 </button>
               )}
             </div>
-            <div className="mt-2 flex justify-between text-[8px] text-tactical-secondary/40 tracking-widest uppercase">
+            <div className="mt-2 flex justify-between text-[10px] text-tactical-secondary/40 tracking-widest uppercase">
               <span>Стран: {filteredCountries.length}</span>
               <span>Рейтинг БП</span>
             </div>
@@ -547,7 +590,7 @@ export default function Home() {
                       `}
                     >
                       {/* BP Rank */}
-                      <span className="text-[9px] font-bold tabular-nums text-tactical-secondary/40 w-5 shrink-0">
+                      <span className="text-[10px] font-bold tabular-nums text-tactical-secondary/40 w-5 shrink-0">
                         {country.bpRank}
                       </span>
 
@@ -558,12 +601,15 @@ export default function Home() {
                         }`}
                       />
 
+                      {/* Флаг государства */}
+                      <Flag iso={country.isoCode} className="ml-0.5" />
+
                       {/* Country name */}
                       <div className="flex-1 min-w-0">
                         <div className="text-[11px] font-semibold text-slate-200 truncate">
                           {country.nameRu}
                         </div>
-                        <div className="text-[8px] text-tactical-secondary/40 tracking-wider">
+                        <div className="text-[10px] text-tactical-secondary/40 tracking-wider">
                           {country.isoCode} · {country.region}
                         </div>
                       </div>
@@ -612,14 +658,14 @@ export default function Home() {
                     className="flex flex-col items-center bg-white/5 rounded p-1.5 border border-white/5"
                   >
                     <span
-                      className={`text-[9px] font-bold ${SIDE_COLORS[side]}`}
+                      className={`text-[10px] font-bold ${SIDE_COLORS[side]}`}
                     >
                       {side}
                     </span>
                     <span className="text-[10px] font-bold tabular-nums text-white/70">
                       {avgBP.toFixed(0)}
                     </span>
-                    <span className="text-[7px] text-tactical-secondary/30">
+                    <span className="text-[10px] text-tactical-secondary/30">
                       {sideCountries.length} стран
                     </span>
                   </div>
@@ -631,19 +677,21 @@ export default function Home() {
             <div className="flex gap-1.5">
               <button
                 onClick={handleOpenCoalitionBuilder}
-                className="flex-1 py-2 bg-tactical-accent/5 hover:bg-tactical-accent/15 border border-tactical-accent/20 hover:border-tactical-accent/40 text-tactical-accent/70 hover:text-tactical-accent font-bold tracking-widest text-[9px] rounded-md transition-all cursor-pointer flex items-center justify-center gap-1.5 uppercase"
+                aria-label="Открыть анализ коалиций"
+                className="flex-1 py-2 bg-tactical-accent/5 hover:bg-tactical-accent/15 border border-tactical-accent/20 hover:border-tactical-accent/40 text-tactical-accent/70 hover:text-tactical-accent font-bold tracking-widest text-[10px] rounded-md transition-all cursor-pointer flex items-center justify-center gap-1.5 uppercase"
               >
                 <Users size={11} />
                 Коалиции
               </button>
               <button
+                aria-label="Открыть сравнение стран"
                 onClick={() => {
                   if (selectedISO) {
                     setCompareInitialIsos([selectedISO]);
                   }
                   setComparisonOpen(true);
                 }}
-                className={`flex-1 py-2 border font-bold tracking-widest text-[9px] rounded-md transition-all cursor-pointer flex items-center justify-center gap-1.5 uppercase ${
+                className={`flex-1 py-2 border font-bold tracking-widest text-[10px] rounded-md transition-all cursor-pointer flex items-center justify-center gap-1.5 uppercase ${
                   selectedISO
                     ? "bg-tactical-primary/5 hover:bg-tactical-primary/15 border-tactical-primary/20 hover:border-tactical-primary/40 text-tactical-primary/70 hover:text-tactical-primary"
                     : "bg-white/5 border-white/10 text-white/30 cursor-not-allowed"
@@ -666,7 +714,10 @@ export default function Home() {
             selectedISO={selectedISO}
             onCountryClick={handleCountryClick}
             activeLayer={activeLayer}
+            onLayerChange={handleLayerChange}
+            showInspector={!selectedCountry}
             countriesRaw={countriesMapData}
+            focusPoint={mapFocus}
             className="absolute inset-0"
           />
 
@@ -681,13 +732,14 @@ export default function Home() {
         </div>
 
         {/* ─── RIGHT SIDEBAR: Country Detail Panel with Tabs ─── */}
-        <aside className="w-96 glass-panel border-l border-white/5 shrink-0 z-30 overflow-y-auto custom-scrollbar country-panel-enter">
+        <aside className={`${selectedCountry ? "block" : "hidden"} absolute bottom-0 left-0 right-0 h-[46dvh] lg:static lg:h-auto lg:w-96 xl:w-[26rem] bg-[#0d2019] border-l border-[#294138] shrink-0 z-30 overflow-hidden country-panel-enter`}>
           {selectedCountry ? (
             <StrategicDetailPanel
               country={selectedCountry}
               allCountries={countriesCompareData}
               onClose={handleCloseCountryCard}
               onCompare={handleCompare}
+              onLocateFacility={(lat, lng) => setMapFocus((prev) => ({ lat, lng, seq: (prev?.seq ?? 0) + 1 }))}
             />
           ) : (
             <div className="h-full flex flex-col items-center justify-center text-center px-6">

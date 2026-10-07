@@ -5,10 +5,8 @@ import MapGL from "react-map-gl/mapbox";
 import type { MapRef } from "react-map-gl/mapbox";
 import { DeckGL } from "@deck.gl/react";
 import type { Layer, PickingInfo } from "@deck.gl/core";
-import type { Feature, FeatureCollection, Polygon, MultiPolygon } from "geojson";
-import { scaleSequential } from "d3-scale";
 import { MapErrorBoundary } from './MapErrorBoundary';
-import { GeoJsonLayer, ScatterplotLayer } from "@deck.gl/layers";
+import { StrategicAtlas } from './StrategicAtlas';
 
 import "mapbox-gl/dist/mapbox-gl.css";
 
@@ -18,162 +16,20 @@ import { MapControls, MAP_STYLE_URLS } from "./MapControls";
 import type { MapStyle } from "./MapControls";
 import { CountryPopup } from "./CountryPopup";
 import { MapLegend } from "./MapLegend";
-import { LayerSelector } from "./LayerSelector";
 import type { AnalyticsLayerKey } from "./LayerSelector";
 import {
   loadCountryBoundaries,
   mergeWithBPData,
+  normalizeISO3,
 } from "@/lib/geo/country-boundaries";
 import type { CountryCollection, CountryBPRecord } from "@/lib/geo/country-boundaries";
-import { getPosition } from "@/lib/geo/country-centroids";
-
-// ─── OKLCH → sRGB conversion (shared with AnalyticsLayers) ─────────────
-
-function oklchToRgb(l: number, c: number, h: number): [number, number, number] {
-  const hueRad = (h * Math.PI) / 180;
-  const a = c * Math.cos(hueRad);
-  const b = c * Math.sin(hueRad);
-  const l_ = l + 0.3963377774 * a + 0.2158037573 * b;
-  const m_ = l - 0.1055613458 * a - 0.0638541728 * b;
-  const s_ = l - 0.0894841775 * a - 1.291485548 * b;
-  const l3 = l_ * l_ * l_;
-  const m3 = m_ * m_ * m_;
-  const s3 = s_ * s_ * s_;
-  const r = +4.0767416621 * l3 - 3.3079834258 * m3 + 0.2309640425 * s3;
-  const g = -1.2681438942 * l3 + 2.6093399734 * m3 - 0.3411344294 * s3;
-  const bl = -0.0041119484 * l3 - 0.7037628646 * m3 + 1.7070697198 * s3;
-  return [
-    Math.round(Math.max(0, Math.min(255, r * 255))),
-    Math.round(Math.max(0, Math.min(255, g * 255))),
-    Math.round(Math.max(0, Math.min(255, bl * 255))),
-  ];
-}
-
-// ─── Analytics Layer Color Scales ──────────────────────────────────────
-
-function budgetColorInterpolator(t: number): [number, number, number, number] {
-  const tc = Math.max(0, Math.min(1, t));
-  let lightness: number;
-  let chroma: number;
-  let hue: number;
-  if (tc <= 0.4) {
-    const s = tc / 0.4;
-    lightness = 40 + s * 20;
-    chroma = 0.12 + s * 0.06;
-    hue = 220 - s * 40;
-  } else if (tc <= 0.75) {
-    const s = (tc - 0.4) / 0.35;
-    lightness = 60 + s * 15;
-    chroma = 0.18 + s * 0.04;
-    hue = 180 - s * 80;
-  } else {
-    const s = (tc - 0.75) / 0.25;
-    lightness = 75 - s * 10;
-    chroma = 0.22 + s * 0.06;
-    hue = 100 - s * 30;
-  }
-  const rgb = oklchToRgb(lightness / 100, chroma, hue);
-  return [rgb[0], rgb[1], rgb[2], 210];
-}
-
-function navyColorInterpolator(t: number): [number, number, number, number] {
-  const tc = Math.max(0, Math.min(1, t));
-  let lightness: number;
-  let chroma: number;
-  let hue: number;
-  if (tc <= 0.5) {
-    const s = tc * 2;
-    lightness = 35 + s * 25;
-    chroma = 0.14 + s * 0.06;
-    hue = 250 - s * 30;
-  } else {
-    const s = (tc - 0.5) * 2;
-    lightness = 60 + s * 15;
-    chroma = 0.20 + s * 0.05;
-    hue = 220 - s * 20;
-  }
-  const rgb = oklchToRgb(lightness / 100, chroma, hue);
-  return [rgb[0], rgb[1], rgb[2], 200];
-}
-
-function aircraftColorInterpolator(t: number): [number, number, number, number] {
-  const tc = Math.max(0, Math.min(1, t));
-  let lightness: number;
-  let chroma: number;
-  let hue: number;
-  if (tc <= 0.5) {
-    const s = tc * 2;
-    lightness = 40 + s * 25;
-    chroma = 0.10 + s * 0.08;
-    hue = 260 - s * 20;
-  } else {
-    const s = (tc - 0.5) * 2;
-    lightness = 65 + s * 15;
-    chroma = 0.18 + s * 0.04;
-    hue = 240 - s * 10;
-  }
-  const rgb = oklchToRgb(lightness / 100, chroma, hue);
-  return [rgb[0], rgb[1], rgb[2], 200];
-}
-
-function tankColorInterpolator(t: number): [number, number, number, number] {
-  const tc = Math.max(0, Math.min(1, t));
-  let lightness: number;
-  let chroma: number;
-  let hue: number;
-  if (tc <= 0.4) {
-    const s = tc / 0.4;
-    lightness = 35 + s * 20;
-    chroma = 0.10 + s * 0.06;
-    hue = 120 - s * 30;
-  } else if (tc <= 0.75) {
-    const s = (tc - 0.4) / 0.35;
-    lightness = 55 + s * 15;
-    chroma = 0.16 + s * 0.06;
-    hue = 90 - s * 30;
-  } else {
-    const s = (tc - 0.75) / 0.25;
-    lightness = 70 - s * 5;
-    chroma = 0.22 + s * 0.04;
-    hue = 60 - s * 15;
-  }
-  const rgb = oklchToRgb(lightness / 100, chroma, hue);
-  return [rgb[0], rgb[1], rgb[2], 200];
-}
-
-function nukeColorInterpolator(t: number): [number, number, number, number] {
-  const tc = Math.max(0, Math.min(1, t));
-  let lightness: number;
-  let chroma: number;
-  let hue: number;
-  if (tc <= 0.3) {
-    const s = tc / 0.3;
-    lightness = 25 + s * 15;
-    chroma = 0.18 + s * 0.06;
-    hue = 15 - s * 5;
-  } else if (tc <= 0.7) {
-    const s = (tc - 0.3) / 0.4;
-    lightness = 40 + s * 20;
-    chroma = 0.24 + s * 0.04;
-    hue = 10 - s * 3;
-  } else {
-    const s = (tc - 0.7) / 0.3;
-    lightness = 60 + s * 10;
-    chroma = 0.28 + s * 0.04;
-    hue = 7 - s * 2;
-  }
-  const rgb = oklchToRgb(lightness / 100, chroma, hue);
-  return [rgb[0], rgb[1], rgb[2], 220];
-}
-
-// ─── Scatter point type for analytics layers ──────────────────────────
-
-interface ScatterPoint {
-  iso: string;
-  name: string;
-  position: [number, number];
-  value: number;
-}
+import {
+  createMilitaryBudgetLayer,
+  createNavyLayer,
+  createAircraftLayer,
+  createNukeLayer,
+  createTankLayer,
+} from "./AnalyticsLayers";
 
 /** Shape of a country row from the /api/countries response */
 export interface CountryMapData {
@@ -212,8 +68,14 @@ interface StrategicMapProps {
   className?: string;
   /** Active analytics layer — "bp" shows choropleth, others show scatter/geojson layers */
   activeLayer?: AnalyticsLayerKey;
+  /** Optional thematic selector for expanded map mode. */
+  onLayerChange?: (layer: AnalyticsLayerKey) => void;
+  /** Hide the compact map inspector when a full detail panel is visible. */
+  showInspector?: boolean;
   /** Full country data for analytics layers (budget, navy, etc.) */
   countriesRaw?: ReadonlyArray<CountryMapData>;
+  /** External locate request: centers the atlas camera on the point (token-free mode). */
+  focusPoint?: { lat: number; lng: number; seq: number } | null;
 }
 
 interface HoverState {
@@ -224,113 +86,6 @@ interface HoverState {
 }
 
 // ─── Analytics Layer Builders ──────────────────────────────────────────
-
-/** Build a GeoJsonLayer for military budget heatmap */
-function buildBudgetGeoJsonLayer(
-  geoJson: CountryCollection | null,
-  countriesRaw: ReadonlyArray<CountryMapData>,
-): Layer | null {
-  if (!geoJson) return null;
-
-  const budgetByIso = new Map<string, number>();
-  for (const c of countriesRaw) {
-    budgetByIso.set(c.isoCode, c.militaryBudgetBn);
-  }
-
-  let minBudget = Infinity;
-  let maxBudget = -Infinity;
-  for (const val of budgetByIso.values()) {
-    if (val < minBudget) minBudget = val;
-    if (val > maxBudget) maxBudget = val;
-  }
-  if (!isFinite(minBudget)) minBudget = 0;
-  if (!isFinite(maxBudget)) maxBudget = 100;
-  const range = maxBudget - minBudget || 1;
-  const colorScale = scaleSequential(budgetColorInterpolator).domain([minBudget, maxBudget]);
-
-  return new GeoJsonLayer({
-    id: "analytics-budget",
-    data: geoJson,
-    pickable: true,
-    stroked: true,
-    filled: true,
-    extruded: false,
-    wireframe: false,
-    lineWidthMinPixels: 1,
-    lineWidthMaxPixels: 2,
-    getFillColor: ((feature: Feature<Polygon | MultiPolygon>) => {
-      const iso = feature.properties?.iso ?? "";
-      const budget = budgetByIso.get(iso) ?? 0;
-      if (budget <= 0) return [20, 30, 40, 80];
-      const t = (budget - minBudget) / range;
-      return colorScale(t) as [number, number, number, number];
-    }) as (feature: object) => [number, number, number, number],
-    getLineColor: [0, 150, 180, 50] as [number, number, number, number],
-    getLineWidth: 1,
-    updateTriggers: {
-      getFillColor: [minBudget, maxBudget],
-    },
-  });
-}
-
-/** Build a ScatterplotLayer for a given metric */
-function buildScatterLayer(
-  id: string,
-  countriesRaw: ReadonlyArray<CountryMapData>,
-  metricKey: keyof CountryMapData,
-  colorInterpolator: (t: number) => [number, number, number, number],
-  lineColor: [number, number, number, number],
-  minRadius: number,
-  maxRadius: number,
-): Layer {
-  const values: number[] = [];
-  const points: ScatterPoint[] = [];
-
-  for (const c of countriesRaw) {
-    const val = c[metricKey] as number;
-    if (val > 0) {
-      values.push(val);
-      points.push({
-        iso: c.isoCode,
-        name: c.nameRu,
-        position: getPosition(c.isoCode),
-        value: val,
-      });
-    }
-  }
-
-  const min = values.length > 0 ? Math.min(...values) : 0;
-  const max = values.length > 0 ? Math.max(...values) : 100;
-  const range = max - min || 1;
-  const colorScale = scaleSequential(colorInterpolator).domain([min, max]);
-
-  return new ScatterplotLayer({
-    id,
-    data: points,
-    pickable: true,
-    opacity: 0.8,
-    stroked: true,
-    filled: true,
-    lineWidthMinPixels: 1,
-    getPosition: (d: ScatterPoint) => d.position,
-    getRadius: (d: ScatterPoint) => {
-      const t = (d.value - min) / range;
-      return minRadius + t * maxRadius;
-    },
-    getFillColor: (d: ScatterPoint) => {
-      const t = (d.value - min) / range;
-      return colorScale(t) as [number, number, number, number];
-    },
-    getLineColor: lineColor,
-    radiusUnits: "meters",
-    radiusMinPixels: 3,
-    radiusMaxPixels: 60,
-    updateTriggers: {
-      getRadius: [min, max],
-      getFillColor: [min, max],
-    },
-  });
-}
 
 // ─── Token Validation ──────────────────────────────────────────────────
 
@@ -384,10 +139,10 @@ function MapTokenFallback({ className }: { className?: string }) {
           {/* Header bar */}
           <div className="px-4 py-2 border-b border-tactical-primary/15 flex items-center gap-2 bg-tactical-primary/[0.04]">
             <div className="w-2 h-2 rounded-full bg-tactical-primary/60 animate-pulse" />
-            <span className="font-mono text-[9px] tracking-[0.2em] uppercase text-tactical-primary/50">
+            <span className="font-mono text-[10px] tracking-[0.2em] uppercase text-tactical-primary/50">
               system.status
             </span>
-            <span className="font-mono text-[9px] tracking-wider text-amber-500/70 ml-auto">
+            <span className="font-mono text-[10px] tracking-wider text-amber-500/70 ml-auto">
               TOKEN_MISSING
             </span>
           </div>
@@ -410,7 +165,7 @@ function MapTokenFallback({ className }: { className?: string }) {
 
             {/* Instructions block */}
             <div className="bg-slate-900/80 border border-white/5 rounded-sm p-3 space-y-2">
-              <div className="font-mono text-[9px] tracking-widest uppercase text-tactical-secondary/50 mb-1">
+              <div className="font-mono text-[10px] tracking-widest uppercase text-tactical-secondary/50 mb-1">
                 Инструкция
               </div>
               <ol className="font-mono text-[10px] text-slate-300 space-y-1.5 list-decimal list-inside">
@@ -433,7 +188,7 @@ function MapTokenFallback({ className }: { className?: string }) {
 
             {/* Config file path */}
             <div className="bg-slate-900/80 border border-white/5 rounded-sm p-3">
-              <div className="font-mono text-[9px] tracking-widest uppercase text-tactical-secondary/50 mb-1.5">
+              <div className="font-mono text-[10px] tracking-widest uppercase text-tactical-secondary/50 mb-1.5">
                 Файл конфигурации
               </div>
               <code className="font-mono text-[10px] text-amber-400/80 break-all">
@@ -449,7 +204,7 @@ function MapTokenFallback({ className }: { className?: string }) {
             {/* Footer note */}
             <div className="flex items-start gap-2 pt-1">
               <div className="w-1 h-1 rounded-full bg-amber-500/50 mt-1.5 shrink-0" />
-              <p className="font-mono text-[9px] text-slate-500 leading-relaxed">
+              <p className="font-mono text-[10px] text-slate-500 leading-relaxed">
                 Приложение работает без карты — список стран и аналитика доступны в боковой панели.
                 Перезапустите сервер после изменения .env.local.
               </p>
@@ -458,10 +213,10 @@ function MapTokenFallback({ className }: { className?: string }) {
 
           {/* Bottom status bar */}
           <div className="px-4 py-1.5 border-t border-tactical-primary/10 flex items-center justify-between bg-tactical-primary/[0.02]">
-            <span className="font-mono text-[8px] text-tactical-secondary/30 tracking-widest uppercase">
+            <span className="font-mono text-[10px] text-tactical-secondary/30 tracking-widest uppercase">
               РБП Центр v2.0
             </span>
-            <span className="font-mono text-[8px] text-tactical-secondary/30 tracking-wider">
+            <span className="font-mono text-[10px] text-tactical-secondary/30 tracking-wider">
               map.disabled
             </span>
           </div>
@@ -473,7 +228,7 @@ function MapTokenFallback({ className }: { className?: string }) {
 
 // ─── Component ────────────────────────────────────────────────────────
 
-export function StrategicMap({
+function MapboxStrategicMap({
   onCountryClick,
   countryBPData,
   selectedISO,
@@ -513,6 +268,8 @@ export function StrategicMap({
         const mgl = mod.default || mod;
         const OrigLngLat = mgl.LngLat;
         if (!OrigLngLat || (OrigLngLat as any)._safePatched) return;
+        // Mapbox exposes the constructor only after the client bundle loads.
+        // eslint-disable-next-line react-hooks/unsupported-syntax
         class SafeLngLat extends OrigLngLat {
           static _safePatched = true;
           constructor(lng: number, lat: number) {
@@ -524,7 +281,7 @@ export function StrategicMap({
         }
         Object.setPrototypeOf(SafeLngLat, OrigLngLat);
         Object.keys(OrigLngLat).forEach((key) => {
-          try { (SafeLngLat as any)[key] = (OrigLngLat as any)[key]; } catch (_) {}
+          try { (SafeLngLat as any)[key] = (OrigLngLat as any)[key]; } catch {}
         });
         mgl.LngLat = SafeLngLat as any;
         if (!cancelled) setMapPatched(true);
@@ -612,11 +369,12 @@ export function StrategicMap({
   // ─── Hover handler ──────────────────────────────────────
   const handleCountryHover = useCallback(
     (iso: string | null, info: PickingInfo) => {
-      const country = iso
-        ? countryBPData.find((c) => c.iso === iso) ?? null
+      const normalizedISO = normalizeISO3(iso);
+      const country = normalizedISO
+        ? countryBPData.find((c) => normalizeISO3(c.iso) === normalizedISO) ?? null
         : null;
       setHover({
-        iso,
+        iso: normalizedISO,
         longitude: (info.coordinate?.[0] != null && isFinite(info.coordinate[0])) ? info.coordinate[0] : 0,
         latitude: (info.coordinate?.[1] != null && isFinite(info.coordinate[1])) ? info.coordinate[1] : 0,
         country,
@@ -652,73 +410,47 @@ export function StrategicMap({
     }
 
     // ─── Analytics Layers ──────────────────────────────────
-    const layers: Layer[] = [];
+    const budgetValues = countriesRaw.map((country) => country.militaryBudgetBn);
+    const budgetBounds = {
+      min: budgetValues.length ? Math.min(...budgetValues) : 0,
+      max: budgetValues.length ? Math.max(...budgetValues) : 100,
+    };
+    const analyticsOptions = {
+      selectedISO,
+      onHover: (info: PickingInfo) => {
+        const object = info.object as {
+          iso?: string;
+          members?: string[];
+          properties?: Record<string, unknown>;
+        } | null | undefined;
+        const props = object?.properties;
+        const iso = normalizeISO3(object?.iso ?? object?.members?.[0] ??
+          (typeof props?.ISO_A3 === "string" ? props.ISO_A3 :
+            typeof props?.ADM0_A3 === "string" ? props.ADM0_A3 : null));
+        handleCountryHover(iso, info);
+      },
+      onClick: (info: PickingInfo) => {
+        const object = info.object as { iso?: string; members?: string[] } | null | undefined;
+        handleCountryClick(normalizeISO3(object?.iso ?? object?.members?.[0]));
+      },
+    };
 
     switch (activeLayer) {
-      case "budget": {
-        const budgetLayer = buildBudgetGeoJsonLayer(geoJson, countriesRaw);
-        if (budgetLayer) layers.push(budgetLayer);
-        break;
-      }
-      case "fleet": {
-        layers.push(
-          buildScatterLayer(
-            "analytics-navy",
-            countriesRaw,
-            "totalNavy",
-            navyColorInterpolator,
-            [0, 180, 220, 120],
-            15000,
-            180000,
-          ),
-        );
-        break;
-      }
-      case "aviation": {
-        layers.push(
-          buildScatterLayer(
-            "analytics-aircraft",
-            countriesRaw,
-            "totalAircraft",
-            aircraftColorInterpolator,
-            [100, 130, 255, 120],
-            20000,
-            200000,
-          ),
-        );
-        break;
-      }
-      case "tanks": {
-        layers.push(
-          buildScatterLayer(
-            "analytics-tanks",
-            countriesRaw,
-            "totalTanks",
-            tankColorInterpolator,
-            [200, 160, 60, 120],
-            18000,
-            190000,
-          ),
-        );
-        break;
-      }
-      case "nukes": {
-        layers.push(
-          buildScatterLayer(
-            "analytics-nukes",
-            countriesRaw,
-            "nuclearWarheads",
-            nukeColorInterpolator,
-            [255, 60, 60, 180],
-            30000,
-            250000,
-          ),
-        );
-        break;
-      }
+      case "budget":
+        return geoJson
+          ? [createMilitaryBudgetLayer(geoJson, budgetBounds, analyticsOptions, countriesRaw)]
+          : [];
+      case "fleet":
+        return [createNavyLayer(countriesRaw, analyticsOptions)];
+      case "aviation":
+        return [createAircraftLayer(countriesRaw, analyticsOptions)];
+      case "tanks":
+        return [createTankLayer(countriesRaw, analyticsOptions)];
+      case "nukes":
+        return [createNukeLayer(countriesRaw, analyticsOptions)];
+      default:
+        return [];
     }
-
-    return layers;
   }, [
     activeLayer,
     enrichedGeoJson,
@@ -907,12 +639,19 @@ export function StrategicMap({
       {!geoJson && (
         <div className="absolute inset-0 flex items-center justify-center z-20 pointer-events-none">
           <div className="glass-panel rounded-md px-6 py-3 font-mono text-xs text-tactical-primary tracking-widest uppercase">
-            <span className="animate-pulse">Loading GeoData...</span>
+            <span className="animate-pulse">Загрузка геоданных...</span>
           </div>
         </div>
       )}
     </div>
   );
+}
+
+/** Local atlas is fully functional when a Mapbox token is not configured. */
+export function StrategicMap(props: StrategicMapProps) {
+  return isTokenValid(MAPBOX_TOKEN)
+    ? <MapboxStrategicMap {...props} />
+    : <StrategicAtlas {...props} />;
 }
 
 export default StrategicMap;

@@ -62,10 +62,8 @@ interface HUDButtonProps {
 
 function HUDButton({ onClick, active, label, children, ariaExpanded }: HUDButtonProps) {
   return (
-    <motion.button
+    <button
       type="button"
-      whileHover={{ scale: 1.08 }}
-      whileTap={{ scale: 0.92 }}
       onClick={onClick}
       aria-label={label}
       aria-expanded={ariaExpanded}
@@ -75,13 +73,13 @@ function HUDButton({ onClick, active, label, children, ariaExpanded }: HUDButton
         transition-colors duration-150
         ${
           active
-            ? "border-tactical-primary/50 text-tactical-primary shadow-[0_0_8px_oklch(75%_0.18_200/30%)]"
+            ? "border-tactical-primary/50 text-tactical-primary"
             : "text-white/60 hover:text-tactical-primary hover:border-tactical-primary/30"
         }
       `}
     >
       {children}
-    </motion.button>
+    </button>
   );
 }
 
@@ -108,19 +106,19 @@ export function MapControls({
     <div className="absolute top-4 right-4 z-10 flex flex-col gap-2 font-mono">
       {/* Zoom controls */}
       <div className="flex flex-col gap-1">
-        <HUDButton onClick={onZoomIn} label="Zoom in">
+        <HUDButton onClick={onZoomIn} label="Увеличить масштаб">
           <ZoomIn size={18} />
         </HUDButton>
-        <HUDButton onClick={onZoomOut} label="Zoom out">
+        <HUDButton onClick={onZoomOut} label="Уменьшить масштаб">
           <ZoomOut size={18} />
         </HUDButton>
       </div>
 
       {/* Compass & Reset */}
-      <HUDButton onClick={onCompass} label="Reset bearing">
+      <HUDButton onClick={onCompass} label="Сбросить направление">
         <Compass size={18} />
       </HUDButton>
-      <HUDButton onClick={onReset} label="Reset view">
+      <HUDButton onClick={onReset} label="Сбросить вид">
         <RotateCcw size={18} />
       </HUDButton>
 
@@ -129,7 +127,7 @@ export function MapControls({
         <HUDButton
           onClick={onToggleLayers}
           active={layerOpen}
-          label="Map layers"
+          label="Слои карты"
           ariaExpanded={layerOpen}
         >
           <Layers size={18} />
@@ -145,13 +143,13 @@ export function MapControls({
           >
             {/* Map Styles */}
             <div className="text-[10px] tracking-widest text-tactical-primary/60 uppercase mb-2 px-1">
-              Map Style
+              Стиль карты
             </div>
             {(
               [
-                { key: "dark-v11" as MapStyle, icon: Map, label: "Tactical Dark" },
-                { key: "satellite-v9" as MapStyle, icon: Satellite, label: "Satellite" },
-                { key: "dark-dem" as MapStyle, icon: Map, label: "Dark (alt)" },
+                { key: "dark-v11" as MapStyle, icon: Map, label: "Тактическая тёмная" },
+                { key: "satellite-v9" as MapStyle, icon: Satellite, label: "Спутник" },
+                { key: "dark-dem" as MapStyle, icon: Map, label: "Тёмная (альт.)" },
               ] as const
             ).map(({ key, icon: Icon, label }) => (
               <button
@@ -180,7 +178,7 @@ export function MapControls({
 
             {/* Data Layers */}
             <div className="text-[10px] tracking-widest text-tactical-primary/60 uppercase mb-2 px-1">
-              Data Layers
+              Слои данных
             </div>
             <button
               onClick={onToggleChoropleth}
@@ -196,9 +194,9 @@ export function MapControls({
               `}
             >
               <Layers size={14} />
-              <span className="tracking-wider">BP Choropleth</span>
+              <span className="tracking-wider">Хороплет БП</span>
               <span className="ml-auto text-[10px]">
-                {choroplethVisible ? "ON" : "OFF"}
+                {choroplethVisible ? "ВКЛ" : "ВЫКЛ"}
               </span>
             </button>
           </motion.div>

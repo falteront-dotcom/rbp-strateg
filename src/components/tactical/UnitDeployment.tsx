@@ -67,11 +67,8 @@ const CATEGORY_LABELS: Record<UnitCategory, { label: string; icon: string }> = {
 
 // ─── Component ───────────────────────────────────────────────────────────────
 export function UnitDeployment({
-  onDeploy,
   deployedUnits,
-  side,
   budget,
-  onBudgetChange,
 }: UnitDeploymentProps) {
   const [selectedCategory, setSelectedCategory] = useState<UnitCategory | "all">("all");
   const [selectedUnitId, setSelectedUnitId] = useState<string | null>(null);
@@ -90,11 +87,6 @@ export function UnitDeployment({
         ? UNIT_SPECS
         : UNIT_SPECS.filter((u) => u.category === selectedCategory),
     [selectedCategory]
-  );
-
-  const selectedUnit = useMemo(
-    () => UNIT_SPECS.find((u) => u.id === selectedUnitId) ?? null,
-    [selectedUnitId]
   );
 
   const forceComposition = useMemo(() => {
@@ -127,7 +119,7 @@ export function UnitDeployment({
       <div className="flex gap-1 flex-wrap">
         <button
           onClick={() => setSelectedCategory("all")}
-          className={`px-2 py-0.5 text-[9px] rounded border ${
+          className={`px-2 py-0.5 text-[10px] rounded border ${
             selectedCategory === "all"
               ? "border-tactical-primary/50 text-tactical-primary bg-tactical-primary/10"
               : "border-white/10 text-slate-400"
@@ -140,7 +132,7 @@ export function UnitDeployment({
             <button
               key={cat}
               onClick={() => setSelectedCategory(cat)}
-              className={`px-2 py-0.5 text-[9px] rounded border ${
+              className={`px-2 py-0.5 text-[10px] rounded border ${
                 selectedCategory === cat
                   ? "border-tactical-primary/50 text-tactical-primary bg-tactical-primary/10"
                   : "border-white/10 text-slate-400"
@@ -182,11 +174,11 @@ export function UnitDeployment({
                   <span className="text-sm">{CATEGORY_LABELS[unit.category].icon}</span>
                   <span className="text-[10px] text-slate-300 font-semibold">{unit.name}</span>
                 </div>
-                <span className="text-[9px] text-slate-500">{unit.cost} очков</span>
+                <span className="text-[10px] text-slate-500">{unit.cost} очков</span>
               </div>
 
               {/* Stats bar (compact) */}
-              <div className="flex gap-2 mt-1 text-[8px] text-slate-500">
+              <div className="flex gap-2 mt-1 text-[10px] text-slate-500">
                 <span>⚔{unit.firepower}</span>
                 <span>🛡{unit.armor}</span>
                 <span>👣{unit.mobility}</span>
@@ -201,7 +193,7 @@ export function UnitDeployment({
                     initial={{ height: 0, opacity: 0 }}
                     animate={{ height: "auto", opacity: 1 }}
                     exit={{ height: 0, opacity: 0 }}
-                    className="mt-2 pt-2 border-t border-white/5 text-[9px] text-slate-400 leading-relaxed"
+                    className="mt-2 pt-2 border-t border-white/5 text-[10px] text-slate-400 leading-relaxed"
                   >
                     {unit.description}
                     {isSelected && (
@@ -220,7 +212,7 @@ export function UnitDeployment({
       {/* Force Composition Summary */}
       {deployedUnits.length > 0 && (
         <div className="glass-panel rounded-md p-2">
-          <h4 className="text-[9px] font-bold text-tactical-primary tracking-widest uppercase mb-1">
+          <h4 className="text-[10px] font-bold text-tactical-primary tracking-widest uppercase mb-1">
             Состав группировки
           </h4>
           <div className="grid grid-cols-5 gap-1 text-center">
@@ -228,12 +220,12 @@ export function UnitDeployment({
               ([cat, { label }]) => (
                 <div key={cat}>
                   <div className="text-sm font-bold text-slate-300">{forceComposition[cat]}</div>
-                  <div className="text-[7px] text-slate-500">{label}</div>
+                  <div className="text-[10px] text-slate-500">{label}</div>
                 </div>
               )
             )}
           </div>
-          <div className="mt-1 text-[9px] text-slate-400">
+          <div className="mt-1 text-[10px] text-slate-400">
             Всего: {deployedUnits.length} подразделений · Общая сила:{" "}
             {deployedUnits.reduce((s, u) => s + u.strength, 0)}
           </div>

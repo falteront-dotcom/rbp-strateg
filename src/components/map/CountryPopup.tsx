@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useState } from "react";
+import { useCallback } from "react";
 import { Popup } from "react-map-gl/mapbox";
 import type { LngLatLike } from "mapbox-gl";
 import { motion, AnimatePresence } from "framer-motion";
@@ -16,13 +16,13 @@ interface CountryPopupProps {
   latitude: number;
   /** Whether the popup is visible */
   visible: boolean;
-  /** Callback when "Details" link is clicked */
+  /** Callback when the details link is clicked */
   onDetailsClick: (iso: string) => void;
 }
 
 /** Format BP score with thousand separators */
 function formatBP(score: number): string {
-  return score.toLocaleString("en-US", {
+  return score.toLocaleString("ru-RU", {
     maximumFractionDigits: 1,
   });
 }
@@ -30,7 +30,7 @@ function formatBP(score: number): string {
 /** Get BP tier label + tailwind color from the shared canonical tiers module. */
 function getBPTier(score: number): { label: string; color: string } {
   const info = BPTIER_BY_KEY[getBPTierKey(score)];
-  return { label: info.labelEn, color: info.colorClass };
+  return { label: info.labelRu, color: info.colorClass };
 }
 
 export function CountryPopup({
@@ -87,7 +87,7 @@ export function CountryPopup({
             {/* BP Score */}
             <div className="flex items-baseline gap-2 mb-1">
               <span className="text-[10px] text-tactical-secondary/70 tracking-wider uppercase">
-                BP Score
+                Индекс БП
               </span>
               <span className="text-lg font-bold text-tactical-primary tabular-nums">
                 {formatBP(country.bpScore)}
@@ -98,7 +98,7 @@ export function CountryPopup({
             {country.bpRank !== null && (
               <div className="flex items-baseline gap-2 mb-1">
                 <span className="text-[10px] text-tactical-secondary/70 tracking-wider uppercase">
-                  Rank
+                  Место
                 </span>
                 <span className="text-sm font-semibold text-white/80 tabular-nums">
                   #{country.bpRank}
@@ -118,7 +118,7 @@ export function CountryPopup({
               onClick={handleDetailsClick}
               className="mt-2 text-[10px] tracking-widest uppercase text-tactical-primary/80 hover:text-tactical-primary transition-colors cursor-pointer"
             >
-              ▸ Details
+              ▸ Подробнее
             </button>
           </motion.div>
         </Popup>

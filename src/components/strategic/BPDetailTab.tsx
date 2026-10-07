@@ -63,14 +63,14 @@ interface BPDetailTabProps {
 
 // ─── Constants ───────────────────────────────────────────────────────────────
 const COMPONENTS = [
-  { key: "weaponScore", letter: "W", name: "Оружие", weight: 0.20, color: "#ef4444" },
-  { key: "manpowerScore", letter: "M", name: "Люди", weight: 0.15, color: "#f59e0b" },
-  { key: "logisticsScore", letter: "L", name: "Логистика", weight: 0.12, color: "#22d3ee" },
-  { key: "c2Score", letter: "C2", name: "Управление", weight: 0.10, color: "#a78bfa" },
-  { key: "economyScore", letter: "E", name: "Экономика", weight: 0.15, color: "#10b981" },
-  { key: "doctrineScore", letter: "D", name: "Доктрина", weight: 0.08, color: "#f472b6" },
-  { key: "readinessScore", letter: "R", name: "Боеготовность", weight: 0.10, color: "#3b82f6" },
-  { key: "terrainScore", letter: "T", name: "География", weight: 0.10, color: "#84cc16" },
+  { key: "weaponScore", letter: "W", name: "Оружие", weight: 0.20, color: "#8aa89b" },
+  { key: "manpowerScore", letter: "M", name: "Люди", weight: 0.15, color: "#8aa89b" },
+  { key: "logisticsScore", letter: "L", name: "Логистика", weight: 0.12, color: "#8aa89b" },
+  { key: "c2Score", letter: "C2", name: "Управление", weight: 0.10, color: "#8aa89b" },
+  { key: "economyScore", letter: "E", name: "Экономика", weight: 0.15, color: "#8aa89b" },
+  { key: "doctrineScore", letter: "D", name: "Доктрина", weight: 0.08, color: "#8aa89b" },
+  { key: "readinessScore", letter: "R", name: "Боеготовность", weight: 0.10, color: "#8aa89b" },
+  { key: "terrainScore", letter: "T", name: "География", weight: 0.10, color: "#8aa89b" },
 ] as const;
 
 const TIER_MAP: Record<string, { label: string; color: string; bg: string }> = {
@@ -82,12 +82,12 @@ const TIER_MAP: Record<string, { label: string; color: string; bg: string }> = {
 };
 
 const SIDE_COLORS: Record<string, string> = {
-  NATO: "#3b82f6",
+  NATO: "#6b8fa0",
   CSTO: "#ef4444",
   BRICS: "#f59e0b",
-  AUKUS: "#22d3ee",
+  AUKUS: "#4fb287",
   UKR: "#eab308",
-  NEUTRAL: "#94a3b8",
+  NEUTRAL: "#94a3a4",
 };
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
@@ -96,17 +96,13 @@ function getTier(score: number): keyof typeof TIER_MAP {
   return getBPTierKey(score);
 }
 
-function scoreToColor(score: number): string {
-  if (score >= 80) return "#ef4444";
-  if (score >= 60) return "#f59e0b";
-  if (score >= 40) return "#22d3ee";
-  if (score >= 20) return "#3b82f6";
-  return "#64748b";
+function scoreToColor(): string {
+  return "#6bb995";
 }
 
 function scoreBarGradient(score: number): string {
   const pct = Math.min(100, Math.max(0, score));
-  return `linear-gradient(90deg, #0e1520 ${100 - pct}%, ${scoreToColor(score)} ${100 - pct}%)`;
+  return `linear-gradient(90deg, #6bb995 0%, #6bb995 ${pct}%, #16241a ${pct}%)`;
 }
 
 function getWeaponSubFactors(c: CountryData): { label: string; value: number }[] {
@@ -223,9 +219,9 @@ export function BPDetailTab({ country }: BPDetailTabProps) {
             <span
               className="px-2 py-0.5 text-[10px] font-bold tracking-widest rounded border"
               style={{
-                borderColor: SIDE_COLORS[country.side] ?? "#64748b44",
-                color: SIDE_COLORS[country.side] ?? "#94a3b8",
-                backgroundColor: `${SIDE_COLORS[country.side] ?? "#64748b"}20`,
+                borderColor: SIDE_COLORS[country.side] ?? "#647a7244",
+                color: SIDE_COLORS[country.side] ?? "#94a3a4",
+                backgroundColor: `${SIDE_COLORS[country.side] ?? "#647a72"}20`,
               }}
             >
               {country.side}
@@ -254,14 +250,14 @@ export function BPDetailTab({ country }: BPDetailTabProps) {
                 <span className="text-xs font-bold tracking-wider" style={{ color: comp.color }}>
                   {comp.letter} · {comp.name}
                 </span>
-                <span className="text-[9px] px-1.5 py-0.5 rounded bg-white/5 text-slate-400">
+                <span className="text-[10px] px-1.5 py-0.5 rounded bg-white/5 text-slate-400">
                   {(comp.weight * 100).toFixed(0)}%
                 </span>
               </div>
 
               {/* Score */}
               <div className="flex items-end gap-1">
-                <span className="text-lg font-bold" style={{ color: scoreToColor(score) }}>
+                <span className="text-lg font-bold" style={{ color: scoreToColor() }}>
                   {score.toFixed(1)}
                 </span>
                 <span className="text-[10px] text-slate-500 pb-0.5">/100</span>
@@ -274,7 +270,7 @@ export function BPDetailTab({ country }: BPDetailTabProps) {
                   animate={{ width: `${Math.min(100, score)}%` }}
                   transition={{ duration: 0.8, delay: idx * 0.05 }}
                   className="h-full rounded-full"
-                  style={{ backgroundColor: scoreToColor(score) }}
+                  style={{ backgroundColor: scoreToColor() }}
                 />
               </div>
 
@@ -300,25 +296,25 @@ export function BPDetailTab({ country }: BPDetailTabProps) {
             <PolarGrid stroke="#1e293b" />
             <PolarAngleAxis
               dataKey="component"
-              tick={{ fill: "#94a3b8", fontSize: 11, fontWeight: "bold" }}
+              tick={{ fill: "#94a3a4", fontSize: 11, fontWeight: "bold" }}
             />
             <PolarRadiusAxis
               angle={90}
               domain={[0, 100]}
-              tick={{ fill: "#475569", fontSize: 9 }}
+              tick={{ fill: "#47584c", fontSize: 10 }}
             />
             <Radar
               name={country.nameRu}
               dataKey="score"
-              stroke="#22d3ee"
-              fill="#22d3ee"
+              stroke="#6bb995"
+              fill="#6bb995"
               fillOpacity={0.2}
               strokeWidth={2}
             />
             <Tooltip
               contentStyle={{
-                backgroundColor: "#0e1520ee",
-                border: "1px solid #22d3ee40",
+                backgroundColor: "#0e1710ee",
+                border: "1px solid #4fb28740",
                 borderRadius: 8,
                 fontSize: 11,
                 fontFamily: "monospace",
@@ -357,13 +353,13 @@ export function BPDetailTab({ country }: BPDetailTabProps) {
                 dataKey="value"
               >
                 {weightData.map((entry, idx) => (
-                  <Cell key={idx} fill={entry.color} stroke="none" />
+                  <Cell key={idx} fill={`hsl(210, 12%, ${40 + idx * 5}%)`} stroke="none" />
                 ))}
               </Pie>
               <Tooltip
                 contentStyle={{
-                  backgroundColor: "#0e1520ee",
-                  border: "1px solid #22d3ee40",
+                  backgroundColor: "#0e1710ee",
+                  border: "1px solid #4fb28740",
                   borderRadius: 8,
                   fontSize: 11,
                   fontFamily: "monospace",
@@ -404,14 +400,14 @@ export function BPDetailTab({ country }: BPDetailTabProps) {
               ▲ Сильные стороны
             </h4>
             <div className="space-y-1.5">
-              {analysis.strengths.map((comp, idx) => (
+              {analysis.strengths.map((comp) => (
                 <div key={comp.key} className="flex items-center justify-between">
                   <span className="text-[11px] text-slate-300">
                     {comp.letter} · {comp.name}
                   </span>
                   <span
                     className="text-[11px] font-bold"
-                    style={{ color: scoreToColor(comp.score) }}
+                    style={{ color: scoreToColor() }}
                   >
                     {comp.score.toFixed(1)}
                   </span>
@@ -425,14 +421,14 @@ export function BPDetailTab({ country }: BPDetailTabProps) {
               ▼ Слабые стороны
             </h4>
             <div className="space-y-1.5">
-              {analysis.weaknesses.map((comp, idx) => (
+              {analysis.weaknesses.map((comp) => (
                 <div key={comp.key} className="flex items-center justify-between">
                   <span className="text-[11px] text-slate-300">
                     {comp.letter} · {comp.name}
                   </span>
                   <span
                     className="text-[11px] font-bold"
-                    style={{ color: scoreToColor(comp.score) }}
+                    style={{ color: scoreToColor() }}
                   >
                     {comp.score.toFixed(1)}
                   </span>
@@ -448,11 +444,11 @@ export function BPDetailTab({ country }: BPDetailTabProps) {
             <span className="text-tactical-primary">{country.nameRu}</span> занимает{" "}
             <span className="text-white font-bold">#{country.bpRank}</span> место в мировом рейтинге БП.
             Наибольший вклад вносит компонент{" "}
-            <span style={{ color: scoreToColor(analysis.strengths[0].score) }}>
+            <span style={{ color: scoreToColor() }}>
               {analysis.strengths[0].letter} ({analysis.strengths[0].name})
             </span>
             , а наименее развит —{" "}
-            <span style={{ color: scoreToColor(analysis.weaknesses[0].score) }}>
+            <span style={{ color: scoreToColor() }}>
               {analysis.weaknesses[0].letter} ({analysis.weaknesses[0].name})
             </span>
             .
@@ -472,28 +468,28 @@ function SubFactorList({ component, country }: { component: string; country: Cou
       factors = getWeaponSubFactors(country).map((f) => ({
         label: f.label,
         value: f.value,
-        formatted: f.value >= 1000 ? `${(f.value / 1000).toFixed(1)}K` : f.value > 0 ? String(f.value) : "—",
+        formatted: f.value >= 1000 ? `${(f.value / 1000).toFixed(1)} тыс.` : f.value > 0 ? String(f.value) : "—",
       }));
       break;
     case "M":
       factors = getManpowerSubFactors(country).map((f) => ({
         label: f.label,
         value: f.value,
-        formatted: f.value >= 1000000 ? `${(f.value / 1e6).toFixed(1)}M` : f.value >= 1000 ? `${(f.value / 1e3).toFixed(0)}K` : String(f.value),
+        formatted: f.value > 0 ? (f.value >= 1000000 ? `${(f.value / 1e6).toFixed(1)} млн` : f.value >= 1000 ? `${(f.value / 1e3).toFixed(0)} тыс.` : String(f.value)) : "—",
       }));
       break;
     case "L":
       factors = getLogisticsSubFactors(country).map((f) => ({
         label: f.label,
         value: f.value,
-        formatted: f.value >= 10000 ? `${(f.value / 1000).toFixed(0)}K` : String(f.value),
+        formatted: f.value > 0 ? (f.value >= 10000 ? `${(f.value / 1000).toFixed(0)} тыс.` : String(f.value)) : "—",
       }));
       break;
     case "E":
       factors = getEconomySubFactors(country).map((f) => ({
         label: f.label,
         value: f.value,
-        formatted: f.formatted,
+        formatted: f.value > 0 ? f.formatted : "—",
       }));
       break;
     case "C2":
@@ -535,13 +531,13 @@ function SubFactorList({ component, country }: { component: string; country: Cou
   return (
     <div className="space-y-0.5 mt-1">
       {factors.slice(0, 4).map((f, idx) => (
-        <div key={idx} className="flex items-center justify-between text-[9px]">
+        <div key={idx} className="flex items-center justify-between text-[10px]">
           <span className="text-slate-500">{f.label}</span>
           <span className="text-slate-400">{f.formatted ?? f.value}</span>
         </div>
       ))}
       {factors.length > 4 && (
-        <span className="text-[8px] text-slate-600">+{factors.length - 4} ещё</span>
+        <span className="text-[10px] text-slate-600">+{factors.length - 4} ещё</span>
       )}
     </div>
   );

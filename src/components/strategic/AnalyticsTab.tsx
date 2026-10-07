@@ -1,5 +1,6 @@
 "use client";
 
+import { Flag } from "@/components/Flag";
 import { useMemo, useState } from "react";
 import {
   BarChart,
@@ -9,7 +10,6 @@ import {
   CartesianGrid,
   Tooltip,
   ResponsiveContainer,
-  LineChart,
   Line,
   Area,
   AreaChart,
@@ -17,7 +17,12 @@ import {
 } from "recharts";
 import { motion } from "framer-motion";
 import type { CountryCompareData } from "@/lib/comparison";
-import { isoToFlag, formatLargeNumber, getBPTierLabel, getBPTierColor } from "@/lib/comparison";
+import { getBPTierColor } from "@/lib/comparison";
+import { HISTORICAL_CONFLICTS } from "@/lib/data/conflict-history.generated";
+import { HISTORICAL_BATTLES } from "@/lib/data/battles.generated";
+import { MILITARY_CAMPAIGNS } from "@/lib/data/campaigns.generated";
+import { Sparkline } from "@/components/viz/Sparkline";
+import { BUDGET_SERIES } from "@/lib/data/budgets.generated";
 
 // ─── Props ──────────────────────────────────────────────────────────────────
 interface AnalyticsTabProps {
@@ -118,7 +123,7 @@ export function AnalyticsTab({ countries, selectedISO }: AnalyticsTabProps) {
               <button
                 key={key}
                 onClick={() => setSortKey(key)}
-                className={`px-2 py-0.5 text-[9px] rounded border ${
+                className={`px-2 py-0.5 text-[10px] rounded border ${
                   sortKey === key
                     ? "border-tactical-primary/50 text-tactical-primary bg-tactical-primary/10"
                     : "border-white/10 text-slate-400 hover:text-slate-200"
@@ -139,9 +144,9 @@ export function AnalyticsTab({ countries, selectedISO }: AnalyticsTabProps) {
             >
               <div className="flex items-center gap-2 flex-1 min-w-0">
                 <span className="w-5 text-right text-slate-500">{idx + 1}</span>
-                <span className="text-sm">{isoToFlag(c.isoCode)}</span>
+                <span className="text-sm"><Flag iso={c.isoCode} /></span>
                 <span className="text-slate-300 truncate">{c.nameRu}</span>
-                <span className="text-[8px] text-slate-600">{c.side}</span>
+                <span className="text-[10px] text-slate-600">{c.side}</span>
               </div>
               <span className="font-bold" style={{ color: getBPTierColor(c[sortKey] as number) }}>
                 {(c[sortKey] as number).toFixed(1)}
@@ -159,20 +164,20 @@ export function AnalyticsTab({ countries, selectedISO }: AnalyticsTabProps) {
         <ResponsiveContainer width="100%" height={160}>
           <BarChart data={distribution}>
             <CartesianGrid strokeDasharray="3 3" stroke="#1e293b" />
-            <XAxis dataKey="range" tick={{ fill: "#94a3b8", fontSize: 10 }} />
-            <YAxis tick={{ fill: "#475569", fontSize: 9 }} />
+            <XAxis dataKey="range" tick={{ fill: "#94a3a4", fontSize: 10 }} />
+            <YAxis tick={{ fill: "#47584c", fontSize: 10 }} tickFormatter={(v: number) => Math.round(v).toLocaleString("ru-RU")} />
             <Tooltip
               contentStyle={{
-                backgroundColor: "#0e1520ee",
-                border: "1px solid #22d3ee40",
+                backgroundColor: "#0e1710ee",
+                border: "1px solid #4fb28740",
                 borderRadius: 8,
                 fontSize: 10,
                 fontFamily: "monospace",
               }}
             />
-            <Bar dataKey="count" fill="#22d3ee" radius={[4, 4, 0, 0]}>
+            <Bar dataKey="count" fill="#4fb287" radius={[4, 4, 0, 0]}>
               {distribution.map((_, idx) => (
-                <Cell key={idx} fill={["#64748b", "#3b82f6", "#22d3ee", "#f59e0b", "#ef4444"][idx]} />
+                <Cell key={idx} fill={["#647a72", "#6b8fa0", "#4fb287", "#f59e0b", "#ef4444"][idx]} />
               ))}
             </Bar>
           </BarChart>
@@ -188,24 +193,24 @@ export function AnalyticsTab({ countries, selectedISO }: AnalyticsTabProps) {
           <ResponsiveContainer width="100%" height={180}>
             <AreaChart data={trendData}>
               <CartesianGrid strokeDasharray="3 3" stroke="#1e293b" />
-              <XAxis dataKey="year" tick={{ fill: "#94a3b8", fontSize: 10 }} />
-              <YAxis domain={[0, 100]} tick={{ fill: "#475569", fontSize: 9 }} />
+              <XAxis dataKey="year" tick={{ fill: "#94a3a4", fontSize: 10 }} />
+              <YAxis domain={[0, 100]} tick={{ fill: "#47584c", fontSize: 10 }} tickFormatter={(v: number) => Math.round(v).toLocaleString("ru-RU")} />
               <Tooltip
                 contentStyle={{
-                  backgroundColor: "#0e1520ee",
-                  border: "1px solid #22d3ee40",
+                  backgroundColor: "#0e1710ee",
+                  border: "1px solid #4fb28740",
                   borderRadius: 8,
                   fontSize: 10,
                   fontFamily: "monospace",
                 }}
               />
-              <Area type="monotone" dataKey="bp" stroke="#22d3ee" fill="#22d3ee" fillOpacity={0.15} strokeWidth={2} />
+              <Area type="monotone" dataKey="bp" stroke="#4fb287" fill="#4fb287" fillOpacity={0.15} strokeWidth={2} />
               <Line type="monotone" dataKey="forecast" stroke="#a78bfa" strokeDasharray="5 5" strokeWidth={2} dot={false} />
               <Area type="monotone" dataKey="upper" stroke="none" fill="#a78bfa" fillOpacity={0.05} />
               <Area type="monotone" dataKey="lower" stroke="none" fill="#a78bfa" fillOpacity={0.05} />
             </AreaChart>
           </ResponsiveContainer>
-          <div className="flex items-center gap-3 mt-2 text-[9px]">
+          <div className="flex items-center gap-3 mt-2 text-[10px]">
             <span className="flex items-center gap-1"><span className="w-4 h-0.5 bg-cyan-400 inline-block" /> Исторические</span>
             <span className="flex items-center gap-1"><span className="w-4 h-0.5 bg-purple-400 inline-block" style={{ borderStyle: "dashed" }} /> Прогноз</span>
           </div>
@@ -222,7 +227,7 @@ export function AnalyticsTab({ countries, selectedISO }: AnalyticsTabProps) {
             {anomalies.map((c) => (
               <div key={c.isoCode} className="flex items-center justify-between text-[10px] py-1 px-2 rounded hover:bg-white/5">
                 <div className="flex items-center gap-2">
-                  <span className="text-sm">{isoToFlag(c.isoCode)}</span>
+                  <span className="text-sm"><Flag iso={c.isoCode} /></span>
                   <span className="text-slate-300">{c.nameRu}</span>
                 </div>
                 <div className="flex items-center gap-2">
@@ -258,6 +263,167 @@ export function AnalyticsTab({ countries, selectedISO }: AnalyticsTabProps) {
           ))}
         </div>
       </motion.div>
+
+      {/* ─── Blocs & Alliances ───────────────────────────────────── */}
+      {(() => {
+        const groups = new Map<string, { totalBP: number; members: number }>();
+        let worldBP = 0;
+        for (const c of countries) {
+          worldBP += c.bpTotal;
+          const key = c.coalition ?? c.side;
+          const g = groups.get(key) ?? { totalBP: 0, members: 0 };
+          g.totalBP += c.bpTotal;
+          g.members += 1;
+          groups.set(key, g);
+        }
+        const rows = [...groups.entries()].sort((a, b) => b[1].totalBP - a[1].totalBP).slice(0, 8);
+        const maxBP = rows[0]?.[1].totalBP ?? 1;
+        return (
+          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="glass-panel rounded-lg p-3">
+            <h3 className="text-xs font-bold text-tactical-primary tracking-widest uppercase mb-2">
+              ◈ Блоки и союзы
+            </h3>
+            <div className="space-y-1.5">
+              {rows.map(([name, g]) => (
+                <div key={name} className="flex items-center gap-2 text-[10px]">
+                  <span className="w-20 truncate text-slate-400" title={name}>{name}</span>
+                  <div className="h-2 flex-1 overflow-hidden rounded-full bg-slate-800">
+                    <div className="h-full rounded-full bg-tactical-primary" style={{ width: `${(g.totalBP / maxBP) * 100}%` }} />
+                  </div>
+                  <span className="w-24 shrink-0 text-right font-mono text-slate-300">{g.totalBP.toFixed(0)} · {g.members} гос.</span>
+                </div>
+              ))}
+            </div>
+            <div className="mt-2 text-[10px] text-slate-500">Суммарный БП по блокам · мировой итог {worldBP.toFixed(0)}</div>
+          </motion.div>
+        );
+      })()}
+
+      {/* ─── Nuclear Club ────────────────────────────────────────── */}
+      {(() => {
+        const holders = countries.filter(c => c.nuclearWarheads > 0).sort((a, b) => b.nuclearWarheads - a.nuclearWarheads);
+        if (holders.length === 0) return null;
+        const total = holders.reduce((s, c) => s + c.nuclearWarheads, 0);
+        const max = holders[0].nuclearWarheads;
+        return (
+          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="glass-panel rounded-lg p-3">
+            <h3 className="text-xs font-bold text-tactical-primary tracking-widest uppercase mb-2">
+              ◈ Ядерный клуб
+            </h3>
+            <div className="space-y-1.5">
+              {holders.map(c => (
+                <div key={c.isoCode} className="flex items-center gap-2 text-[10px]">
+                  <span className="w-20 truncate text-slate-400">{c.nameRu}</span>
+                  <div className="h-2 flex-1 overflow-hidden rounded-full bg-slate-800">
+                    <div className="h-full rounded-full bg-orange-500/80" style={{ width: `${(c.nuclearWarheads / max) * 100}%` }} />
+                  </div>
+                  <span className="w-24 shrink-0 text-right font-mono text-slate-300">{c.nuclearWarheads.toLocaleString("ru-RU")} · {((c.nuclearWarheads / total) * 100).toFixed(0)}%</span>
+                </div>
+              ))}
+            </div>
+            <div className="mt-2 text-[10px] text-slate-500">Боеголовки (оценка FAS) · всего {total.toLocaleString("ru-RU")} в {holders.length} государствах</div>
+          </motion.div>
+        );
+      })()}
+      {/* ─── Military history (aggregated) ─── */}
+      {(() => {
+        const decades = new Map<number, number>();
+        for (const b of HISTORICAL_BATTLES) {
+          const dec = Math.floor(b.year / 10) * 10;
+          decades.set(dec, (decades.get(dec) ?? 0) + 1);
+        }
+        const decRows = [...decades.entries()].sort((a, b) => a[0] - b[0]);
+        const byCountry = new Map<string, number>();
+        for (const b of HISTORICAL_BATTLES) {
+          for (const iso of b.isoCodes) byCountry.set(iso, (byCountry.get(iso) ?? 0) + 1);
+        }
+        const top = [...byCountry.entries()].sort((a, b) => b[1] - a[1]).slice(0, 8);
+        const topMax = top[0]?.[1] ?? 1;
+        return (
+          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="glass-panel rounded-lg p-3">
+            <h3 className="text-xs font-bold text-tactical-primary tracking-widest uppercase mb-2">
+              ◈ Военная история · агрегаты
+            </h3>
+            <div className="grid grid-cols-3 gap-2 text-center">
+              <div className="rounded bg-slate-900/40 px-1 py-1.5">
+                <div className="font-mono text-sm font-bold text-slate-200 tabular-nums">{HISTORICAL_CONFLICTS.length}</div>
+                <div className="text-[10px] text-slate-500">конфликтов 1945–2025</div>
+              </div>
+              <div className="rounded bg-slate-900/40 px-1 py-1.5">
+                <div className="font-mono text-sm font-bold text-slate-200 tabular-nums">{HISTORICAL_BATTLES.length}</div>
+                <div className="text-[10px] text-slate-500">сражений 1900–2025</div>
+              </div>
+              <div className="rounded bg-slate-900/40 px-1 py-1.5">
+                <div className="font-mono text-sm font-bold text-slate-200 tabular-nums">{MILITARY_CAMPAIGNS.length}</div>
+                <div className="text-[10px] text-slate-500">кампаний-операций</div>
+              </div>
+            </div>
+            {decRows.length >= 2 && (
+              <div className="mt-3 flex items-center gap-2">
+                <span className="text-[10px] text-slate-500">Сражений по десятилетиям:</span>
+                <Sparkline values={decRows.map(d => d[1])} width={120} height={20} label="Динамика числа сражений по десятилетиям" />
+                <span className="font-mono text-[10px] text-slate-500 tabular-nums">
+                  {decRows[0][0]}–{decRows[decRows.length - 1][0] + 9}
+                </span>
+              </div>
+            )}
+            {top.length > 0 && (
+              <div className="mt-3 space-y-1">
+                <div className="text-[10px] text-slate-500">Чаще всего в сражениях базы:</div>
+                {top.map(([iso, n]) => (
+                  <div key={iso} className="flex items-center gap-2 text-[10px]">
+                    <span className="w-12 shrink-0 text-slate-400"><Flag iso={iso} /> {iso}</span>
+                    <div className="h-1.5 flex-1 overflow-hidden rounded-full bg-slate-800">
+                      <div className="h-full rounded-full bg-tactical-primary" style={{ width: `${(n / topMax) * 100}%` }} />
+                    </div>
+                    <span className="w-8 shrink-0 text-right font-mono text-slate-400 tabular-nums">{n}</span>
+                  </div>
+                ))}
+              </div>
+            )}
+            <div className="mt-2 text-[10px] text-slate-600">Сводка по базе сражений/кампаний; оценки потерь — в карточках записей.</div>
+          </motion.div>
+        );
+      })()}
+      {/* ─── World budgets (trend from budget series) ─── */}
+      {(() => {
+        const latest = BUDGET_SERIES
+          .map(s => {
+            const pts = s.points.filter(p => p.usdBn !== null) as { year: number; usdBn: number }[];
+            return pts.length >= 2 ? { iso: s.iso, pts, last: pts[pts.length - 1].usdBn } : null;
+          })
+          .filter((x): x is { iso: string; pts: { year: number; usdBn: number }[]; last: number } => x !== null)
+          .sort((a, b) => b.last - a.last)
+          .slice(0, 10);
+        const maxLast = latest[0]?.last ?? 1;
+        const total = latest.reduce((s, x) => s + x.last, 0);
+        return (
+          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="glass-panel rounded-lg p-3">
+            <h3 className="text-xs font-bold text-tactical-primary tracking-widest uppercase mb-2">
+              ◈ Бюджеты мира · топ-10
+            </h3>
+            <div className="space-y-1">
+              {latest.map((x, i) => (
+                <div key={x.iso} className="flex items-center gap-2 text-[10px]">
+                  <span className="w-6 shrink-0 font-mono text-slate-600 tabular-nums">{String(i + 1).padStart(2, "0")}</span>
+                  <span className="w-16 shrink-0 text-slate-400"><Flag iso={x.iso} /> {x.iso}</span>
+                  <Sparkline values={x.pts.map(p => p.usdBn)} width={90} height={18} />
+                  <div className="h-1.5 flex-1 overflow-hidden rounded-full bg-slate-800">
+                    <div className="h-full rounded-full bg-tactical-primary" style={{ width: `${(x.last / maxLast) * 100}%` }} />
+                  </div>
+                  <span className="w-20 shrink-0 text-right font-mono text-slate-300 tabular-nums">
+                    {x.last >= 1e9 ? `$${(x.last / 1e9).toFixed(0)} млрд` : `$${(x.last / 1e6).toFixed(0)} млн`}
+                  </span>
+                </div>
+              ))}
+            </div>
+            <div className="mt-2 flex items-center justify-between border-t border-white/15 pt-1 text-[10px]">
+              <span className="text-slate-500">Σ топ-10 (последний год ряда)</span>
+              <span className="font-mono text-slate-300 tabular-nums">${(total / 1e12).toFixed(2)} трлн</span>
+            </div>
+          </motion.div>
+        );
+      })()}
     </div>
   );
 }

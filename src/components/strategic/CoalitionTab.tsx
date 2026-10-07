@@ -1,5 +1,6 @@
 "use client";
 
+import { Flag } from "@/components/Flag";
 import { useMemo, useState, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import {
@@ -45,12 +46,9 @@ import {
   getCoalitionAggregateBP,
   getCoalitionComparison,
   simulateCoalitionSwitch,
-  isoToFlag,
   formatLargeNumber,
-  getBPTierLabel,
   getRankBadge,
   type AggregateBP,
-  type SwitchScenario,
 } from "@/lib/coalition-analysis";
 import {
   COALITION_BP_COMPONENTS,
@@ -236,7 +234,7 @@ export function CoalitionTab({ country, allCountries }: CoalitionTabProps) {
   // ─── Coalition colors for chart cells ─────────────────────────────────
   const getHex = useCallback((name: string): string => {
     const info = COALITION_REGISTRY.get(name);
-    return info?.colorHex ?? "#22d3ee";
+    return info?.colorHex ?? "#4fb287";
   }, []);
 
   const getLabel = useCallback((name: string): string => {
@@ -249,21 +247,20 @@ export function CoalitionTab({ country, allCountries }: CoalitionTabProps) {
 
       {/* ═══ 1. Current Coalition Badge ═════════════════════════════════ */}
       <Section title="Текущая Коалиция" icon={<Swords size={14} />}>
-        <div className="flex items-center gap-4">
+        <div className="flex flex-col gap-3">
           <div
             className={`px-4 py-3 rounded-lg border ${currentCoalition.bgClass} flex items-center gap-3`}
           >
             <span className="text-2xl leading-none">
-              {isoToFlag(country.isoCode)}
+              <Flag iso={country.isoCode} />
             </span>
             <div>
               <div
                 className={`text-lg font-black tracking-[0.15em] uppercase ${currentCoalition.textClass}`}
-                style={{ textShadow: `0 0 16px ${currentCoalition.colorHex}` }}
               >
                 {getLabel(currentCoalition.name)}
               </div>
-              <div className="text-[9px] text-white/40 tracking-widest uppercase mt-0.5">
+              <div className="text-[10px] text-white/40 tracking-widest uppercase mt-0.5">
                 Сторона: {country.side}
               </div>
             </div>
@@ -272,7 +269,7 @@ export function CoalitionTab({ country, allCountries }: CoalitionTabProps) {
           <div className="flex-1 glass-panel rounded-lg p-3 border border-white/5">
             <div className="grid grid-cols-3 gap-3">
               <div className="text-center">
-                <div className="text-[8px] text-tactical-secondary/50 tracking-widest uppercase">
+                <div className="text-[10px] text-tactical-secondary/50 tracking-widest uppercase">
                   Участников
                 </div>
                 <div className="text-xl font-black text-tactical-primary tabular-nums">
@@ -280,7 +277,7 @@ export function CoalitionTab({ country, allCountries }: CoalitionTabProps) {
                 </div>
               </div>
               <div className="text-center">
-                <div className="text-[8px] text-tactical-secondary/50 tracking-widest uppercase">
+                <div className="text-[10px] text-tactical-secondary/50 tracking-widest uppercase">
                   Суммарный БП
                 </div>
                 <div className="text-xl font-black text-tactical-primary tabular-nums">
@@ -288,7 +285,7 @@ export function CoalitionTab({ country, allCountries }: CoalitionTabProps) {
                 </div>
               </div>
               <div className="text-center">
-                <div className="text-[8px] text-tactical-secondary/50 tracking-widest uppercase">
+                <div className="text-[10px] text-tactical-secondary/50 tracking-widest uppercase">
                   Средний БП
                 </div>
                 <div className="text-xl font-black text-tactical-primary tabular-nums">
@@ -322,13 +319,13 @@ export function CoalitionTab({ country, allCountries }: CoalitionTabProps) {
                   <span className="text-sm font-black tabular-nums w-6 text-center">
                     {getRankBadge(rank)}
                   </span>
-                  <span className="text-base leading-none">{isoToFlag(m.isoCode)}</span>
+                  <span className="text-base leading-none"><Flag iso={m.isoCode} /></span>
                   <span className="text-[11px] font-bold truncate max-w-[140px]">
                     {m.nameRu}
                   </span>
                 </div>
                 <div className="flex items-center gap-3">
-                  <span className="text-[9px] text-white/30 tracking-wider uppercase">
+                  <span className="text-[10px] text-white/30 tracking-wider uppercase">
                     {m.side}
                   </span>
                   <span className="text-[11px] text-tactical-primary font-black tabular-nums">
@@ -351,14 +348,13 @@ export function CoalitionTab({ country, allCountries }: CoalitionTabProps) {
             </span>
             <span
               className={`text-2xl font-black tabular-nums ${currentCoalition.textClass}`}
-              style={{ textShadow: `0 0 20px ${currentCoalition.colorHex}` }}
             >
               {aggregate.totalBP.toFixed(1)}
             </span>
           </div>
 
           {/* Component grid */}
-          <div className="grid grid-cols-4 gap-1.5">
+          <div className="grid grid-cols-3 gap-1.5">
             {COALITION_BP_COMPONENTS.map((comp) => {
               const key = comp as keyof AggregateBP;
               const val = aggregate[key] as number;
@@ -372,10 +368,10 @@ export function CoalitionTab({ country, allCountries }: CoalitionTabProps) {
                   <span className="text-[11px] font-black text-tactical-primary tabular-nums">
                     {val.toFixed(1)}
                   </span>
-                  <span className="text-[7px] text-tactical-secondary/40 tracking-wider uppercase truncate w-full text-center">
+                  <span className="text-[10px] text-tactical-secondary/40 tracking-wider uppercase truncate w-full text-center">
                     {BP_LABELS_RU[comp]}
                   </span>
-                  <span className="text-[7px] text-white/20 tabular-nums">
+                  <span className="text-[10px] text-white/20 tabular-nums">
                     avg {avgVal.toFixed(1)}
                   </span>
                 </div>
@@ -392,12 +388,12 @@ export function CoalitionTab({ country, allCountries }: CoalitionTabProps) {
             <BarChart data={barData} margin={{ top: 8, right: 8, bottom: 8, left: 8 }}>
               <XAxis
                 dataKey="name"
-                tick={{ fill: "oklch(75% 0.18 200 / 60%)", fontSize: 9, fontFamily: "var(--font-mono)" }}
+                tick={{ fill: "oklch(75% 0.18 155 / 60%)", fontSize: 10, fontFamily: "var(--font-mono)" }}
                 axisLine={{ stroke: "rgba(255,255,255,0.05)" }}
                 tickLine={false}
               />
               <YAxis
-                tick={{ fill: "oklch(75% 0.18 200 / 40%)", fontSize: 8, fontFamily: "var(--font-mono)" }}
+                tick={{ fill: "oklch(75% 0.18 155 / 40%)", fontSize: 10, fontFamily: "var(--font-mono)" }}
                 axisLine={false}
                 tickLine={false}
                 width={52}
@@ -429,7 +425,7 @@ export function CoalitionTab({ country, allCountries }: CoalitionTabProps) {
                   className="w-2.5 h-2.5 rounded-sm"
                   style={{ backgroundColor: info.colorHex }}
                 />
-                <span className="text-[8px] text-white/50 font-bold tracking-wider uppercase">
+                <span className="text-[10px] text-white/50 font-bold tracking-wider uppercase">
                   {getLabel(name)}
                 </span>
               </div>
@@ -450,7 +446,7 @@ export function CoalitionTab({ country, allCountries }: CoalitionTabProps) {
               <option key={name} value={name}>{getLabel(name)}</option>
             ))}
           </select>
-          <span className="text-[9px] text-tactical-accent font-bold tracking-widest">VS</span>
+          <span className="text-[10px] text-tactical-accent font-bold tracking-widest">VS</span>
           <select
             value={radarCoalitionB}
             onChange={(e) => setRadarCoalitionB(e.target.value)}
@@ -469,8 +465,8 @@ export function CoalitionTab({ country, allCountries }: CoalitionTabProps) {
               <PolarAngleAxis
                 dataKey="component"
                 tick={{
-                  fill: "oklch(75% 0.18 200 / 60%)",
-                  fontSize: 8,
+                  fill: "oklch(75% 0.18 155 / 60%)",
+                  fontSize: 10,
                   fontFamily: "var(--font-mono)",
                 }}
               />
@@ -492,7 +488,7 @@ export function CoalitionTab({ country, allCountries }: CoalitionTabProps) {
                 strokeWidth={2}
               />
               <Legend
-                wrapperStyle={{ fontSize: 9, fontFamily: "var(--font-mono)" }}
+                wrapperStyle={{ fontSize: 10, fontFamily: "var(--font-mono)" }}
                 formatter={(value: string) => (
                   <span style={{ color: "rgba(255,255,255,0.6)" }}>{value}</span>
                 )}
@@ -510,26 +506,26 @@ export function CoalitionTab({ country, allCountries }: CoalitionTabProps) {
             <BarChart data={militaryData} margin={{ top: 8, right: 8, bottom: 8, left: 8 }}>
               <XAxis
                 dataKey="name"
-                tick={{ fill: "oklch(75% 0.18 200 / 60%)", fontSize: 9, fontFamily: "var(--font-mono)" }}
+                tick={{ fill: "oklch(75% 0.18 155 / 60%)", fontSize: 10, fontFamily: "var(--font-mono)" }}
                 axisLine={{ stroke: "rgba(255,255,255,0.05)" }}
                 tickLine={false}
               />
               <YAxis
-                tick={{ fill: "oklch(75% 0.18 200 / 40%)", fontSize: 8, fontFamily: "var(--font-mono)" }}
+                tick={{ fill: "oklch(75% 0.18 155 / 40%)", fontSize: 10, fontFamily: "var(--font-mono)" }}
                 axisLine={false}
                 tickLine={false}
                 width={52}
               />
               <Tooltip content={<HudTooltip />} />
               <Legend
-                wrapperStyle={{ fontSize: 9, fontFamily: "var(--font-mono)" }}
+                wrapperStyle={{ fontSize: 10, fontFamily: "var(--font-mono)" }}
                 formatter={(value: string) => (
                   <span style={{ color: "rgba(255,255,255,0.6)" }}>{value}</span>
                 )}
               />
-              <Bar dataKey="Танки" stackId="a" fill="#ef4444" fillOpacity={0.7} radius={[0, 0, 0, 0]} barSize={28} />
-              <Bar dataKey="Авиация" stackId="a" fill="#3b82f6" fillOpacity={0.7} radius={[0, 0, 0, 0]} />
-              <Bar dataKey="Флот" stackId="a" fill="#2dd4bf" fillOpacity={0.7} radius={[4, 4, 0, 0]} />
+              <Bar dataKey="Танки" stackId="a" fill="#c76a5a" fillOpacity={0.85} radius={[0, 0, 0, 0]} barSize={28} />
+              <Bar dataKey="Авиация" stackId="a" fill="#6b86a8" fillOpacity={0.85} radius={[0, 0, 0, 0]} />
+              <Bar dataKey="Флот" stackId="a" fill="#7fa895" fillOpacity={0.85} radius={[4, 4, 0, 0]} />
             </BarChart>
           </ResponsiveContainer>
         </div>
@@ -543,30 +539,30 @@ export function CoalitionTab({ country, allCountries }: CoalitionTabProps) {
                 key={mb.coalitionName}
                 className={`p-2 rounded-md border ${info?.bgClass ?? "bg-white/5 border-white/5"}`}
               >
-                <div className={`text-[9px] font-black tracking-widest uppercase mb-1.5 ${info?.textClass ?? "text-white/60"}`}>
+                <div className={`text-[10px] font-black tracking-widest uppercase mb-1.5 ${info?.textClass ?? "text-white/60"}`}>
                   {getLabel(mb.coalitionName)}
                 </div>
                 <div className="grid grid-cols-3 gap-1">
                   <div className="flex flex-col items-center">
                     <Crosshair size={8} className="text-red-400/60 mb-0.5" />
-                    <span className="text-[8px] font-bold text-red-400 tabular-nums">
+                    <span className="text-[10px] font-bold text-red-400 tabular-nums">
                       {formatLargeNumber(mb.totalTanks)}
                     </span>
-                    <span className="text-[6px] text-white/20 uppercase">Танки</span>
+                    <span className="text-[10px] text-white/20 uppercase">Танки</span>
                   </div>
                   <div className="flex flex-col items-center">
                     <Plane size={8} className="text-blue-400/60 mb-0.5" />
-                    <span className="text-[8px] font-bold text-blue-400 tabular-nums">
+                    <span className="text-[10px] font-bold text-blue-400 tabular-nums">
                       {formatLargeNumber(mb.totalAircraft)}
                     </span>
-                    <span className="text-[6px] text-white/20 uppercase">Авиация</span>
+                    <span className="text-[10px] text-white/20 uppercase">Авиация</span>
                   </div>
                   <div className="flex flex-col items-center">
                     <Ship size={8} className="text-teal-400/60 mb-0.5" />
-                    <span className="text-[8px] font-bold text-teal-400 tabular-nums">
+                    <span className="text-[10px] font-bold text-teal-400 tabular-nums">
                       {formatLargeNumber(mb.totalNavy)}
                     </span>
-                    <span className="text-[6px] text-white/20 uppercase">Флот</span>
+                    <span className="text-[10px] text-white/20 uppercase">Флот</span>
                   </div>
                 </div>
               </div>
@@ -580,12 +576,12 @@ export function CoalitionTab({ country, allCountries }: CoalitionTabProps) {
         <div className="space-y-4">
           {/* Target selector */}
           <div className="flex items-center gap-3 flex-wrap">
-            <span className="text-[9px] text-tactical-secondary/60 tracking-widest uppercase">
+            <span className="text-[10px] text-tactical-secondary/60 tracking-widest uppercase">
               Страна:
             </span>
-            <span className="text-sm leading-none">{isoToFlag(country.isoCode)}</span>
+            <span className="text-sm leading-none"><Flag iso={country.isoCode} /></span>
             <span className="text-[10px] font-bold text-white/80">{country.nameRu}</span>
-            <span className="text-[9px] text-tactical-secondary/60 tracking-widest uppercase ml-2">
+            <span className="text-[10px] text-tactical-secondary/60 tracking-widest uppercase ml-2">
               → В коалицию:
             </span>
             <select
@@ -609,7 +605,7 @@ export function CoalitionTab({ country, allCountries }: CoalitionTabProps) {
                   <span className={`text-[10px] font-black tracking-widest uppercase ${currentCoalition.textClass}`}>
                     {getLabel(scenario.currentCoalition)}
                   </span>
-                  <span className="text-[8px] text-white/30">без {country.nameRu}</span>
+                  <span className="text-[10px] text-white/30">без {country.nameRu}</span>
                 </div>
                 <div className="flex items-baseline gap-2">
                   <span className="text-xl font-black text-tactical-primary tabular-nums">
@@ -622,7 +618,7 @@ export function CoalitionTab({ country, allCountries }: CoalitionTabProps) {
                     {scenario.currentDelta.toFixed(1)}
                   </span>
                 </div>
-                <div className="text-[7px] text-white/20 tracking-wider uppercase mt-1">
+                <div className="text-[10px] text-white/20 tracking-wider uppercase mt-1">
                   {scenario.currentWithout.memberCount} участников
                 </div>
               </div>
@@ -633,7 +629,7 @@ export function CoalitionTab({ country, allCountries }: CoalitionTabProps) {
                   <span className="text-[10px] font-black tracking-widest uppercase text-tactical-accent">
                     {getLabel(scenario.targetCoalition)}
                   </span>
-                  <span className="text-[8px] text-white/30">+ {country.nameRu}</span>
+                  <span className="text-[10px] text-white/30">+ {country.nameRu}</span>
                 </div>
                 <div className="flex items-baseline gap-2">
                   <span className="text-xl font-black text-tactical-primary tabular-nums">
@@ -645,7 +641,7 @@ export function CoalitionTab({ country, allCountries }: CoalitionTabProps) {
                     +{scenario.targetDelta.toFixed(1)}
                   </span>
                 </div>
-                <div className="text-[7px] text-white/20 tracking-wider uppercase mt-1">
+                <div className="text-[10px] text-white/20 tracking-wider uppercase mt-1">
                   {scenario.targetWith.memberCount} участников
                 </div>
               </div>
@@ -655,7 +651,7 @@ export function CoalitionTab({ country, allCountries }: CoalitionTabProps) {
           {/* Component-by-component impact table */}
           {scenario && (
             <div className="mt-2">
-              <div className="text-[8px] text-tactical-secondary/50 tracking-widest uppercase mb-2">
+              <div className="text-[10px] text-tactical-secondary/50 tracking-widest uppercase mb-2">
                 Изменение по Компонентам
               </div>
               <div className="grid grid-cols-4 gap-1.5">
@@ -674,7 +670,7 @@ export function CoalitionTab({ country, allCountries }: CoalitionTabProps) {
                       }`}>
                         +{countryVal.toFixed(1)}
                       </span>
-                      <span className="text-[6px] text-tactical-secondary/40 tracking-wider uppercase truncate w-full text-center">
+                      <span className="text-[10px] text-tactical-secondary/40 tracking-wider uppercase truncate w-full text-center">
                         {BP_LABELS_RU[comp]}
                       </span>
                     </div>
@@ -687,7 +683,7 @@ export function CoalitionTab({ country, allCountries }: CoalitionTabProps) {
           {/* Summary verdict */}
           {scenario && (
             <div className="glass-panel rounded-lg p-3 border border-tactical-accent/20 text-center">
-              <div className="text-[9px] text-tactical-secondary/50 tracking-widest uppercase mb-1">
+              <div className="text-[10px] text-tactical-secondary/50 tracking-widest uppercase mb-1">
                 Вывод
               </div>
               <div className="text-[11px] font-bold text-tactical-primary">
@@ -696,7 +692,7 @@ export function CoalitionTab({ country, allCountries }: CoalitionTabProps) {
               </div>
               <div className="flex items-center justify-center gap-4 mt-2">
                 <div>
-                  <span className={`text-[9px] font-bold ${currentCoalition.textClass}`}>
+                  <span className={`text-[10px] font-bold ${currentCoalition.textClass}`}>
                     {getLabel(scenario.currentCoalition)}
                   </span>
                   <span className="text-[10px] text-red-400 font-bold tabular-nums ml-1">
@@ -705,7 +701,7 @@ export function CoalitionTab({ country, allCountries }: CoalitionTabProps) {
                 </div>
                 <ArrowRightLeft size={12} className="text-tactical-accent" />
                 <div>
-                  <span className="text-[9px] font-bold text-tactical-accent">
+                  <span className="text-[10px] font-bold text-tactical-accent">
                     {getLabel(scenario.targetCoalition)}
                   </span>
                   <span className="text-[10px] text-green-400 font-bold tabular-nums ml-1">

@@ -1,15 +1,15 @@
 "use client";
 
+import { Flag } from "@/components/Flag";
 import { useState, useMemo, useCallback, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Search, X, Plus, Minus, Users, Swords, GitCompareArrows, Loader2 } from "lucide-react";
+import { Search, X, Plus, Minus, Users, Loader2 } from "lucide-react";
 import {
   PREDEFINED_COALITIONS,
   COALITION_BP_COMPONENTS,
   COALITION_BP_LABELS,
   COALITION_TEXT_CLASSES,
   COALITION_BG_CLASSES,
-  isoToFlag,
   aggregateCoalitionBP,
   compareCoalitions,
   type CoalitionBP,
@@ -92,6 +92,15 @@ export function CoalitionBuilder({ isOpen, onClose, countries: countriesProp }: 
     fetchData();
     return () => { cancelled = true; };
   }, [isOpen, countriesProp]);
+
+  useEffect(() => {
+    if (!isOpen) return;
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === "Escape") onClose();
+    };
+    document.addEventListener("keydown", handleKeyDown);
+    return () => document.removeEventListener("keydown", handleKeyDown);
+  }, [isOpen, onClose]);
 
   /** Search-filtered list of countries NOT already selected */
   const filteredCountries = useMemo(() => {
@@ -178,33 +187,36 @@ export function CoalitionBuilder({ isOpen, onClose, countries: countriesProp }: 
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
           onClick={onClose}
-          className="fixed inset-0 bg-black/60 backdrop-blur-md z-50 flex items-center justify-center p-4"
+          className="fixed inset-0 bg-black/60 z-50 flex items-center justify-center p-4"
         >
           <motion.div
             initial={{ opacity: 0, scale: 0.95, y: 20 }}
             animate={{ opacity: 1, scale: 1, y: 0 }}
             exit={{ opacity: 0, scale: 0.95, y: 20 }}
             onClick={(e) => e.stopPropagation()}
-            className="w-full max-w-6xl max-h-[90vh] glass-panel rounded-2xl overflow-hidden flex flex-col"
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="coalition-builder-title"
+            data-testid="coalition-builder"
+            className="w-full max-w-6xl max-h-[90vh] glass-panel rounded-md overflow-hidden flex flex-col"
           >
             {/* ─── Header ─── */}
             <div className="p-4 border-b border-white/5 flex items-center justify-between bg-white/5 shrink-0">
               <div className="flex items-center gap-4">
                 <div className="flex items-center gap-2 text-tactical-accent">
                   <Users size={18} />
-                  <h2 className="font-black tracking-widest uppercase text-sm">
-                    Анализ Коалиций
+                  <h2 id="coalition-builder-title" className="text-sm font-semibold">
+                    Анализ коалиций
                   </h2>
                 </div>
                 {/* Total BP of custom coalition — large styled number */}
                 {selectedCodes.length > 0 && (
                   <div className="flex items-center gap-2 ml-2 pl-3 border-l border-white/10">
-                    <span className="text-[8px] text-tactical-secondary/60 tracking-widest uppercase font-mono">
+                    <span className="text-[10px] text-tactical-secondary/60 tracking-widest uppercase font-mono">
                       Total BP
                     </span>
                     <span
                       className="text-2xl font-black text-tactical-primary tabular-nums"
-                      style={{ textShadow: "0 0 16px currentColor" }}
                     >
                       {customCoalition.totalBP.toFixed(1)}
                     </span>
@@ -237,6 +249,7 @@ export function CoalitionBuilder({ isOpen, onClose, countries: countriesProp }: 
                 <div className="w-px h-6 bg-white/10 mx-1" />
                 <button
                   onClick={onClose}
+                  aria-label="Закрыть анализ коалиций"
                   className="p-1.5 text-white/40 hover:text-tactical-primary transition-colors cursor-pointer"
                 >
                   <X size={16} />
@@ -280,7 +293,7 @@ export function CoalitionBuilder({ isOpen, onClose, countries: countriesProp }: 
                       <div className="flex flex-col gap-4">
                         {/* Predefined quick-add buttons */}
                         <div>
-                          <div className="text-[9px] text-tactical-secondary/60 tracking-widest uppercase mb-2">
+                          <div className="text-[10px] text-tactical-secondary/60 tracking-widest uppercase mb-2">
                             Быстрое Добавление
                           </div>
                           <div className="flex flex-wrap gap-2">
@@ -324,12 +337,12 @@ export function CoalitionBuilder({ isOpen, onClose, countries: countriesProp }: 
                               className="w-full flex items-center justify-between px-3 py-2 bg-white/5 hover:bg-white/10 rounded-md border border-white/5 hover:border-tactical-primary/30 transition-all cursor-pointer group"
                             >
                               <div className="flex items-center gap-2">
-                                <span className="text-base leading-none">{isoToFlag(c.isoCode)}</span>
+                                <span className="text-base leading-none"><Flag iso={c.isoCode} /></span>
                                 <span className="text-[10px] text-white/80 font-bold truncate">
                                   {c.nameRu}
                                 </span>
                                 <span
-                                  className={`text-[8px] px-1.5 py-0.5 rounded border font-bold tracking-wider ${
+                                  className={`text-[10px] px-1.5 py-0.5 rounded border font-bold tracking-wider ${
                                     c.side === "NATO"
                                       ? "text-tactical-nato border-tactical-nato/30 bg-tactical-nato/10"
                                       : c.side === "RUS"
@@ -343,7 +356,7 @@ export function CoalitionBuilder({ isOpen, onClose, countries: countriesProp }: 
                                 </span>
                               </div>
                               <div className="flex items-center gap-2">
-                                <span className="text-[9px] text-tactical-primary font-bold tabular-nums">
+                                <span className="text-[10px] text-tactical-primary font-bold tabular-nums">
                                   {c.bpTotal.toFixed(1)}
                                 </span>
                                 <Plus
@@ -365,7 +378,7 @@ export function CoalitionBuilder({ isOpen, onClose, countries: countriesProp }: 
                       <div className="flex flex-col gap-4">
                         {/* Custom coalition name */}
                         <div>
-                          <label className="text-[9px] text-tactical-secondary/60 tracking-widest uppercase mb-1 block">
+                          <label className="text-[10px] text-tactical-secondary/60 tracking-widest uppercase mb-1 block">
                             Название Коалиции
                           </label>
                           <input
@@ -379,13 +392,13 @@ export function CoalitionBuilder({ isOpen, onClose, countries: countriesProp }: 
                         {/* Selected members */}
                         <div>
                           <div className="flex items-center justify-between mb-2">
-                            <span className="text-[9px] text-tactical-secondary/60 tracking-widest uppercase">
+                            <span className="text-[10px] text-tactical-secondary/60 tracking-widest uppercase">
                               Выбранные Страны ({selectedCodes.length})
                             </span>
                             {selectedCodes.length > 0 && (
                               <button
                                 onClick={() => setSelectedCodes([])}
-                                className="text-[8px] text-red-400/60 hover:text-red-400 tracking-widest uppercase cursor-pointer transition-colors"
+                                className="text-[10px] text-red-400/60 hover:text-red-400 tracking-widest uppercase cursor-pointer transition-colors"
                               >
                                 Очистить
                               </button>
@@ -398,13 +411,13 @@ export function CoalitionBuilder({ isOpen, onClose, countries: countriesProp }: 
                                 className="flex items-center justify-between px-3 py-1.5 bg-tactical-primary/5 rounded-md border border-tactical-primary/20 hover:border-tactical-primary/40 transition-colors group"
                               >
                                 <div className="flex items-center gap-2">
-                                  <span className="text-sm leading-none">{isoToFlag(c.isoCode)}</span>
+                                  <span className="text-sm leading-none"><Flag iso={c.isoCode} /></span>
                                   <span className="text-[10px] text-white/80 font-bold">
                                     {c.nameRu}
                                   </span>
                                 </div>
                                 <div className="flex items-center gap-2">
-                                  <span className="text-[9px] text-tactical-primary font-bold tabular-nums">
+                                  <span className="text-[10px] text-tactical-primary font-bold tabular-nums">
                                     {c.bpTotal.toFixed(1)}
                                   </span>
                                   <button
@@ -428,12 +441,11 @@ export function CoalitionBuilder({ isOpen, onClose, countries: countriesProp }: 
                         {selectedCodes.length > 0 && (
                           <div className="glass-panel rounded-lg p-3 border border-tactical-primary/20">
                             <div className="flex items-center justify-between mb-2">
-                              <span className="text-[9px] text-tactical-secondary/60 tracking-widest uppercase">
+                              <span className="text-[10px] text-tactical-secondary/60 tracking-widest uppercase">
                                 Суммарный БП
                               </span>
                               <span
                                 className="text-xl font-black text-tactical-primary tabular-nums"
-                                style={{ textShadow: "0 0 12px currentColor" }}
                               >
                                 {customCoalition.totalBP.toFixed(1)}
                               </span>
@@ -444,7 +456,7 @@ export function CoalitionBuilder({ isOpen, onClose, countries: countriesProp }: 
                                 const val = customCoalition.componentScores[comp];
                                 return (
                                   <div key={comp} className="flex items-center gap-2">
-                                    <span className="text-[7px] text-tactical-secondary/40 tracking-wider uppercase w-16 truncate">
+                                    <span className="text-[10px] text-tactical-secondary/40 tracking-wider uppercase w-16 truncate">
                                       {COALITION_BP_LABELS[comp]}
                                     </span>
                                     <div className="flex-1 h-1.5 bg-white/5 rounded-full overflow-hidden">
@@ -453,7 +465,7 @@ export function CoalitionBuilder({ isOpen, onClose, countries: countriesProp }: 
                                         style={{ width: `${Math.min(val, 100)}%` }}
                                       />
                                     </div>
-                                    <span className="text-[8px] text-tactical-primary font-bold tabular-nums w-8 text-right">
+                                    <span className="text-[10px] text-tactical-primary font-bold tabular-nums w-8 text-right">
                                       {val.toFixed(1)}
                                     </span>
                                   </div>
@@ -491,7 +503,7 @@ export function CoalitionBuilder({ isOpen, onClose, countries: countriesProp }: 
                         </select>
 
                         <div className="flex items-center justify-center">
-                          <div className="w-10 h-10 rounded-full border border-tactical-accent/30 bg-tactical-accent/10 flex items-center justify-center font-black text-tactical-accent text-xs italic shadow-[0_0_15px_rgba(234,179,8,0.2)]">
+                          <div className="w-10 h-10 rounded-full border border-tactical-accent/30 bg-tactical-accent/10 flex items-center justify-center font-black text-tactical-accent text-xs italic">
                             VS
                           </div>
                         </div>
@@ -528,7 +540,7 @@ export function CoalitionBuilder({ isOpen, onClose, countries: countriesProp }: 
                       {/* Overall delta banner */}
                       {comparison && (
                         <div className="glass-panel rounded-lg p-4 border border-white/10 text-center">
-                          <div className="text-[9px] text-tactical-secondary/60 tracking-widest uppercase mb-2">
+                          <div className="text-[10px] text-tactical-secondary/60 tracking-widest uppercase mb-2">
                             Общая Дельта
                           </div>
                           <div className="flex items-center justify-center gap-4">
@@ -558,7 +570,7 @@ export function CoalitionBuilder({ isOpen, onClose, countries: countriesProp }: 
                                 key={d.component}
                                 className="flex flex-col items-center"
                               >
-                                <span className="text-[7px] text-tactical-secondary/40 tracking-wider uppercase">
+                                <span className="text-[10px] text-tactical-secondary/40 tracking-wider uppercase">
                                   {d.label}
                                 </span>
                                 <span

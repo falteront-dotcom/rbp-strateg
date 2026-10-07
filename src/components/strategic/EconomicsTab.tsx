@@ -21,13 +21,14 @@ import {
   Shield,
   TrendingUp,
   AlertTriangle,
-  CheckCircle2,
   Gauge,
   ArrowUpRight,
   ArrowDownRight,
   Minus,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { WORLD_BANK_INDEX, WORLD_BANK_SOURCE } from '@/lib/data/world-bank.generated';
+import { BUDGET_SERIES } from '@/lib/data/budgets.generated';
 import type { Country } from '@/db/schema';
 
 // ─────────────────────────────────────────────────────────────
@@ -46,22 +47,22 @@ export interface EconomicsTabProps {
 
 /** Format billions with $ and B suffix */
 function fmtBn(value: number): string {
-  if (value >= 1000) return `$${(value / 1000).toFixed(1)}T`;
-  if (value >= 1) return `$${value.toFixed(1)}B`;
-  return `$${(value * 1000).toFixed(0)}M`;
+  if (value >= 1000) return `$${(value / 1000).toFixed(1).replace(".", ",")} трлн`;
+  if (value >= 1) return `$${value % 1 === 0 ? value.toFixed(0) : value.toFixed(1).replace(".", ",")} млрд`;
+  return `$${(value * 1000).toFixed(0)} млн`;
 }
 
 /** Format large population number */
 function fmtPop(millions: number): string {
-  if (millions >= 1000) return `${(millions / 1000).toFixed(2)}B`;
-  if (millions >= 1) return `${millions.toFixed(1)}M`;
-  return `${(millions * 1000).toFixed(0)}K`;
+  if (millions >= 1000) return `${(millions / 1000).toFixed(2).replace(".", ",")} млрд чел.`;
+  if (millions >= 1) return `${millions.toFixed(millions >= 100 ? 0 : 1).replace(".", ",")} млн чел.`;
+  return `${(millions * 1000).toFixed(0)} тыс. чел.`;
 }
 
 /** Format oil production (kbd → readable) */
 function fmtOil(kbd: number): string {
-  if (kbd >= 1000) return `${(kbd / 1000).toFixed(1)}M b/d`;
-  return `${kbd.toLocaleString('en')}K b/d`;
+  if (kbd >= 1000) return `${(kbd / 1000).toFixed(1).replace(".", ",")} млн б/с`;
+  return `${kbd.toLocaleString("ru-RU")} тыс. б/с`;
 }
 
 /** Compute GDP world rank from allCountries array */
@@ -129,14 +130,12 @@ function MetricCard({
   label,
   value,
   sub,
-  accent = 'var(--color-tactical-primary)',
   delay = 0,
 }: {
   icon: React.ElementType;
   label: string;
   value: string;
   sub?: string;
-  accent?: string;
   delay?: number;
 }) {
   return (
@@ -144,25 +143,19 @@ function MetricCard({
       initial={{ opacity: 0, y: 12 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ delay, duration: 0.35 }}
-      className="glass-panel rounded-lg p-4 flex flex-col gap-1.5 relative overflow-hidden group"
+      className="glass-panel rounded-lg p-4 flex flex-col gap-1.5"
     >
-      <div
-        className="absolute top-0 left-0 w-0.5 h-full opacity-60 group-hover:opacity-100 transition-opacity"
-        style={{ backgroundColor: accent }}
-      />
       <div className="flex items-center gap-2">
-        <div className="p-1.5 rounded" style={{ backgroundColor: `${accent}18` }}>
-          <Icon size={14} style={{ color: accent }} />
-        </div>
-        <span className="text-[9px] font-bold tracking-[.2em] uppercase text-slate-500">
+        <Icon size={12} className="shrink-0 text-slate-500" />
+        <span className="min-w-0 text-[10px] font-bold tracking-[.12em] uppercase text-slate-500 leading-tight">
           {label}
         </span>
       </div>
-      <p className="text-xl font-black font-mono tracking-tight" style={{ color: accent }}>
+      <p className="text-xl font-black font-mono tracking-tight text-slate-100 tabular-nums">
         {value}
       </p>
       {sub && (
-        <p className="text-[9px] font-mono text-slate-500 tracking-wider">{sub}</p>
+        <p className="text-[10px] font-mono text-slate-500 tracking-wider">{sub}</p>
       )}
     </motion.div>
   );
@@ -184,7 +177,7 @@ interface ChartTooltipProps {
 function ChartTooltip({ active, payload, label }: ChartTooltipProps) {
   if (!active || !payload?.length) return null;
   return (
-    <div className="glass-panel rounded px-3 py-2 text-xs font-mono border border-white/10 shadow-xl">
+    <div className="glass-panel rounded px-3 py-2 text-xs font-mono border border-white/10">
       <p className="text-slate-400 mb-1">{label}</p>
       {payload.map((p, i) => (
         <p key={i} style={{ color: p.color }} className="font-bold">
@@ -225,7 +218,7 @@ function EfficiencyGauge({ budget, personnel }: { budget: number; personnel: num
     return `M ${s.x} ${s.y} A ${radius} ${radius} 0 ${largeArc} 0 ${e.x} ${e.y}`;
   };
 
-  const gaugeColor = ratio >= 1.5 ? '#22d3ee' : ratio >= 1 ? '#22c55e' : ratio >= 0.5 ? '#eab308' : '#ef4444';
+  const gaugeColor = ratio >= 1.5 ? '#4fb287' : ratio >= 1 ? '#22c55e' : ratio >= 0.5 ? '#eab308' : '#ef4444';
   const label = ratio >= 1.5 ? 'Высокая' : ratio >= 1 ? 'Средняя' : ratio >= 0.5 ? 'Низкая' : 'Очень низкая';
 
   return (
@@ -244,14 +237,13 @@ function EfficiencyGauge({ budget, personnel }: { budget: number; personnel: num
             stroke={gaugeColor}
             strokeWidth={stroke}
             strokeLinecap="round"
-            style={{ filter: `drop-shadow(0 0 6px ${gaugeColor}60)` }}
           />
         )}
         {/* Center text */}
         <text x={cx} y={cy - 8} textAnchor="middle" fill={gaugeColor} fontSize="18" fontWeight="900" fontFamily="monospace">
           ${perSoldier >= 1000 ? `${(perSoldier / 1000).toFixed(0)}K` : perSoldier.toFixed(0)}
         </text>
-        <text x={cx} y={cy + 10} textAnchor="middle" fill="#94a3b8" fontSize="8" fontFamily="monospace">
+        <text x={cx} y={cy + 10} textAnchor="middle" fill="#94a3a4" fontSize="10" fontFamily="monospace">
           на военнослужащего
         </text>
       </svg>
@@ -259,7 +251,7 @@ function EfficiencyGauge({ budget, personnel }: { budget: number; personnel: num
         <p className="text-[10px] font-bold tracking-widest uppercase" style={{ color: gaugeColor }}>
           {label} эффективность
         </p>
-        <p className="text-[8px] font-mono text-slate-500 mt-1">
+        <p className="text-[10px] font-mono text-slate-500 mt-1">
           Мировой средний: ${GLOBAL_AVG_BUDGET_PER_SOLDIER / 1000}K
         </p>
       </div>
@@ -269,13 +261,11 @@ function EfficiencyGauge({ budget, personnel }: { budget: number; personnel: num
 
 /** Fiscal sustainability indicator block */
 function FiscalIndicator({ pct }: { pct: number }) {
-  const { label, color, level } = fiscalRating(pct);
+  const { label, color } = fiscalRating(pct);
   const barPct = Math.min(pct / 8, 1) * 100;
 
   return (
     <div className="glass-panel rounded-lg p-5 relative overflow-hidden">
-      <div className="absolute top-0 right-0 w-32 h-32 rounded-full opacity-[0.04]" style={{ backgroundColor: color, filter: `blur(40px)` }} />
-
       <div className="flex items-center justify-between mb-4">
         <div className="flex items-center gap-2">
           <Shield size={14} style={{ color }} />
@@ -301,7 +291,7 @@ function FiscalIndicator({ pct }: { pct: number }) {
           animate={{ width: `${barPct}%` }}
           transition={{ duration: 1, ease: 'easeOut', delay: 0.3 }}
           className="h-full rounded-full"
-          style={{ backgroundColor: color, boxShadow: `0 0 12px ${color}50` }}
+          style={{ backgroundColor: color }}
         />
         {/* Threshold markers */}
         {[2, 3, 5].map((threshold) => (
@@ -314,7 +304,7 @@ function FiscalIndicator({ pct }: { pct: number }) {
       </div>
 
       {/* Scale labels */}
-      <div className="flex justify-between text-[8px] font-mono text-slate-500">
+      <div className="flex justify-between text-[10px] font-mono text-slate-500">
         <span>0%</span>
         <span className="text-green-500">2%</span>
         <span className="text-yellow-500">3%</span>
@@ -323,7 +313,7 @@ function FiscalIndicator({ pct }: { pct: number }) {
       </div>
 
       {/* Detail */}
-      <div className="mt-4 grid grid-cols-4 gap-2">
+      <div className="mt-4 grid grid-cols-2 gap-2">
         {([
           { range: '<2%', label: 'Устойчивый', clr: '#22c55e' },
           { range: '2–3%', label: 'Умеренный', clr: '#eab308' },
@@ -341,13 +331,13 @@ function FiscalIndicator({ pct }: { pct: number }) {
               borderColor: tier.clr === color ? `${tier.clr}40` : 'rgba(255,255,255,0.05)',
             }}
           >
-            <p className="text-[9px] font-mono" style={{ color: tier.clr }}>{tier.range}</p>
-            <p className="text-[8px] text-slate-500 mt-0.5">{tier.label}</p>
+            <p className="text-[10px] font-mono" style={{ color: tier.clr }}>{tier.range}</p>
+            <p className="text-[10px] text-slate-500 mt-0.5">{tier.label}</p>
           </div>
         ))}
       </div>
 
-      <p className="mt-3 text-[9px] font-mono text-slate-500">
+      <p className="mt-3 text-[10px] font-mono text-slate-500">
         Оборонные расходы: <span className="font-bold" style={{ color }}>{pct.toFixed(1)}%</span> ВВП
       </p>
     </div>
@@ -384,7 +374,7 @@ function ComparisonTable({ country, peers }: { country: Country; peers: Country[
         <span className="text-[10px] font-bold tracking-[.2em] uppercase text-slate-400">
           Региональное сравнение
         </span>
-        <span className="ml-auto text-[8px] font-mono text-slate-600">
+        <span className="ml-auto text-[10px] font-mono text-slate-600">
           {country.coalition || country.side}
         </span>
       </div>
@@ -472,10 +462,6 @@ export function EconomicsTab({ country, allCountries }: EconomicsTabProps) {
 
   // Bar chart: military budget vs GDP
   const budgetVsGdpData = useMemo(() => {
-    const militaryShare = country.gdpPppBn > 0
-      ? (country.militaryBudgetBn / country.gdpPppBn) * 100
-      : 0;
-    const civilianShare = 100 - militaryShare;
     return [
       { name: 'ВВП', value: country.gdpPppBn, fill: 'rgba(34,211,238,0.15)' },
       { name: 'Оборонный', value: country.militaryBudgetBn, fill: 'var(--color-tactical-primary)' },
@@ -491,47 +477,113 @@ export function EconomicsTab({ country, allCountries }: EconomicsTabProps) {
 
   return (
     <div className="space-y-6">
+      {/* ─── REAL DATA: World Bank (authoritative, auditable) ─── */}
+      {(() => {
+        const wb = WORLD_BANK_INDEX[country.isoCode];
+        const series = BUDGET_SERIES.find(s => s.iso === country.isoCode);
+        const pts = (series?.points ?? []).filter(p => p.usdBn !== null) as { year: number; usdBn: number; pctGdp: number | null }[];
+        if (!wb && pts.length < 2) return null;
+        const fmtUsd = (v: number | null) =>
+          v === null ? "—" : v >= 1e9 ? `$${(v / 1e9).toFixed(1)} млрд` : v >= 1e6 ? `$${(v / 1e6).toFixed(0)} млн` : `$${v.toLocaleString("ru-RU")}`;
+        return (
+          <section className="glass-panel rounded-lg p-3">
+            <div className="flex items-center gap-2 mb-2">
+              <span className="h-2 w-2 rounded-full bg-[#82a882]" aria-hidden />
+              <h3 className="text-xs font-black tracking-[.25em] uppercase text-[#82a882]">
+                Реальные данные · {WORLD_BANK_SOURCE}
+              </h3>
+            </div>
+            {wb && (
+            <div className="space-y-1 font-mono text-[10px]">
+              {wb.milSpendPctGdp !== null && (
+                <div className="flex items-baseline justify-between gap-2">
+                  <span className="text-slate-400">Военные расходы, % ВВП</span>
+                  <span className="text-slate-200 tabular-nums">{wb.milSpendPctGdp.toFixed(2)}% <span className="text-slate-500">({wb.milSpendPctGdpYear})</span></span>
+                </div>
+              )}
+              {wb.milSpendUsd !== null && (
+                <div className="flex items-baseline justify-between gap-2">
+                  <span className="text-slate-400">Военные расходы, текущие $</span>
+                  <span className="text-slate-200 tabular-nums">{fmtUsd(wb.milSpendUsd)} <span className="text-slate-500">({wb.milSpendUsdYear})</span></span>
+                </div>
+              )}
+              {wb.armedForcesPersonnel !== null && (
+                <div className="flex items-baseline justify-between gap-2">
+                  <span className="text-slate-400">Численность ВС</span>
+                  <span className="text-slate-200 tabular-nums">{wb.armedForcesPersonnel.toLocaleString("ru-RU")} <span className="text-slate-500">({wb.personnelYear})</span></span>
+                </div>
+              )}
+            </div>
+            )}
+            {pts.length >= 2 && (
+              <div className="mt-2 flex items-center gap-2">
+                <span className="text-[10px] text-slate-500">Динамика бюджета {pts[0].year}–{pts[pts.length - 1].year}:</span>
+                <svg width="120" height="22" className="shrink-0 text-tactical-primary" aria-hidden>
+                  <polyline
+                    points={(() => {
+                      const max = Math.max(...pts.map(q => q.usdBn));
+                      const min = Math.min(...pts.map(q => q.usdBn));
+                      return pts.map((p, i) => {
+                        const x = (i / (pts.length - 1)) * 118 + 1;
+                        const y = 20 - ((p.usdBn - min) / (max - min || 1)) * 18;
+                        return `${x.toFixed(1)},${y.toFixed(1)}`;
+                      }).join(' ');
+                    })()}
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="1.5"
+                  />
+                </svg>
+                <span className="font-mono text-[10px] tabular-nums text-slate-400">
+                  {fmtUsd(pts[0].usdBn)} → {fmtUsd(pts[pts.length - 1].usdBn)}
+                </span>
+              </div>
+            )}
+            <p className="mt-2 text-[10px] leading-relaxed text-slate-500">
+              Авторитетные показатели World Bank (MS.MIL.*) с привязкой к году — в отличие
+              от оценок IISS/GFP, используемых в расчёте БП выше.
+            </p>
+          </section>
+        );
+      })()}
+
       {/* ─── SECTION: KEY METRICS ROW ─── */}
       <section>
         <div className="flex items-center gap-2 mb-4 px-1">
-          <div className="h-px flex-1 bg-gradient-to-r from-tactical-primary/40 to-transparent" />
-          <span className="text-[9px] font-black tracking-[.3em] uppercase text-tactical-primary/60">
+          <div className="h-px flex-1 bg-tactical-primary/25" />
+          <span className="text-[10px] font-black tracking-[.3em] uppercase text-tactical-primary/60">
             Ключевые показатели
           </span>
-          <div className="h-px flex-1 bg-gradient-to-l from-tactical-primary/40 to-transparent" />
+          <div className="h-px flex-1 bg-tactical-primary/25" />
         </div>
 
-        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3">
+        <div className="grid grid-cols-2 gap-3">
           <MetricCard
             icon={DollarSign}
             label="ВВП (ППС)"
             value={fmtBn(country.gdpPppBn)}
             sub={rank ? `Место в мире: #${rank}` : undefined}
-            accent="var(--color-tactical-primary)"
             delay={0}
           />
           <MetricCard
             icon={Users}
             label="ВВП на душу"
-            value={gdpPerCapita >= 1000 ? `$${(gdpPerCapita / 1000).toFixed(1)}K` : `$${gdpPerCapita.toFixed(0)}`}
+            value={gdpPerCapita >= 1000 ? `$${(gdpPerCapita / 1000).toFixed(1)} тыс.` : `$${gdpPerCapita.toFixed(0)}`}
             sub="ППС, текущ. цены"
-            accent="#8b5cf6"
             delay={0.05}
           />
           <MetricCard
             icon={Shield}
-            label="Оборонный бюджет"
+            label="Бюджет"
             value={fmtBn(country.militaryBudgetBn)}
             sub={budgetChange !== 0 ? `${budgetChange > 0 ? '+' : ''}${budgetChange.toFixed(1)}% г/г` : undefined}
-            accent="#0ea5e9"
             delay={0.1}
           />
           <MetricCard
             icon={AlertTriangle}
-            label="% ВВП на оборону"
+            label="Оборона, % ВВП"
             value={`${country.defensePctGdp.toFixed(1)}%`}
             sub={country.defensePctGdp > 4 ? 'Выше порога НАТО' : country.defensePctGdp >= 2 ? 'В пределах нормы' : 'Ниже порога НАТО'}
-            accent={defenseColor(country.defensePctGdp)}
             delay={0.15}
           />
           <MetricCard
@@ -539,7 +591,6 @@ export function EconomicsTab({ country, allCountries }: EconomicsTabProps) {
             label="Население"
             value={fmtPop(country.populationM)}
             sub={`Активный состав: ${country.activePersonnel.toLocaleString('ru')}`}
-            accent="#a78bfa"
             delay={0.2}
           />
           <MetricCard
@@ -547,14 +598,13 @@ export function EconomicsTab({ country, allCountries }: EconomicsTabProps) {
             label="Добыча нефти"
             value={country.oilProductionKbd > 0 ? fmtOil(country.oilProductionKbd) : '—'}
             sub={country.oilProductionKbd > 0 ? 'баррелей / день' : 'Нет данных'}
-            accent="#f59e0b"
             delay={0.25}
           />
         </div>
       </section>
 
       {/* ─── SECTION: CHARTS ROW ─── */}
-      <section className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+      <section className="grid grid-cols-1 gap-4">
         {/* Military Budget vs GDP */}
         <motion.div
           initial={{ opacity: 0, y: 16 }}
@@ -569,7 +619,7 @@ export function EconomicsTab({ country, allCountries }: EconomicsTabProps) {
                 Оборонный бюджет vs ВВП
               </span>
             </div>
-            <span className="text-[9px] font-mono text-slate-600">
+            <span className="text-[10px] font-mono text-slate-600">
               ППС, млрд $
             </span>
           </div>
@@ -580,12 +630,12 @@ export function EconomicsTab({ country, allCountries }: EconomicsTabProps) {
                 <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.05)" vertical={false} />
                 <XAxis
                   dataKey="name"
-                  tick={{ fill: '#64748b', fontSize: 9, fontFamily: 'monospace' }}
+                  tick={{ fill: '#647a72', fontSize: 10, fontFamily: 'monospace' }}
                   axisLine={{ stroke: 'rgba(255,255,255,0.08)' }}
                   tickLine={false}
                 />
                 <YAxis
-                  tick={{ fill: '#475569', fontSize: 8, fontFamily: 'monospace' }}
+                  tick={{ fill: '#47584c', fontSize: 10, fontFamily: 'monospace' }}
                   axisLine={false}
                   tickLine={false}
                   tickFormatter={(v: number) => fmtBn(v)}
@@ -602,7 +652,7 @@ export function EconomicsTab({ country, allCountries }: EconomicsTabProps) {
 
           {/* Proportion callout */}
           <div className="mt-3 flex items-center justify-between px-2 py-2 bg-white/[0.03] rounded border border-white/5">
-            <span className="text-[9px] font-mono text-slate-500">Доля обороны в ВВП</span>
+            <span className="text-[10px] font-mono text-slate-500">Доля обороны в ВВП</span>
             <span className="text-sm font-black font-mono" style={{ color: defenseColor(country.defensePctGdp) }}>
               {country.defensePctGdp.toFixed(1)}%
             </span>
@@ -654,12 +704,12 @@ export function EconomicsTab({ country, allCountries }: EconomicsTabProps) {
                 <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.05)" vertical={false} />
                 <XAxis
                   dataKey="year"
-                  tick={{ fill: '#64748b', fontSize: 9, fontFamily: 'monospace' }}
+                  tick={{ fill: '#647a72', fontSize: 10, fontFamily: 'monospace' }}
                   axisLine={{ stroke: 'rgba(255,255,255,0.08)' }}
                   tickLine={false}
                 />
                 <YAxis
-                  tick={{ fill: '#475569', fontSize: 8, fontFamily: 'monospace' }}
+                  tick={{ fill: '#47584c', fontSize: 10, fontFamily: 'monospace' }}
                   axisLine={false}
                   tickLine={false}
                   tickFormatter={(v: number) => `$${v}B`}
@@ -673,7 +723,7 @@ export function EconomicsTab({ country, allCountries }: EconomicsTabProps) {
                   strokeWidth={2}
                   fill="url(#budgetGradient)"
                   dot={{ fill: 'var(--color-tactical-primary)', r: 3, strokeWidth: 0 }}
-                  activeDot={{ r: 5, fill: 'var(--color-tactical-primary)', stroke: '#0e1520', strokeWidth: 2 }}
+                  activeDot={{ r: 5, fill: 'var(--color-tactical-primary)', stroke: '#0e1710', strokeWidth: 2 }}
                 />
               </AreaChart>
             </ResponsiveContainer>
@@ -681,8 +731,8 @@ export function EconomicsTab({ country, allCountries }: EconomicsTabProps) {
 
           {/* Year range */}
           <div className="mt-3 flex items-center justify-between px-2 py-2 bg-white/[0.03] rounded border border-white/5">
-            <span className="text-[9px] font-mono text-slate-500">5-летний тренд</span>
-            <span className="text-[9px] font-mono text-slate-400">
+            <span className="text-[10px] font-mono text-slate-500">5-летний тренд</span>
+            <span className="text-[10px] font-mono text-slate-400">
               {trendData[0]?.year} – {trendData[trendData.length - 1]?.year}
             </span>
           </div>
@@ -690,7 +740,7 @@ export function EconomicsTab({ country, allCountries }: EconomicsTabProps) {
       </section>
 
       {/* ─── SECTION: GAUGE + FISCAL ─── */}
-      <section className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+      <section className="grid grid-cols-1 gap-4">
         {/* Economic Efficiency Gauge */}
         <motion.div
           initial={{ opacity: 0, y: 16 }}
@@ -710,7 +760,7 @@ export function EconomicsTab({ country, allCountries }: EconomicsTabProps) {
 
             {/* Comparison bar */}
             <div className="w-full mt-5 space-y-2">
-              <div className="flex items-center justify-between text-[9px] font-mono">
+              <div className="flex items-center justify-between text-[10px] font-mono">
                 <span className="text-slate-500">{country.nameRu || country.name}</span>
                 <span className="text-tactical-primary font-bold">
                   ${((country.militaryBudgetBn * 1e9) / Math.max(country.activePersonnel, 1) / 1000).toFixed(0)}K
@@ -731,7 +781,7 @@ export function EconomicsTab({ country, allCountries }: EconomicsTabProps) {
                 />
               </div>
 
-              <div className="flex items-center justify-between text-[9px] font-mono">
+              <div className="flex items-center justify-between text-[10px] font-mono">
                 <span className="text-slate-600">Мировой средний</span>
                 <span className="text-slate-400">${GLOBAL_AVG_BUDGET_PER_SOLDIER / 1000}K</span>
               </div>
@@ -752,13 +802,13 @@ export function EconomicsTab({ country, allCountries }: EconomicsTabProps) {
           {/* Stat detail */}
           <div className="mt-4 grid grid-cols-2 gap-3">
             <div className="bg-white/[0.03] rounded p-2.5 border border-white/5">
-              <p className="text-[8px] font-mono text-slate-500 uppercase tracking-wider">Оборонный бюджет</p>
+              <p className="text-[10px] font-mono text-slate-500 uppercase tracking-wider">Оборонный бюджет</p>
               <p className="text-xs font-black font-mono text-tactical-primary mt-0.5">
                 {fmtBn(country.militaryBudgetBn)}
               </p>
             </div>
             <div className="bg-white/[0.03] rounded p-2.5 border border-white/5">
-              <p className="text-[8px] font-mono text-slate-500 uppercase tracking-wider">Активный состав</p>
+              <p className="text-[10px] font-mono text-slate-500 uppercase tracking-wider">Активный состав</p>
               <p className="text-xs font-black font-mono text-slate-300 mt-0.5">
                 {country.activePersonnel.toLocaleString('ru')}
               </p>
@@ -811,8 +861,8 @@ export function EconomicsTab({ country, allCountries }: EconomicsTabProps) {
 function MetaItem({ label, value }: { label: string; value: string }) {
   return (
     <div className="flex items-center gap-2">
-      <span className="text-[8px] font-mono text-slate-600 uppercase tracking-wider">{label}</span>
-      <span className="text-[9px] font-mono text-slate-400">{value}</span>
+      <span className="text-[10px] font-mono text-slate-600 uppercase tracking-wider">{label}</span>
+      <span className="text-[10px] font-mono text-slate-400">{value}</span>
     </div>
   );
 }

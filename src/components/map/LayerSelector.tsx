@@ -1,7 +1,5 @@
 "use client";
 
-import { motion } from "framer-motion";
-
 /** Available analytics overlay layers */
 export type AnalyticsLayerKey =
   | "bp"
@@ -20,12 +18,12 @@ interface LayerOption {
 }
 
 const LAYER_OPTIONS: LayerOption[] = [
-  { key: "bp",       label: "Combat Potential", shortLabel: "BP",   icon: "◎" },
-  { key: "budget",   label: "Military Budget",  shortLabel: "BGT",  icon: "$" },
-  { key: "fleet",    label: "Naval Fleet",       shortLabel: "FLEET", icon: "⚓" },
-  { key: "aviation", label: "Air Force",         shortLabel: "AIR",  icon: "✈" },
-  { key: "tanks",    label: "Armor Corps",       shortLabel: "TNK",  icon: "▣" },
-  { key: "nukes",    label: "Nuclear Arsenal",   shortLabel: "NUKE", icon: "☢" },
+  { key: "bp",       label: "Боевой потенциал", shortLabel: "БП",     icon: "◎" },
+  { key: "budget",   label: "Оборонный бюджет", shortLabel: "БЮДЖ",   icon: "$" },
+  { key: "fleet",    label: "Военно-морской флот", shortLabel: "ФЛОТ", icon: "⚓" },
+  { key: "aviation", label: "Военная авиация", shortLabel: "АВИА",    icon: "✈" },
+  { key: "tanks",    label: "Бронетехника", shortLabel: "ТАНКИ",      icon: "▣" },
+  { key: "nukes",    label: "Ядерный арсенал", shortLabel: "ЯДЕР",     icon: "☢" },
 ];
 
 interface LayerSelectorProps {
@@ -43,57 +41,38 @@ export function LayerSelector({
   className,
 }: LayerSelectorProps) {
   return (
-    <div className={`flex flex-col gap-1 ${className ?? ""}`}>
-      {/* Section header */}
-      <div className="text-[9px] tracking-[0.25em] text-tactical-primary/50 uppercase font-mono mb-1 px-1">
-        Intel Layer
+    <div className={`w-full sm:w-auto ${className ?? ""}`}>
+      <div className="mb-1 hidden px-1 font-mono text-[10px] text-tactical-primary/60 sm:block">
+        Слой аналитики
       </div>
 
-      {/* Layer buttons */}
-      <div className="flex flex-row flex-wrap gap-1">
+      <div className="grid grid-cols-6 gap-1 sm:flex sm:flex-row">
         {LAYER_OPTIONS.map((opt) => {
           const isActive = activeLayer === opt.key;
 
           return (
-            <motion.button
+            <button
               key={opt.key}
+              type="button"
+              aria-label={opt.label}
+              aria-pressed={isActive}
               onClick={() => onLayerChange(opt.key)}
               className={`
-                group relative font-mono text-[10px] tracking-[0.12em] uppercase
-                px-2.5 py-1.5 rounded-sm border transition-colors duration-150
-                cursor-pointer select-none layer-btn-glow
+                relative min-w-0 border px-1 py-1.5 font-mono text-[10px]
+                cursor-pointer select-none sm:px-2.5
                 ${
                   isActive
-                    ? "border-tactical-primary/60 text-tactical-primary bg-tactical-primary/10 layer-btn-glow-active shadow-[0_0_12px_oklch(75%_0.18_200/15%)]"
+                    ? "border-tactical-primary/60 text-tactical-primary bg-tactical-primary/10 layer-btn-glow-active"
                     : "border-white/8 text-white/35 bg-transparent hover:border-tactical-primary/25 hover:text-white/60 hover:bg-tactical-primary/5"
                 }
               `}
-              whileTap={{ scale: 0.95 }}
-              whileHover={{ scale: 1.02 }}
               title={opt.label}
             >
-              {/* Active indicator line */}
-              {isActive && (
-                <motion.div
-                  layoutId="layer-indicator"
-                  className="absolute left-0 top-0 bottom-0 w-[2px] bg-tactical-primary"
-                  transition={{ type: "spring", stiffness: 400, damping: 30 }}
-                />
-              )}
-
-              {/* Icon + short label */}
-              <span className="flex items-center gap-1">
-                <span className="text-[11px]">{opt.icon}</span>
-                <span>{opt.shortLabel}</span>
+              <span className="flex items-center justify-center gap-1">
+                <span aria-hidden="true" className="text-[11px]">{opt.icon}</span>
+                <span className="hidden sm:inline">{opt.shortLabel}</span>
               </span>
-
-              {/* Scanline shimmer on active */}
-              {isActive && (
-                <div className="absolute inset-0 overflow-hidden rounded-sm pointer-events-none">
-                  <div className="absolute inset-0 animate-scanline bg-gradient-to-b from-transparent via-tactical-primary/5 to-transparent" />
-                </div>
-              )}
-            </motion.button>
+            </button>
           );
         })}
       </div>

@@ -1,16 +1,19 @@
 import type { Metadata } from "next";
-import { Inter, JetBrains_Mono } from "next/font/google";
+import { IBM_Plex_Mono, IBM_Plex_Sans } from "next/font/google";
 // mapbox-gl CSS is imported in StrategicMap.tsx — loaded only when the map component renders
 import "./globals.css";
+import "flag-icons/css/flag-icons.min.css";
 
-const inter = Inter({
-  variable: "--font-inter",
+const plexSans = IBM_Plex_Sans({
+  variable: "--font-sans-face",
   subsets: ["latin", "cyrillic"],
+  weight: ["400", "500", "600", "700"],
 });
 
-const jetbrainsMono = JetBrains_Mono({
-  variable: "--font-mono",
+const plexMono = IBM_Plex_Mono({
+  variable: "--font-mono-face",
   subsets: ["latin", "cyrillic"],
+  weight: ["400", "500", "600"],
 });
 
 export const metadata: Metadata = {
@@ -26,7 +29,7 @@ export default function RootLayout({
   return (
     <html lang="ru">
       <body
-        className={`${inter.variable} ${jetbrainsMono.variable} font-sans antialiased`}
+        className={`${plexSans.variable} ${plexMono.variable} font-sans antialiased`}
       >
         {children}
       </body>

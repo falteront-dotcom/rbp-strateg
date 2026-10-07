@@ -26,7 +26,7 @@ export const MAP_MAX_ZOOM = 15;
 // ─── Sides ─────────────────────────────────────────────────────────────────────
 export const MILITARY_SIDES = ["west", "east", "non_aligned", "neutral"] as const;
 export const SIDE_COLORS: Record<string, string> = {
-  west: "#3b82f6",
+  west: "#6b8fa0",
   east: "#ef4444",
   non_aligned: "#f59e0b",
   neutral: "#6b7280",
@@ -59,15 +59,15 @@ export const DATA_SOURCE_LABELS: Record<string, string> = {
 
 // ─── UI Colors ─────────────────────────────────────────────────────────────────
 export const HUD_COLORS = {
-  cyan: "#06b6d4",
+  cyan: "#34b98a",
   teal: "#14b8a6",
   emerald: "#10b981",
   amber: "#f59e0b",
   red: "#ef4444",
-  blue: "#3b82f6",
+  blue: "#6b8fa0",
   purple: "#8b5cf6",
   pink: "#ec4899",
-  slate: "#64748b",
+  slate: "#647a72",
   glass: "rgba(15, 23, 42, 0.85)",
   glassBorder: "rgba(6, 182, 212, 0.2)",
   glow: "rgba(6, 182, 212, 0.15)",

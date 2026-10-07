@@ -8,7 +8,6 @@ import { NextRequest, NextResponse } from "next/server";
 import {
   getGlobalMilitaryBalance,
   getRegionalBalance,
-  getAllRegionalBalances,
   getHighestConflictRisk,
   getDominantPowers,
 } from "@/lib/military-balance";

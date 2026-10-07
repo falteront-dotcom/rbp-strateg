@@ -1,7 +1,6 @@
 "use client";
 
 import { useState, useCallback, useMemo } from "react";
-import { motion } from "framer-motion";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 type TerrainType = "plains" | "forest" | "mountain" | "urban" | "water" | "desert";
@@ -134,28 +133,27 @@ export function TacticalMap({
             const cfg = TERRAIN_CONFIG[cell.type];
 
             return (
-              <motion.div
+              <div
                 key={`${r}-${c}`}
                 className="aspect-square rounded-sm flex items-center justify-center cursor-pointer relative border"
                 style={{
                   backgroundColor: cfg.color,
-                  borderColor: isHovered ? "#22d3ee" : "transparent",
+                  borderColor: isHovered ? "#4fb287" : "transparent",
                   fontSize: "10px",
                 }}
-                whileHover={{ scale: 1.05 }}
                 onClick={() => handleCellClick(r, c)}
                 onMouseEnter={() => setHoveredCell({ row: r, col: c })}
                 onMouseLeave={() => setHoveredCell(null)}
               >
                 {/* Terrain icon */}
-                <span className="text-slate-600/40 text-[8px] select-none">{cfg.icon}</span>
+                <span className="text-slate-600/40 text-[10px] select-none">{cfg.icon}</span>
 
                 {/* Unit overlay */}
                 {unit && (
                   <span
                     className="absolute inset-0 flex items-center justify-center font-bold"
                     style={{
-                      color: unit.side === "blue" ? "#22d3ee" : "#ef4444",
+                      color: unit.side === "blue" ? "#4fb287" : "#ef4444",
                       fontSize: "12px",
                       textShadow: "0 0 4px rgba(0,0,0,0.8)",
                     }}
@@ -168,14 +166,14 @@ export function TacticalMap({
                 {unit && selectedUnit === unit.id && (
                   <span className="absolute -top-0.5 -right-0.5 w-1.5 h-1.5 rounded-full bg-tactical-primary animate-pulse" />
                 )}
-              </motion.div>
+              </div>
             );
           })
         )}
       </div>
 
       {/* Legend */}
-      <div className="flex flex-wrap gap-2 text-[9px] font-mono">
+      <div className="flex flex-wrap gap-2 text-[10px] font-mono">
         {Object.entries(TERRAIN_CONFIG).map(([type, cfg]) => (
           <span key={type} className="flex items-center gap-1">
             <span className="w-3 h-3 rounded-sm" style={{ backgroundColor: cfg.color }} />

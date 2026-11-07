@@ -170,13 +170,20 @@ npm install
 # 2. Создать .env.local с Mapbox токеном
 echo "NEXT_PUBLIC_MAPBOX_TOKEN=pk.eyJ1Ijoi..." > .env.local
 
-# 3. Запустить dev-сервер
+# 3. Задать админ-токен в .env.local (туда же, куда Mapbox-токен выше).
+#    RBP_ADMIN_TOKEN читается ТОЛЬКО на сервере (см. src/db/runtime.ts) и
+#    сверяется с заголовком запроса; без токена /api/init-db вернёт 401.
+echo "RBP_ADMIN_TOKEN=<придумайте-секрет>" >> .env.local
+
+# 4. Запустить dev-сервер
 npm run dev
 
-# 4. Инициализировать БД (первый запуск)
-curl -X POST http://localhost:3000/api/init-db
+# 5. Инициализировать БД (первый запуск)
+curl -X POST http://localhost:3000/api/init-db \
+  -H "Authorization: Bearer $RBP_ADMIN_TOKEN" \
+  -H "x-admin-token: $RBP_ADMIN_TOKEN"
 
-# 5. Открыть http://localhost:3000
+# 6. Открыть http://localhost:3000
 ```
 
 ## 🔑 Ключевые технологии

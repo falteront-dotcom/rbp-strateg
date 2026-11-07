@@ -20,6 +20,9 @@ export function openDatabase(): Database.Database {
   const db = new Database(DB_PATH);
   db.pragma("journal_mode = WAL");
   db.pragma("foreign_keys = ON");
+  // Wait up to 5s for a concurrent writer instead of failing with SQLITE_BUSY
+  // (pipeline + dev server can hold write connections at the same time).
+  db.pragma("busy_timeout = 5000");
   return db;
 }
 

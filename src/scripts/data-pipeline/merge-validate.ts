@@ -15,7 +15,7 @@
  *   - Missing fields: fill from existing seed data or mark as unknown
  */
 
-import { getGFPData } from "./scrape-gfp";
+import { getGFPData, GFP_RANKINGS_2025 } from "./scrape-gfp";
 import { getNuclearData } from "./nuclear-data";
 import { COUNTRY_NAMES_RU } from "@/lib/geo/country-names-ru";
 
@@ -95,23 +95,94 @@ const NATO_MEMBERS = new Set([
 /** CSTO members */
 const CSTO_MEMBERS = new Set(["RUS","BLR","ARM","KAZ","KGZ","TJK"]);
 
-/** BRICS members */
-const BRICS_MEMBERS = new Set(["CHN","RUS","IND","BRA","ZAF","SAU","IRN","UAE","EGY","ETH"]);
+/** AUKUS members — wired into deriveCoalition (was dead code, audit §1).
+ *  Seed: AUS carries coalition "AUKUS"; USA/GBR resolve to NATO first. */
+const AUKUS_MEMBERS = new Set(["USA", "GBR", "AUS"]);
+
+/**
+ * BRICS members — aligned with the seed (Wave 0, audit §1).
+ * The seed's coalition:"BRICS" countries are exactly CHN, IND, BRA, ZAF,
+ * ETH and ARE; RUS is a BRICS member too but resolves to CSTO in
+ * deriveCoalition (seed: RUS → "CSTO"). Removed from the old set:
+ * SAU, IRN, EGY (seed marks them coalition: null — the pipeline silently
+ * gave them BRICS) and "UAE" (not an ISO3 code; the UAE is ARE, which is
+ * what the seed and the GFP data actually use).
+ */
+const BRICS_MEMBERS = new Set(["CHN", "RUS", "IND", "BRA", "ZAF", "ETH", "ARE"]);
+
+/**
+ * NATO-side allies that are NOT NATO members (Wave 0, audit §1 HIGH).
+ * The seed intentionally marks these countries side:"NATO" (extended
+ * allied taxonomy, not strict membership), but deriveSide only knew the
+ * strict NATO_MEMBERS set, so all of them silently degraded to NEUTRAL
+ * on a fresh pipeline run. UKR belongs to this set for the fail-loud
+ * assert below, but deriveSide keeps Ukraine's dedicated "UKR" side —
+ * the taxonomy distinguishes Ukraine from the alliance itself.
+ */
+export const ALLIES = new Set([
+  "JPN", "KOR", "ISR", "AUS", "TWN", "SGP", "PHI", "NZL", "UKR",
+]);
+
+export type CountrySide = "NATO" | "RUS" | "CHINA" | "UKR" | "NEUTRAL";
 
 /** Derive side from coalition membership */
-function deriveSide(iso3: string): "NATO" | "RUS" | "CHINA" | "UKR" | "NEUTRAL" {
+export function deriveSide(iso3: string): CountrySide {
   if (iso3 === "UKR") return "UKR";
   if (NATO_MEMBERS.has(iso3)) return "NATO";
+  if (ALLIES.has(iso3)) return "NATO";
   if (CSTO_MEMBERS.has(iso3)) return "RUS";
   if (iso3 === "CHN" || iso3 === "PRK") return "CHINA";
   return "NEUTRAL";
 }
 
-function deriveCoalition(iso3: string): "NATO" | "CSTO" | "AUKUS" | "BRICS" | null {
+export function deriveCoalition(iso3: string): "NATO" | "CSTO" | "AUKUS" | "BRICS" | null {
   if (NATO_MEMBERS.has(iso3)) return "NATO";
   if (CSTO_MEMBERS.has(iso3)) return "CSTO";
+  if (AUKUS_MEMBERS.has(iso3)) return "AUKUS";
   if (BRICS_MEMBERS.has(iso3)) return "BRICS";
   return null;
+}
+
+/**
+ * Fail-loud guard (audit §1, fix #4): a country the seed marks as a NATO
+ * member, a NATO-side ally or a CSTO member must NEVER silently degrade
+ * to NEUTRAL in a fresh pipeline run. Throws instead of storing bad data.
+ */
+export function assertAlliedCountryNotNeutral(iso3: string, side: CountrySide): void {
+  if (side !== "NEUTRAL") return;
+  if (NATO_MEMBERS.has(iso3) || ALLIES.has(iso3) || CSTO_MEMBERS.has(iso3)) {
+    throw new Error(
+      `Pipeline integrity: ${iso3} is a seed-marked member/ally but deriveSide returned NEUTRAL`,
+    );
+  }
+}
+
+/** Batch variant of the assert above, for merged lists and smoke tests. */
+export function assertNoSeedAllyIsNeutral(
+  countries: readonly { isoCode: string; side: string }[],
+): void {
+  for (const c of countries) {
+    assertAlliedCountryNotNeutral(c.isoCode, c.side as CountrySide);
+  }
+}
+
+/**
+ * Uniqueness validator (Wave 0): duplicate iso3 rows in a source silently
+ * overwrite each other when loaded into a Map — that is exactly how the
+ * duplicated AUS row in the GFP data stayed invisible. Fail loudly.
+ */
+export function assertUniqueIso3(
+  entries: readonly { iso3: string }[],
+  source: string,
+): void {
+  const counts = new Map<string, number>();
+  for (const e of entries) counts.set(e.iso3, (counts.get(e.iso3) ?? 0) + 1);
+  const dupes = [...counts.entries()]
+    .filter(([, n]) => n > 1)
+    .map(([iso]) => iso);
+  if (dupes.length > 0) {
+    throw new Error(`Duplicate iso3 in ${source}: ${dupes.sort().join(", ")}`);
+  }
 }
 
 /** Estimate tech level (1-10) based on GDP per capita and side */
@@ -211,7 +282,8 @@ export async function runPipeline(): Promise<{
     console.warn("  ⚠ World Bank fetch failed, using GFP-only:", err);
   }
 
-  // 2. GFP
+  // 2. GFP (fail loudly on duplicate iso3 rows before the Map hides them)
+  assertUniqueIso3(GFP_RANKINGS_2025, "GFP_RANKINGS_2025");
   const gfpData = getGFPData();
   stats.fromGFP = gfpData.size;
   console.log(`  ✓ GFP: ${gfpData.size} countries`);
@@ -235,6 +307,7 @@ export async function runPipeline(): Promise<{
     const nuke = nukeData.get(iso3);
 
     const side = deriveSide(iso3);
+    assertAlliedCountryNotNeutral(iso3, side);
     const coalition = deriveCoalition(iso3);
     const combatExp = estimateCombatExperience(iso3);
 
@@ -326,6 +399,12 @@ export async function runPipeline(): Promise<{
 
     mergedCountries.push(country);
   }
+
+  assertUniqueIso3(
+    mergedCountries.map((c) => ({ iso3: c.isoCode })),
+    "merged pipeline output",
+  );
+  assertNoSeedAllyIsNeutral(mergedCountries);
 
   stats.total = mergedCountries.length;
   console.log(`\n✅ Pipeline complete: ${stats.total} countries merged`);

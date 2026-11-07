@@ -735,6 +735,7 @@ export default function Home() {
         <aside className={`${selectedCountry ? "block" : "hidden"} absolute bottom-0 left-0 right-0 h-[46dvh] lg:static lg:h-auto lg:w-96 xl:w-[26rem] bg-[#0d2019] border-l border-[#294138] shrink-0 z-30 overflow-hidden country-panel-enter`}>
           {selectedCountry ? (
             <StrategicDetailPanel
+              key={selectedCountry.isoCode}
               country={selectedCountry}
               allCountries={countriesCompareData}
               onClose={handleCloseCountryCard}

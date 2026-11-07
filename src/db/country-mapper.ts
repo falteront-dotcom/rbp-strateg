@@ -71,6 +71,7 @@ export function deriveRegion(side: string, coalition: string | null): string {
   if (side === "NATO") return "Western";
   if (side === "RUS") return "Eurasian";
   if (side === "CHINA") return "Asia-Pacific";
+  if (side === "UKR") return "Ukraine";
   return "Non-Aligned";
 }
 

@@ -14,7 +14,7 @@ export {
   WEAPON_CLASS_RU,
   WEAPON_SYSTEMS,
   WEAPON_SYSTEM_COUNT,
-} from "./equipment-systems.js";
+} from "./equipment-systems";
 export type {
   CombatUseEntry,
   OperatorEntry,
@@ -24,7 +24,7 @@ export type {
   SystemProvenance,
   WeaponClassId,
   WeaponSystemProfile,
-} from "./equipment-systems.js";
+} from "./equipment-systems";
 
 export {
   ASSESSMENT_AXES,
@@ -58,7 +58,7 @@ export {
   systemsByDeveloper,
   systemsOfGeneration,
   topBySpec,
-} from "./systems-analysis.js";
+} from "./systems-analysis";
 export type {
   AssessmentAxis,
   AxisDelta,
@@ -73,4 +73,4 @@ export type {
   SpecComparison,
   SpecSearchQuery,
   SystemComparison,
-} from "./systems-analysis.js";
+} from "./systems-analysis";

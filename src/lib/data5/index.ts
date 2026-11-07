@@ -13,5 +13,5 @@
  *
  * Проверка волны: verify_data5.ts в корне репозитория.
  */
-export * from "./country-profiles-rest.js";
-export * from "./regional-aggregates.js";
+export * from "./country-profiles-rest";
+export * from "./regional-aggregates";

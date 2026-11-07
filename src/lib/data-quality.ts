@@ -7,7 +7,7 @@
 
 import type { RawCountryRow } from "@/db/country-mapper";
 
-export type DataSourceType = "gfp" | "worldbank" | "fas" | "sipri" | "iiss" | "cia" | "un" | "custom";
+export type DataSourceType = "gfp" | "worldbank" | "fas" | "sipri" | "sipri_yearbook" | "iiss" | "cia" | "un" | "custom";
 
 export interface DataSourceProfile {
   id: DataSourceType;
@@ -49,7 +49,7 @@ export const DATA_SOURCES: DataSourceProfile[] = [
     updateFrequency: "Ежегодно (январь)",
     coverageScore: 0.55,       // 145/263 countries
     accuracyScore: 0.75,
-    timelinessScore: 0.8,      // 2025 data
+    timelinessScore: 0.8,      // релиз GFP 2026 (23.01.2026); слои v2 по нему ещё не ре-валидированы (P3 аудита 2026-11)
     reliabilityScore: 0.7,
     fields: ["activePersonnel", "totalTanks", "totalAircraft", "totalNavy", "defensePctGdp", "oilProduction", "airfields", "ports", "merchantFleet", "roadways", "railways"],
     limitations: [
@@ -58,7 +58,7 @@ export const DATA_SOURCES: DataSourceProfile[] = [
       "Некоторые данные устарели (особенно после СВО)",
       "Ядерное оружие не включено в индекс",
     ],
-    lastUpdated: "2025-01-01",
+    lastUpdated: "2026-01-23",
   },
   {
     id: "worldbank",
@@ -96,7 +96,7 @@ export const DATA_SOURCES: DataSourceProfile[] = [
       "Израиль: неподтверждённые данные (амбигоность)",
       "КНДР: оценки разнятся от 30 до 100",
     ],
-    lastUpdated: "2025-01-15",
+    lastUpdated: "2026",
   },
   {
     id: "sipri",
@@ -114,7 +114,24 @@ export const DATA_SOURCES: DataSourceProfile[] = [
       "Некоторые данные оценочные",
       "Задержка 1 год в публикации",
     ],
-    lastUpdated: "2024-04-01",
+    lastUpdated: "2026-04-27",
+  },
+  {
+    id: "sipri_yearbook",
+    name: "SIPRI Yearbook",
+    nameRu: "Ежегодник SIPRI",
+    url: "sipri.org/yearbook",
+    updateFrequency: "Ежегодно (июнь)",
+    coverageScore: 0.65,
+    accuracyScore: 0.9,
+    timelinessScore: 0.85,
+    reliabilityScore: 0.9,
+    fields: ["nuclearWarheads", "militaryBudgetBn"],
+    limitations: [
+      "Итоговые оценки арсеналов — на январь соответствующего года",
+      "По закрытым программам (КНДР, Израиль) — интервальные оценки",
+    ],
+    lastUpdated: "2026-06-08",
   },
   {
     id: "iiss",
@@ -132,7 +149,7 @@ export const DATA_SOURCES: DataSourceProfile[] = [
       "Некоторые страны не раскрывают данные",
       "Числа ОШК — могут быть номинальными (не боеготовыми)",
     ],
-    lastUpdated: "2025-02-01",
+    lastUpdated: "2026-02-24",
   },
   {
     id: "cia",

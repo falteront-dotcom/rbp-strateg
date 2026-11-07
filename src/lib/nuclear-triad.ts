@@ -4,6 +4,19 @@
 // Based on FAS Nuclear Notebook and SIPRI data
 // РБП-Стратег 2.0
 // ─────────────────────────────────────────────────────────────────────────────
+//
+// ВИНТАЖ И СЕМАНТИКА (обновлено аудитом 2026-11-07 по SIPRI Yearbook 2026
+// и FAS Status of World Nuclear Forces, январь 2026).
+// Поле totalWarheads — ПОЛНЫЙ ИНВЕНТАРЬ (total inventory): включает
+// боеголовки, снятые с вооружения и ожидающие демонтажа. Поле
+// militaryStockpile — военный запас (развёрнутые + резервные боевые
+// блоки). Смешивать поля нельзя: у США и России разрыв между ними —
+// тысячи единиц, у остальных держав значения совпадают или близки.
+// Мировой инвентарь на январь 2026: 12 187 боеголовок, из них военный
+// запас — 9 745, развёрнуто ~4 012.
+// Договор New START прекратил действие 5 февраля 2026 года: впервые
+// с 1972 года стратегические арсеналы США и России не ограничены
+// действующим договором о контроле над вооружениями.
 
 export type TriadLeg = "land" | "sea" | "air";
 export type TriadStatus = "complete" | "partial" | "aspiring" | "none";
@@ -32,7 +45,10 @@ export interface NuclearTriadAssessment {
   countryName: string;
   countryNameRu: string;
   status: TriadStatus;
+  /** Полный инвентарь (total inventory, SIPRI/FAS янв. 2026), включая ожидающие демонтажа. */
   totalWarheads: number;
+  /** Военный запас (military stockpile, SIPRI/FAS янв. 2026): развёрнутые + резерв. */
+  militaryStockpile: number;
   triadLegs: Record<TriadLeg, TriadLegDetail>;
   deliverySystems: DeliverySystem[];
   doctrines: string[];
@@ -47,7 +63,8 @@ export const NUCLEAR_TRIADS: NuclearTriadAssessment[] = [
     countryName: "United States",
     countryNameRu: "США",
     status: "complete",
-    totalWarheads: 5044,
+    totalWarheads: 5042,
+    militaryStockpile: 3700,
     triadLegs: {
       land: { active: true, platforms: ["LGM-30G Minuteman III"], warheads: 400, range: "13000km", generation: 3 },
       sea: { active: true, platforms: ["UGM-133A Trident II D5 (Ohio-class)"], warheads: 1920, range: "11300km", generation: 4 },
@@ -69,7 +86,8 @@ export const NUCLEAR_TRIADS: NuclearTriadAssessment[] = [
     countryName: "Russia",
     countryNameRu: "Россия",
     status: "complete",
-    totalWarheads: 5580,
+    totalWarheads: 5420,
+    militaryStockpile: 4400,
     triadLegs: {
       land: { active: true, platforms: ["RS-24 Ярс", "Р-36М2 Воевода", "РС-28 Сармат"], warheads: 1132, range: "12000-18000km", generation: 4 },
       sea: { active: true, platforms: ["Р-30 Булава (Борей-А)"], warheads: 672, range: "9300km", generation: 3 },
@@ -83,7 +101,7 @@ export const NUCLEAR_TRIADS: NuclearTriadAssessment[] = [
       { name: "Ту-160М", nameRu: "Ту-160М Белый лебедь", type: "ALCM", platform: "Strategic bomber", range: 15000, warheadsPer: 12, count: 16, status: "deployed" },
       { name: "Ту-95МСМ", nameRu: "Ту-95МСМ", type: "ALCM", platform: "Strategic bomber", range: 12000, warheadsPer: 6, count: 55, status: "deployed" },
     ],
-    doctrines: ["Деэскалация через эскалацию", "Применение первым при угрозе существованию", "Амбигуная доктрина"],
+    doctrines: ["Деэскалация через эскалацию", "Применение первым при угрозе существованию", "Амбигуная доктрина", "New START прекратил действие 05.02.2026 — потолки СНВ более не действуют", "БРСД «Орешник»: строительство передовой базы в Беларуси (SIPRI, 2026); применения по Украине — в обычном снаряжении"],
     firstTest: 1949,
     nptStatus: "NPT Nuclear",
   },
@@ -92,7 +110,8 @@ export const NUCLEAR_TRIADS: NuclearTriadAssessment[] = [
     countryName: "China",
     countryNameRu: "Китай",
     status: "complete",
-    totalWarheads: 500,
+    totalWarheads: 620,
+    militaryStockpile: 620,
     triadLegs: {
       land: { active: true, platforms: ["DF-41", "DF-31AG", "DF-5B"], warheads: 200, range: "12000-15000km", generation: 4 },
       sea: { active: true, platforms: ["JL-2 (Type 094)", "JL-3 (Type 096)"], warheads: 72, range: "7200-11000km", generation: 3 },
@@ -106,7 +125,7 @@ export const NUCLEAR_TRIADS: NuclearTriadAssessment[] = [
       { name: "JL-3", nameRu: "JL-3 (Цзюйлун-3)", type: "SLBM", platform: "Type 096 SSBN", range: 11000, warheadsPer: 3, count: 0, status: "development" },
       { name: "H-6N", nameRu: "H-6N", type: "ALCM", platform: "Strategic bomber", range: 8000, warheadsPer: 2, count: 20, status: "deployed" },
     ],
-    doctrines: ["Не первый удар (декларация)", "Минимальное сдерживание → ограниченное сдерживание", "Наращивание к 2030: 500+ боеголовок"],
+    doctrines: ["Не первый удар (декларация)", "Минимальное сдерживание → ограниченное сдерживание", "Арсенал — 620 боеголовок (янв. 2026, SIPRI/FAS); наращивание продолжается"],
     firstTest: 1964,
     nptStatus: "NPT Nuclear",
   },
@@ -116,6 +135,7 @@ export const NUCLEAR_TRIADS: NuclearTriadAssessment[] = [
     countryNameRu: "Великобритания",
     status: "partial",
     totalWarheads: 225,
+    militaryStockpile: 225,
     triadLegs: {
       land: { active: false, platforms: [], warheads: 0, range: "N/A", generation: 0 },
       sea: { active: true, platforms: ["Trident II D5 (Vanguard-class → Dreadnought-class)"], warheads: 120, range: "11300km", generation: 4 },
@@ -134,7 +154,8 @@ export const NUCLEAR_TRIADS: NuclearTriadAssessment[] = [
     countryName: "France",
     countryNameRu: "Франция",
     status: "partial",
-    totalWarheads: 290,
+    totalWarheads: 370,
+    militaryStockpile: 290,
     triadLegs: {
       land: { active: false, platforms: [], warheads: 0, range: "N/A", generation: 0 },
       sea: { active: true, platforms: ["M51.2 (Triomphant-class)"], warheads: 160, range: "10000km", generation: 4 },
@@ -143,7 +164,7 @@ export const NUCLEAR_TRIADS: NuclearTriadAssessment[] = [
     deliverySystems: [
       { name: "M51.2", nameRu: "M51.2", type: "SLBM", platform: "Triomphant SSBN", range: 10000, warheadsPer: 6, count: 32, status: "deployed" },
       { name: "ASMP-A", nameRu: "ASMP-A (воздух-поверхность)", type: "cruise_missile", platform: "Rafale M", range: 600, warheadsPer: 1, count: 54, status: "deployed" },
-      { name: "M51.3", nameRu: "M51.3 (гиперзвуковая ГЧ)", type: "SLBM", platform: "Suffren SSBN", range: 11000, warheadsPer: 6, count: 0, status: "development" },
+      { name: "M51.3", nameRu: "M51.3 (гиперзвуковая ГЧ)", type: "SLBM", platform: "Triomphant-class SSBN (перспективно — SNLE 3G)", range: 11000, warheadsPer: 6, count: 0, status: "development" },
     ],
     doctrines: ["Строгая достаточность", "Два компонента: морской + воздушный", "Не первый удар (декларация)"],
     firstTest: 1960,
@@ -154,7 +175,8 @@ export const NUCLEAR_TRIADS: NuclearTriadAssessment[] = [
     countryName: "India",
     countryNameRu: "Индия",
     status: "partial",
-    totalWarheads: 172,
+    totalWarheads: 190,
+    militaryStockpile: 190,
     triadLegs: {
       land: { active: true, platforms: ["Agni-V (5000km)", "Agni-III (3500km)"], warheads: 80, range: "3500-5000km", generation: 3 },
       sea: { active: true, platforms: ["K-4 (Arihant-class)"], warheads: 24, range: "3500km", generation: 2 },
@@ -176,6 +198,7 @@ export const NUCLEAR_TRIADS: NuclearTriadAssessment[] = [
     countryNameRu: "Пакистан",
     status: "partial",
     totalWarheads: 170,
+    militaryStockpile: 170,
     triadLegs: {
       land: { active: true, platforms: ["Shaheen-III (2750km)", "Ghauri (1300km)"], warheads: 100, range: "1300-2750km", generation: 2 },
       sea: { active: false, platforms: [], warheads: 0, range: "N/A", generation: 0 },
@@ -195,7 +218,8 @@ export const NUCLEAR_TRIADS: NuclearTriadAssessment[] = [
     countryName: "North Korea",
     countryNameRu: "КНДР",
     status: "partial",
-    totalWarheads: 50,
+    totalWarheads: 60,
+    militaryStockpile: 60,
     triadLegs: {
       land: { active: true, platforms: ["Hwasong-17 (15000km)", "Hwasong-15 (13000km)"], warheads: 30, range: "13000-15000km", generation: 3 },
       sea: { active: false, platforms: ["SLBM testing (Pukguksong-1)"], warheads: 0, range: "N/A", generation: 1 },
@@ -216,6 +240,7 @@ export const NUCLEAR_TRIADS: NuclearTriadAssessment[] = [
     countryNameRu: "Израиль",
     status: "partial",
     totalWarheads: 90,
+    militaryStockpile: 90,
     triadLegs: {
       land: { active: true, platforms: ["Jericho III (4800-6500km)"], warheads: 50, range: "6500km", generation: 3 },
       sea: { active: true, platforms: ["Dolphin-class SSK (cruise missiles)"], warheads: 20, range: "1500km", generation: 2 },

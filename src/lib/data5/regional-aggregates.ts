@@ -32,7 +32,7 @@ import {
   REST_COUNTRY_PROFILES,
   type RestCountryProfile,
   type RestProvenance,
-} from "./country-profiles-rest.js";
+} from "./country-profiles-rest";
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Типы агрегации

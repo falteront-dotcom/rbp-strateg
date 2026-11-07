@@ -19,13 +19,13 @@
 import {
   SPEC_PARAMETER_DEFS,
   WEAPON_SYSTEMS,
-} from "./equipment-systems.js";
+} from "./equipment-systems";
 import type {
   SpecValue,
   SystemAssessment,
   WeaponClassId,
   WeaponSystemProfile,
-} from "./equipment-systems.js";
+} from "./equipment-systems";
 
 // ════════════════════════════════════════════════════════════════════
 // Базовые типы аналитики

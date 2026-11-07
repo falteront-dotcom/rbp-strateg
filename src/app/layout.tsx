@@ -32,6 +32,12 @@ export default function RootLayout({
         className={`${plexSans.variable} ${plexMono.variable} font-sans antialiased`}
       >
         {children}
+        <a
+          href="/v3"
+          className="fixed right-4 bottom-4 z-50 rounded-full border border-sky-700 bg-slate-900/95 px-3.5 py-2 text-sm font-semibold text-sky-300 shadow-lg shadow-black/40 backdrop-blur transition-colors hover:bg-slate-800 hover:text-sky-200"
+        >
+          РБП 3.0
+        </a>
       </body>
     </html>
   );

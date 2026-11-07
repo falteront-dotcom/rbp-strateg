@@ -38,7 +38,7 @@
 import type {
   CountrySustainabilityProfile,
   MobilizationBaseData,
-} from "./data/top30-sustainability.js";
+} from "./data/top30-sustainability";
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Типы

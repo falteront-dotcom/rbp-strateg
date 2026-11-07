@@ -26,11 +26,11 @@ import type {
   CountrySustainabilityProfile,
   EnduranceCategoryId,
   StockpileCategoryData,
-} from "./data/top30-sustainability.js";
+} from "./data/top30-sustainability";
 import {
   ENDURANCE_CATEGORY_LABELS_RU,
   ENDURANCE_CATEGORY_ORDER,
-} from "./data/top30-sustainability.js";
+} from "./data/top30-sustainability";
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Типы

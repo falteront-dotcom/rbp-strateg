@@ -39,16 +39,16 @@
 // проекта отсутствуют, модуль подключается к API/UI отдельным шагом.
 
 // Аттриционный симулятор: законы Ланчестера, модификаторы, пресеты
-export * from "./lanchester.js";
+export * from "./lanchester";
 
 // Выносливость: месяцы до исчерпания по категориям, бутылочное горлышко
-export * from "./endurance.js";
+export * from "./endurance";
 
 // Мобилизационная модель: волны, качество, экономический потолок
-export * from "./mobilization.js";
+export * from "./mobilization";
 
 // Проекция силы: затухание с дистанцией, базы, союзники, chokepoint'ы
-export * from "./projection.js";
+export * from "./projection";
 
 // Входные данные топ-30 стран: запасы, производство, мобилизационная база
-export * from "./data/top30-sustainability.js";
+export * from "./data/top30-sustainability";

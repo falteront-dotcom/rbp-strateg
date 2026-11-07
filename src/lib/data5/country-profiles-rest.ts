@@ -78,6 +78,14 @@ export interface RestBudgetSection {
   shareOfGdpPct: number | null;
   /** Тренд расходов за последние годы (рус.). */
   trendRu: string;
+  /**
+   * Методология оценки доли ВВП: SIPRI или НАТО. Периметры учёта
+   * различаются (НАТО шире: учитывает, в частности, космические и
+   * киберкомпоненты ряда стран), поэтому проценты разных методологий
+   * несопоставимы напрямую. Поле добавлено аудитом 2026-11-07;
+   * у профилей без явного значения методология не зафиксирована.
+   */
+  methodology?: "SIPRI" | "NATO";
   /** Провенанс секции. */
   provenance: RestProvenance;
 }
@@ -1760,13 +1768,14 @@ export const REST_COUNTRY_PROFILES: readonly RestCountryProfile[] = [
     hasStandingArmy: true,
     budget: {
       amountUsdBn: 0.52,
-      amountNoteRu: "Около 0,5 млрд долл.; Албания приблизилась к 2% ВВП в рамках обязательств перед НАТО",
+      amountNoteRu: "Около 0,5 млрд долл. (оценка винтажа 2024 г.); Албания достигла ≥2% ВВП в 2025 году по методологии НАТО (годовой отчёт Генсека НАТО, 26.03.2026: впервые все союзники — не ниже 2%). Далее — траектория Гаагского обязательства: 5% ВВП к 2035 году (3,5% core defence + 1,5% смежных расходов)",
       year: 2024,
       shareOfGdpPct: 2.0,
       trendRu: "Рост после 2022 года: вертолёты, БПЛА и модернизация базы Кучова",
+      methodology: "NATO",
       provenance: {
-        source: "SIPRI Military Expenditure Database; НАТО",
-        year: 2024,
+        source: "SIPRI Military Expenditure Database; НАТО (годовой отчёт Генсека, 26.03.2026)",
+        year: 2025,
         estimated: true,
       },
     },
@@ -2632,14 +2641,15 @@ export const REST_COUNTRY_PROFILES: readonly RestCountryProfile[] = [
     forcesStatusRu: "Регулярные вооружённые силы (армия Люксембурга)",
     hasStandingArmy: true,
     budget: {
-      amountUsdBn: 0.7,
-      amountNoteRu: "Около 0,6–0,75 млрд долл.; Люксембург наращивает расходы к 2% ВВП с учётом космических и киберкомпонентов, учитываемых НАТО широко",
-      year: 2024,
-      shareOfGdpPct: 0.8,
+      amountUsdBn: null,
+      amountNoteRu: "По методологии НАТО (широкий периметр: космос, кибер, спутниковая связь) Люксембург в 2025 году достиг порога 2% ВВП — впервые все союзники НАТО не ниже 2% (годовой отчёт Генсека, 26.03.2026). Прежняя оценка 0,6–0,75 млрд долл. (0,8% ВВП) относилась к узкому SIPRI-периметру винтажа 2024 г.; сумма по NATO Defence Expenditure 2026 подлежит подстановке, поэтому числовое поле оставлено пустым. Актуальная рамка — Гаагское обязательство: 3,5% core defence + 1,5% смежных расходов к 2035 году",
+      year: 2025,
+      shareOfGdpPct: 2.0,
       trendRu: "Выраженный рост после 2022 года: спутники, А400М, кибер",
+      methodology: "NATO",
       provenance: {
-        source: "SIPRI Military Expenditure Database; НАТО",
-        year: 2024,
+        source: "НАТО (годовой отчёт Генсека, 26.03.2026); SIPRI Military Expenditure Database",
+        year: 2025,
         estimated: true,
       },
     },
@@ -2775,13 +2785,14 @@ export const REST_COUNTRY_PROFILES: readonly RestCountryProfile[] = [
     hasStandingArmy: true,
     budget: {
       amountUsdBn: 0.13,
-      amountNoteRu: "Около 0,12–0,14 млрд долл., около 1,9% ВВП — высокий относительный уровень при малой абсолютной сумме",
+      amountNoteRu: "Около 0,12–0,14 млрд долл. (оценка винтажа 2024 г.); по методологии НАТО Черногория в 2025 году — не ниже 2% ВВП (годовой отчёт Генсека НАТО, 26.03.2026: все союзники ≥2%); формулировки «ниже 2%» для 2025 года данными НАТО не подтверждаются",
       year: 2024,
-      shareOfGdpPct: 1.9,
+      shareOfGdpPct: 2.0,
       trendRu: "Рост: вертолёты Bell, патрульные катера и радиолокаторы НАТО",
+      methodology: "NATO",
       provenance: {
-        source: "SIPRI Military Expenditure Database; НАТО",
-        year: 2024,
+        source: "SIPRI Military Expenditure Database; НАТО (годовой отчёт Генсека, 26.03.2026)",
+        year: 2025,
         estimated: true,
       },
     },
@@ -3045,14 +3056,15 @@ export const REST_COUNTRY_PROFILES: readonly RestCountryProfile[] = [
     forcesStatusRu: "Регулярные вооружённые силы, член НАТО и ЕС",
     hasStandingArmy: true,
     budget: {
-      amountUsdBn: 0.85,
-      amountNoteRu: "Около 0,8–0,9 млрд долл., порядка 1,3% ВВП — ниже цели НАТО, рост обещан к 2030 году",
-      year: 2024,
-      shareOfGdpPct: 1.3,
+      amountUsdBn: null,
+      amountNoteRu: "По методологии НАТО Словения в 2025 году — не ниже 2% ВВП (годовой отчёт Генсека НАТО, 26.03.2026: впервые все союзники ≥2%). Прежняя оценка 0,8–0,9 млрд долл. (~1,3% ВВП) относилась к SIPRI-периметру винтажа 2024 г. и занижала учитываемый контур; сумма по NATO Defence Expenditure 2026 подлежит подстановке, поэтому числовое поле оставлено пустым. Словения подтвердила credible path к 3,5% ВВП к 2035 году (заявление Генсека НАТО, 14.09.2026) в рамках Гаагского обязательства 5% (3,5% + 1,5%)",
+      year: 2025,
+      shareOfGdpPct: 2.0,
       trendRu: "Медленный рост: Boxer/JLTV, C-27J Spartan, ПВО IRIS-T (обсуждение)",
+      methodology: "NATO",
       provenance: {
-        source: "SIPRI Military Expenditure Database; НАТО",
-        year: 2024,
+        source: "НАТО (годовой отчёт Генсека, 26.03.2026)",
+        year: 2025,
         estimated: true,
       },
     },

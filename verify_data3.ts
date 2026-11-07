@@ -230,8 +230,8 @@ check(
 
 const usaEntry = sipriEntryByIso3("USA");
 check(
-  "SIPRI: США — $921 млрд и первое место",
-  usaEntry !== undefined && usaEntry.spendingBn === 921 && usaEntry.rank === 1,
+  "SIPRI: США — $954 млрд и первое место",
+  usaEntry !== undefined && usaEntry.spendingBn === 954 && usaEntry.rank === 1,
   `usa=${usaEntry?.spendingBn}`,
 );
 

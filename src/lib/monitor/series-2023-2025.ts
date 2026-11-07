@@ -16,6 +16,15 @@
 //   а не внешняя статистика.
 // Ряды — вход для движка дельт и алертов: соседние годы сопоставимы,
 // методология внутри ряда не меняется.
+//
+// ВИНТАЖНАЯ ОГОВОРКА (аудит 2026-11-07). Значения 2023–2024 в рядах —
+// винтаж SIPRI апреля 2025 года, значения 2025 — винтаж апреля 2026:
+// SIPRI ежегодно ревизует весь ряд, поэтому номинальная дельта ряда
+// (например, США 2024 → 2025: 997 → 954, −4,3%) НЕ равна публикуемой
+// SIPRI реальной динамике (−7,5% в постоянных ценах). Полная пересборка
+// 2023–2024 из базы апреля 2026 года — отдельная задача (P3 аудита);
+// точечно исправлены только подтверждённые факт-листом значения 2025
+// года (DEU 114, POL 46,8).
 
 import {
   SnapshotRegistry,
@@ -2246,13 +2255,13 @@ export const ALL_SNAPSHOTS: CountrySnapshot[] = [
     },
     bpTotal: 79.6,
     budgetBnUsd: {
-      value: 108.0,
+      value: 114.0,
       source: "SIPRI Military Expenditure Database",
       sourceYear: 2025,
       estimated: true,
     },
     defenseShareGdpPct: {
-      value: 2.4,
+      value: 2.3,
       source: "SIPRI Military Expenditure Database",
       sourceYear: 2025,
       estimated: true,
@@ -5492,13 +5501,13 @@ export const ALL_SNAPSHOTS: CountrySnapshot[] = [
     },
     bpTotal: 79.1,
     budgetBnUsd: {
-      value: 44.0,
+      value: 46.8,
       source: "SIPRI Military Expenditure Database",
       sourceYear: 2025,
       estimated: true,
     },
     defenseShareGdpPct: {
-      value: 4.8,
+      value: 4.5,
       source: "SIPRI Military Expenditure Database",
       sourceYear: 2025,
       estimated: true,

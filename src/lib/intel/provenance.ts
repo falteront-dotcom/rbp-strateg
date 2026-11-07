@@ -86,7 +86,7 @@ export const SOURCE_REGISTRY: IntelSourceProfile[] = [
       "Годовой лаг публикации",
       "Не публикует запасы и боеготовность",
     ],
-    updateFrequencyRu: "Ежегодно (апрель)",
+    updateFrequencyRu: "Ежегодно (апрель); винтаж реестра — Milex, факт-лист апреля 2026; Yearbook 2026 (июнь 2026)",
     coverageRu: "170+ стран",
   },
   {
@@ -109,7 +109,7 @@ export const SOURCE_REGISTRY: IntelSourceProfile[] = [
       "Численность техники — наличие, а не боеготовность",
       "Лаг до года по быстро меняющимся данным",
     ],
-    updateFrequencyRu: "Ежегодно (февраль)",
+    updateFrequencyRu: "Ежегодно (февраль); винтаж реестра — The Military Balance 2026 (24.02.2026)",
     coverageRu: "170+ стран",
   },
   {
@@ -132,7 +132,7 @@ export const SOURCE_REGISTRY: IntelSourceProfile[] = [
       "Израиль — политика амбивалентности, данных нет",
       "Обновления по странам выходят неравномерно",
     ],
-    updateFrequencyRu: "По странам, несколько раз в год",
+    updateFrequencyRu: "По странам, несколько раз в год; винтаж реестра — Status of World Nuclear Forces 2026 (январь 2026)",
     coverageRu: "9 ядерных держав",
   },
   {

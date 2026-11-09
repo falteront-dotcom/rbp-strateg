@@ -10,7 +10,7 @@ permissions:
 
 jobs:
   test:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04 # playwright 1.58 не поддерживает ubuntu 26.04 (нынешний ubuntu-latest)
     steps:
       - uses: actions/checkout@v4
 
@@ -29,6 +29,14 @@ jobs:
       - name: Typecheck
         run: npm run typecheck
 
+      - name: Seed SQLite database
+        # The /v3 pages read sqlite.db at build time (static prerender).
+        # Without a seeded database `next build` fails with
+        # "SqliteError: no such table: countries". The seed is idempotent,
+        # takes seconds, and the file persists for the test step's server
+        # (which re-bootstraps through instrumentation.ts anyway).
+        run: npx tsx src/scripts/init-db.ts
+
       - name: Build
         run: npm run build
 
@@ -38,7 +46,7 @@ jobs:
       - name: Run tests (contract + e2e)
         env:
           # A configured token is required for the authenticated admin happy
-          # path; init-db only re-seeds the canonical 59-country fixture, so this
+          # path; init-db only re-seeds the canonical 195-country fixture, so this
           # never changes the committed data and validates the POST gate in CI.
           # run-pipeline stays opted-out (no RBP_PIPELINE_E2E) to keep e2e
           # deterministic and free of live-network flakiness.

@@ -6,13 +6,14 @@ import { test, expect } from '@playwright/test';
 //       Use `domcontentloaded` + explicit waits instead.
 //
 // Determinism: the local dev database is the canonical seeded fixture
-// (top20 + extended + additional = 59 countries). API and UI assertions use the
-// known fixture contract (exact count, required ISO codes / Russian names, and
-// the seeded NATO membership of 26) rather than arbitrary thresholds.
+// (top20 + extended + additional + world = 195 countries, since the 3.0
+// data waves). API and UI assertions use the known fixture contract
+// (exact count, required ISO codes / Russian names, and the seeded NATO
+// membership of 26) rather than arbitrary thresholds.
 // ─────────────────────────────────────────────────────────────────────────────
 
 /** Canonical seeded fixture size used by the deterministic assertions. */
-const EXPECTED_COUNTRY_COUNT = 59;
+const EXPECTED_COUNTRY_COUNT = 195;
 /** Seeded NATO coalition membership count. */
 const EXPECTED_NATO_MEMBERS = 26;
 
@@ -141,7 +142,7 @@ test.describe('RBP-Strateg 2.0 — API Endpoints', () => {
 
     const countries = await response.json();
     expect(Array.isArray(countries)).toBe(true);
-    // Deterministic fixture contract: exactly the 59 seeded countries.
+    // Deterministic fixture contract: exactly the 195 seeded countries.
     expect(countries.length).toBe(EXPECTED_COUNTRY_COUNT);
 
     // Required countries are present and mapped to camelCase.

@@ -29,6 +29,14 @@ jobs:
       - name: Typecheck
         run: npm run typecheck
 
+      - name: Seed SQLite database
+        # The /v3 pages read sqlite.db at build time (static prerender).
+        # Without a seeded database `next build` fails with
+        # "SqliteError: no such table: countries". The seed is idempotent,
+        # takes seconds, and the file persists for the test step's server
+        # (which re-bootstraps through instrumentation.ts anyway).
+        run: npx tsx src/scripts/init-db.ts
+
       - name: Build
         run: npm run build
 

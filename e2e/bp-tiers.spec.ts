@@ -62,19 +62,21 @@ test.describe('canonical BP tiers (80 / 60 / 40 / 20)', () => {
   });
 
   test('getBPTierColor returns the canonical tailwind text classes', () => {
-    expect(getBPTierColor(80)).toBe('text-red-400');
-    expect(getBPTierColor(60)).toBe('text-yellow-400');
-    expect(getBPTierColor(40)).toBe('text-teal-400');
-    expect(getBPTierColor(20)).toBe('text-cyan-400');
-    expect(getBPTierColor(0)).toBe('text-slate-400');
+    // Palette synced with the 2026 green/earthy theme (tiers.ts is the
+    // single source of truth; these assertions pin it against drift).
+    expect(getBPTierColor(80)).toBe('text-[#c76a5a]');
+    expect(getBPTierColor(60)).toBe('text-[#d8a03c]');
+    expect(getBPTierColor(40)).toBe('text-[#8aa89b]');
+    expect(getBPTierColor(20)).toBe('text-[#677a6c]');
+    expect(getBPTierColor(0)).toBe('text-slate-500');
   });
 
   test('getBPTierHex returns the canonical hex colors', () => {
-    expect(getBPTierHex(80)).toBe('#ef4444');
-    expect(getBPTierHex(60)).toBe('#f59e0b');
-    expect(getBPTierHex(40)).toBe('#22d3ee');
-    expect(getBPTierHex(20)).toBe('#3b82f6');
-    expect(getBPTierHex(0)).toBe('#64748b');
+    expect(getBPTierHex(80)).toBe('#c76a5a');
+    expect(getBPTierHex(60)).toBe('#d8a03c');
+    expect(getBPTierHex(40)).toBe('#8aa89b');
+    expect(getBPTierHex(20)).toBe('#677a6c');
+    expect(getBPTierHex(0)).toBe('#55636d');
   });
 
   test('getBPTierInfo is consistent with the scalar accessors', () => {
@@ -102,7 +104,7 @@ test.describe('canonical BP tiers (80 / 60 / 40 / 20)', () => {
     // Shape contract is preserved (caller-visible return shape unchanged).
     expect(getBPTier(80)).toEqual({
       tier: 'КРИТИЧЕСКИЙ',
-      color: '#ef4444',
+      color: '#c76a5a',
       description: expect.any(String),
     });
   });

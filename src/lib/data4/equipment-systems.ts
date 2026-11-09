@@ -3437,7 +3437,8 @@ export const WEAPON_SYSTEMS: readonly WeaponSystemProfile[] = [
     developerRu: "Индия",
     manufacturerRu: "DRDO / HVF Avadi",
     subtypeRu: "основной боевой танк",
-    statusRu: "на вооружении, малая серия",
+    statusRu: "заказана (118 ед.); серийные поставки на ноябрь 2026 не начаты",
+    statusAsOf: "2026-11",
     yearEntered: 2021,
     generationRu: "третье",
     summaryRu: "Национальная разработка Индии с бронированием Kanchan; тяжёлый и дорогой, закуплено ограниченное число.",
@@ -3545,7 +3546,7 @@ export const WEAPON_SYSTEMS: readonly WeaponSystemProfile[] = [
       {
         countryIso: "IND",
         countryRu: "Индия",
-        noteRu: "Состоит на вооружении или заказана; детали состава — по IISS",
+        noteRu: "Контракт HVF от 23.09.2021 на 118 ед.; серийных машин на вооружении нет, поставки задержаны (двигатель MTU), передан только предсерийный образец",
       },
     ],
     combatUse: [
@@ -3562,8 +3563,8 @@ export const WEAPON_SYSTEMS: readonly WeaponSystemProfile[] = [
       exportPotential: 2,
     },
     provenance: {
-      sourceRu: "IISS The Military Balance 2025",
-      dataYear: 2025,
+      sourceRu: "PIB, Министерство обороны Индии, 23.09.2021; сводки о задержке поставок, сентябрь 2026",
+      dataYear: 2026,
       estimated: true,
     },
   },
@@ -3867,6 +3868,7 @@ export const WEAPON_SYSTEMS: readonly WeaponSystemProfile[] = [
     manufacturerRu: "Rheinmetall",
     subtypeRu: "основной боевой танк (перспективный)",
     statusRu: "демонстраторы",
+    statusAsOf: "2026-11",
     yearEntered: 2022,
     generationRu: "четвёртое (концепт)",
     summaryRu: "130-мм пушка с автоматом заряжания, встроенный барражирующий боеприпас, цифровая архитектура NGVA.",
@@ -3972,9 +3974,9 @@ export const WEAPON_SYSTEMS: readonly WeaponSystemProfile[] = [
     ],
     operators: [
       {
-        countryIso: "DEU",
-        countryRu: "Германия",
-        noteRu: "Состоит на вооружении или заказана; детали состава — по IISS",
+        countryIso: "HUN",
+        countryRu: "Венгрия",
+        noteRu: "Партнёр по разработке: контракт Rheinmetall от 15.12.2023 на доведение демонстратора до производственной зрелости; серийного заказа и вооружения нет",
       },
     ],
     combatUse: [
@@ -3991,8 +3993,8 @@ export const WEAPON_SYSTEMS: readonly WeaponSystemProfile[] = [
       exportPotential: 6,
     },
     provenance: {
-      sourceRu: "Rheinmetall, Eurosatory 2022–2024",
-      dataYear: 2024,
+      sourceRu: "Rheinmetall, пресс-релиз о контракте с Венгрией от 15.12.2023; сверка статуса, 2026",
+      dataYear: 2026,
       estimated: true,
     },
   },
@@ -10646,6 +10648,7 @@ export const WEAPON_SYSTEMS: readonly WeaponSystemProfile[] = [
     manufacturerRu: "Elbit Systems",
     subtypeRu: "реактивная система залпового огня",
     statusRu: "на вооружении, экспорт",
+    statusAsOf: "2026-11",
     yearEntered: 2019,
     generationRu: "высокоточная РСЗО (модульная)",
     summaryRu: "Модульные пакеты от 122 мм до Predator Hawk 370 мм/300 км; выбрана рядом армий Европы как замена советских РСЗО.",
@@ -10754,7 +10757,7 @@ export const WEAPON_SYSTEMS: readonly WeaponSystemProfile[] = [
       {
         countryIso: "DEU",
         countryRu: "Германия",
-        noteRu: "Состоит на вооружении или заказана; детали состава — по IISS",
+        noteRu: "Заказана начальная партия из 5 ПУ EuroPULS/MARS 3 (контракт Elbit/KNDS, февраль 2025); проходят испытания BAAINBw, на вооружение на ноябрь 2026 не принята",
       },
       {
         countryIso: "ESP",
@@ -10781,8 +10784,8 @@ export const WEAPON_SYSTEMS: readonly WeaponSystemProfile[] = [
       exportPotential: 8,
     },
     provenance: {
-      sourceRu: "Elbit Systems, IISS 2025",
-      dataYear: 2025,
+      sourceRu: "Elbit Systems; BAAINBw и Defense News, февраль 2025; сверка статуса, 2026",
+      dataYear: 2026,
       estimated: true,
     },
   },
@@ -11848,6 +11851,7 @@ export const WEAPON_SYSTEMS: readonly WeaponSystemProfile[] = [
     manufacturerRu: "Lockheed Martin",
     subtypeRu: "многоцелевой истребитель пятого поколения",
     statusRu: "на вооружении, массовая серия",
+    statusAsOf: "2026-11",
     yearEntered: 2016,
     generationRu: "пятое",
     summaryRu: "Самая массовая программа пятого поколения: единый носитель для ВВС 19+ стран, акцент на сенсоры и сетецентричность.",
@@ -11953,7 +11957,7 @@ export const WEAPON_SYSTEMS: readonly WeaponSystemProfile[] = [
       {
         countryIso: "GBR",
         countryRu: "Великобритания",
-        noteRu: "Состоит на вооружении или заказана; детали состава — по IISS",
+        noteRu: "Только F-35B состоит на вооружении; закупка 12 F-35A объявлена правительством 24.06.2025, поставки ожидаются не ранее начала 2030-х",
       },
       {
         countryIso: "ITA",
@@ -12067,8 +12071,8 @@ export const WEAPON_SYSTEMS: readonly WeaponSystemProfile[] = [
       exportPotential: 10,
     },
     provenance: {
-      sourceRu: "Lockheed Martin, IISS 2025",
-      dataYear: 2025,
+      sourceRu: "Lockheed Martin, Fast Facts (02.11.2026); GOV.UK, 24.06.2025; UK Parliament, 09.07.2026",
+      dataYear: 2026,
       estimated: true,
     },
   },
@@ -12366,6 +12370,7 @@ export const WEAPON_SYSTEMS: readonly WeaponSystemProfile[] = [
     manufacturerRu: "Dassault Aviation",
     subtypeRu: "многоцелевой истребитель",
     statusRu: "на вооружении, серия",
+    statusAsOf: "2026-11",
     yearEntered: 2023,
     generationRu: "4+",
     summaryRu: "«Омниролевой» истребитель Франции и экспортный хит 2010–2020-х: РЛС RBE2-AA, ракеты Meteor и SCALP, ядерная роль ASMP-A.",
@@ -12469,11 +12474,6 @@ export const WEAPON_SYSTEMS: readonly WeaponSystemProfile[] = [
         noteRu: "Состоит на вооружении или заказана; детали состава — по IISS",
       },
       {
-        countryIso: "IND",
-        countryRu: "Индия",
-        noteRu: "Состоит на вооружении или заказана; детали состава — по IISS",
-      },
-      {
         countryIso: "EGY",
         countryRu: "Египет",
         noteRu: "Состоит на вооружении или заказана; детали состава — по IISS",
@@ -12535,8 +12535,8 @@ export const WEAPON_SYSTEMS: readonly WeaponSystemProfile[] = [
       exportPotential: 9,
     },
     provenance: {
-      sourceRu: "Dassault, IISS 2025",
-      dataYear: 2025,
+      sourceRu: "Dassault; IISS The Military Balance 2025; Force India и Defense Mirror, сверка модификаций, 2026",
+      dataYear: 2026,
       estimated: true,
     },
   },
@@ -13550,7 +13550,8 @@ export const WEAPON_SYSTEMS: readonly WeaponSystemProfile[] = [
     developerRu: "Индия",
     manufacturerRu: "HAL",
     subtypeRu: "лёгкий многоцелевой истребитель",
-    statusRu: "начало поставок",
+    statusRu: "заказана (180 ед.); серийные поставки ВВС на ноябрь 2026 не начаты",
+    statusAsOf: "2026-11",
     yearEntered: 2024,
     generationRu: "4+",
     summaryRu: "Индийский лёгкий истребитель с РЛС EL/M-2052 AESA (позже Uttam); крупная программа закупки 180+ машин.",
@@ -13651,7 +13652,7 @@ export const WEAPON_SYSTEMS: readonly WeaponSystemProfile[] = [
       {
         countryIso: "IND",
         countryRu: "Индия",
-        noteRu: "Состоит на вооружении или заказана; детали состава — по IISS",
+        noteRu: "Заказана по контрактам 2021 и 2025 гг. (всего 180); на ноябрь 2026 ВВС не передано ни одной серийной машины, HAL планирует старт поставок с декабря 2026",
       },
     ],
     combatUse: [
@@ -13669,8 +13670,8 @@ export const WEAPON_SYSTEMS: readonly WeaponSystemProfile[] = [
       exportPotential: 5,
     },
     provenance: {
-      sourceRu: "HAL, IISS 2025",
-      dataYear: 2025,
+      sourceRu: "HAL; контракты МО Индии 2021 и 25.09.2025; The Hindu, 08.10.2026",
+      dataYear: 2026,
       estimated: true,
     },
   },
@@ -13865,6 +13866,7 @@ export const WEAPON_SYSTEMS: readonly WeaponSystemProfile[] = [
     manufacturerRu: "Lockheed Martin",
     subtypeRu: "лёгкий многоцелевой истребитель",
     statusRu: "на вооружении, серия",
+    statusAsOf: "2026-11",
     yearEntered: 2021,
     generationRu: "4+",
     summaryRu: "Новая жизнь самой массовой платформы 4-го поколения: РЛС APG-83, ресурс 12 000 ч, заказы от шести стран.",
@@ -13963,11 +13965,6 @@ export const WEAPON_SYSTEMS: readonly WeaponSystemProfile[] = [
     ],
     operators: [
       {
-        countryIso: "USA",
-        countryRu: "США",
-        noteRu: "Состоит на вооружении или заказана; детали состава — по IISS",
-      },
-      {
         countryIso: "TWN",
         countryRu: "Тайвань",
         noteRu: "Состоит на вооружении или заказана; детали состава — по IISS",
@@ -13995,11 +13992,6 @@ export const WEAPON_SYSTEMS: readonly WeaponSystemProfile[] = [
       {
         countryIso: "BHR",
         countryRu: "Бахрейн",
-        noteRu: "Состоит на вооружении или заказана; детали состава — по IISS",
-      },
-      {
-        countryIso: "UKR",
-        countryRu: "Украина",
         noteRu: "Состоит на вооружении или заказана; детали состава — по IISS",
       },
       {
@@ -14039,11 +14031,6 @@ export const WEAPON_SYSTEMS: readonly WeaponSystemProfile[] = [
       },
     ],
     combatUse: [
-      {
-        conflictRu: "Украина",
-        periodRu: "с 2024 г.",
-        noteRu: "Переданные европейскими странами F-16AM и новые Block 70 формируют костяк обновления ВВС",
-      },
     ],
     variantsRu: [
       "F-16V (модернизация)",
@@ -14057,8 +14044,8 @@ export const WEAPON_SYSTEMS: readonly WeaponSystemProfile[] = [
       exportPotential: 9,
     },
     provenance: {
-      sourceRu: "Lockheed Martin, IISS 2025",
-      dataYear: 2025,
+      sourceRu: "Lockheed Martin; The War Zone и The Aviationist, сверка модификаций, 2026",
+      dataYear: 2026,
       estimated: true,
     },
   },
@@ -21247,6 +21234,7 @@ export const WEAPON_SYSTEMS: readonly WeaponSystemProfile[] = [
     manufacturerRu: "Севмаш / АСЗ (СССР)",
     subtypeRu: "многоцелевая атомная подводная лодка",
     statusRu: "на вооружении",
+    statusAsOf: "2026-11",
     yearEntered: 1985,
     generationRu: "третье (АПЛ)",
     summaryRu: "Массовая многоцелевая АПЛ позднего СССР; модернизация по проекту 971М («Калибры») идёт медленно, одна лодка служила в Индии как «Чакра».",
@@ -21342,11 +21330,6 @@ export const WEAPON_SYSTEMS: readonly WeaponSystemProfile[] = [
         countryRu: "Россия",
         noteRu: "Состоит на вооружении или заказана; детали состава — по IISS",
       },
-      {
-        countryIso: "IND",
-        countryRu: "Индия",
-        noteRu: "Состоит на вооружении или заказана; детали состава — по IISS",
-      },
     ],
     combatUse: [
     ],
@@ -21362,8 +21345,8 @@ export const WEAPON_SYSTEMS: readonly WeaponSystemProfile[] = [
       exportPotential: 2,
     },
     provenance: {
-      sourceRu: "IISS The Military Balance 2025",
-      dataYear: 2025,
+      sourceRu: "IISS The Military Balance 2025; Defense Mirror, 2025; сообщения о возврате INS Chakra, 2021",
+      dataYear: 2026,
       estimated: true,
     },
   },
@@ -21378,6 +21361,7 @@ export const WEAPON_SYSTEMS: readonly WeaponSystemProfile[] = [
     manufacturerRu: "Адмиралтейские верфи",
     subtypeRu: "дизель-электрическая подводная лодка",
     statusRu: "на вооружении, серия",
+    statusAsOf: "2026-11",
     yearEntered: 2014,
     generationRu: "третье+ (ДЭПЛ)",
     summaryRu: "Самая малошумная ДЭПЛ своего поколения; носитель «Калибров» из торпедных аппаратов, активно применяется ЧФ и ТОФ.",
@@ -21474,11 +21458,6 @@ export const WEAPON_SYSTEMS: readonly WeaponSystemProfile[] = [
         noteRu: "Состоит на вооружении или заказана; детали состава — по IISS",
       },
       {
-        countryIso: "CHN",
-        countryRu: "Китай",
-        noteRu: "Состоит на вооружении или заказана; детали состава — по IISS",
-      },
-      {
         countryIso: "VNM",
         countryRu: "Вьетнам",
         noteRu: "Состоит на вооружении или заказана; детали состава — по IISS",
@@ -21486,11 +21465,6 @@ export const WEAPON_SYSTEMS: readonly WeaponSystemProfile[] = [
       {
         countryIso: "DZA",
         countryRu: "Алжир",
-        noteRu: "Состоит на вооружении или заказана; детали состава — по IISS",
-      },
-      {
-        countryIso: "IND",
-        countryRu: "Индия",
         noteRu: "Состоит на вооружении или заказана; детали состава — по IISS",
       },
       {
@@ -21524,8 +21498,8 @@ export const WEAPON_SYSTEMS: readonly WeaponSystemProfile[] = [
       exportPotential: 7,
     },
     provenance: {
-      sourceRu: "IISS The Military Balance 2025",
-      dataYear: 2025,
+      sourceRu: "IISS The Military Balance 2025; Defence Turkey, обзор проектов 877/636 (обновление 06.04.2026)",
+      dataYear: 2026,
       estimated: true,
     },
   },
@@ -24519,6 +24493,7 @@ export const WEAPON_SYSTEMS: readonly WeaponSystemProfile[] = [
     manufacturerRu: "Bath Iron Works / Ingalls",
     subtypeRu: "эскадренный миноносец УРО",
     statusRu: "на вооружении, серия продолжается (Flight III)",
+    statusAsOf: "2026-11",
     yearEntered: 1991,
     generationRu: "эсминец четвёртого поколения (Aegis)",
     summaryRu: "Крупнейшая серия боевых кораблей современности (70+ в строю): Aegis, 96 ячеек ВПУ, ПРО SM-3/SM-6.",
@@ -24615,16 +24590,6 @@ export const WEAPON_SYSTEMS: readonly WeaponSystemProfile[] = [
         noteRu: "Состоит на вооружении или заказана; детали состава — по IISS",
       },
       {
-        countryIso: "JPN",
-        countryRu: "Япония",
-        noteRu: "Состоит на вооружении или заказана; детали состава — по IISS",
-      },
-      {
-        countryIso: "KOR",
-        countryRu: "Республика Корея",
-        noteRu: "Состоит на вооружении или заказана; детали состава — по IISS",
-      },
-      {
         countryIso: "ESP",
         countryRu: "Испания",
         noteRu: "Состоит на вооружении или заказана; детали состава — по IISS",
@@ -24666,8 +24631,8 @@ export const WEAPON_SYSTEMS: readonly WeaponSystemProfile[] = [
       exportPotential: 7,
     },
     provenance: {
-      sourceRu: "US Navy, IISS 2025",
-      dataYear: 2025,
+      sourceRu: "US Navy, DDG 51 Fact File (сверка 2026); Naval News",
+      dataYear: 2026,
       estimated: true,
     },
   },
@@ -28015,9 +27980,10 @@ export const WEAPON_SYSTEMS: readonly WeaponSystemProfile[] = [
     manufacturerRu: "Lockheed Martin / Raytheon",
     subtypeRu: "наземный комплекс ПРО/ПВО",
     statusRu: "на вооружении",
+    statusAsOf: "2026-11",
     yearEntered: 2016,
     generationRu: "ПРО (стратегический эшелон союзников)",
-    summaryRu: "Наземный Mk 41 с РЛС SPY-1 в Румынии и Польше; SM-3 Block IIA перехватывает БР средней дальности на среднем участке.",
+    summaryRu: "Наземный Mk 41 с РЛС SPY-1 в Румынии и Польше; SM-3 Block IIA перехватывает БР средней дальности на среднем участке. Япония в программе не участвует: наземный вариант отменён в 2020 г., вместо него строятся морские корабли ПРО ASEV.",
     specs: [
       {
         parameterKey: "crew",
@@ -28120,11 +28086,6 @@ export const WEAPON_SYSTEMS: readonly WeaponSystemProfile[] = [
         countryRu: "Польша",
         noteRu: "Состоит на вооружении или заказана; детали состава — по IISS",
       },
-      {
-        countryIso: "JPN",
-        countryRu: "Япония",
-        noteRu: "Состоит на вооружении или заказана; детали состава — по IISS",
-      },
     ],
     combatUse: [
     ],
@@ -28140,8 +28101,8 @@ export const WEAPON_SYSTEMS: readonly WeaponSystemProfile[] = [
       exportPotential: 5,
     },
     provenance: {
-      sourceRu: "MDA (оценочно)",
-      dataYear: 2025,
+      sourceRu: "MDA; Naval News по данным МО Японии, 2026",
+      dataYear: 2026,
       estimated: true,
     },
   },
@@ -28504,9 +28465,10 @@ export const WEAPON_SYSTEMS: readonly WeaponSystemProfile[] = [
     manufacturerRu: "Eurosam (MBDA / Thales)",
     subtypeRu: "ЗРК большой дальности / ПРО",
     statusRu: "на вооружении",
+    statusAsOf: "2026-11",
     yearEntered: 2011,
     generationRu: "четвёртое (ЗРК/ПРО ТВД)",
-    summaryRu: "Aster 30 с активной ГСН и ПРО-возможностями; версия NG с РЛС нового поколения заказывается Францией и Италией, обсуждается для Украины.",
+    summaryRu: "Aster 30 с активной ГСН и ПРО-возможностями; версия NG заказана Францией и Италией. Украина эксплуатирует базовые SAMP/T с 2023 г.; по декларации 14.07.2026 намерена заказать 4 NG с развёртыванием с 2027 г., до этого Франция направит 2 базовых комплекса.",
     specs: [
       {
         parameterKey: "crew",
@@ -28634,8 +28596,8 @@ export const WEAPON_SYSTEMS: readonly WeaponSystemProfile[] = [
       exportPotential: 6,
     },
     provenance: {
-      sourceRu: "Eurosam, IISS 2025",
-      dataYear: 2025,
+      sourceRu: "Eurosam; DGA/OCCAR, октябрь 2026; МИД Франции, 14.07.2026",
+      dataYear: 2026,
       estimated: true,
     },
   },
@@ -30907,6 +30869,7 @@ export const WEAPON_SYSTEMS: readonly WeaponSystemProfile[] = [
     manufacturerRu: "Lockheed Martin",
     subtypeRu: "оперативно-тактическая баллистическая ракета",
     statusRu: "на вооружении (начальные поставки)",
+    statusAsOf: "2026-07",
     yearEntered: 2023,
     generationRu: "ОТРК четвёртого поколения",
     summaryRu: "Замена ATACMS: две ракеты в пакете HIMARS, дальность 500+ км, следующие инкременты — противокорабельная и 1000-км версии.",
@@ -31003,7 +30966,7 @@ export const WEAPON_SYSTEMS: readonly WeaponSystemProfile[] = [
       {
         countryIso: "GBR",
         countryRu: "Великобритания",
-        noteRu: "Состоит на вооружении или заказана; детали состава — по IISS",
+        noteRu: "Не состоит на вооружении и не поставлена: 07.07.2026 объявлено о присоединении к программе и резервировании £190 млн; соглашение с США и Австралией не заключено, поставки возможны не ранее 2027",
       },
     ],
     combatUse: [
@@ -31021,8 +30984,8 @@ export const WEAPON_SYSTEMS: readonly WeaponSystemProfile[] = [
       exportPotential: 7,
     },
     provenance: {
-      sourceRu: "US Army 2024–2025",
-      dataYear: 2025,
+      sourceRu: "US Army; GOV.UK, объявление о PrSM от 07.07.2026",
+      dataYear: 2026,
       estimated: true,
     },
   },
@@ -31037,6 +31000,7 @@ export const WEAPON_SYSTEMS: readonly WeaponSystemProfile[] = [
     manufacturerRu: "Raytheon",
     subtypeRu: "крылатая ракета морского/подводного базирования",
     statusRu: "на вооружении, массовая серия",
+    statusAsOf: "2026-11",
     yearEntered: 1983,
     generationRu: "КР большой дальности четвёртого поколения",
     summaryRu: "Эталон дозвуковой КР: более 2000 боевых пусков за историю; Block Va — противокорабельная версия с пассивной ГСН.",
@@ -31138,7 +31102,7 @@ export const WEAPON_SYSTEMS: readonly WeaponSystemProfile[] = [
       {
         countryIso: "JPN",
         countryRu: "Япония",
-        noteRu: "Состоит на вооружении или заказана; детали состава — по IISS",
+        noteRu: "Заказана по контракту января 2024 г.: 400 ракет (200 Block IV и 200 Block V), поставки FY2025–FY2027; первый пуск JMSDF — 29.07.2026, полная готовность не достигнута",
       },
       {
         countryIso: "NLD",
@@ -31171,8 +31135,8 @@ export const WEAPON_SYSTEMS: readonly WeaponSystemProfile[] = [
       exportPotential: 8,
     },
     provenance: {
-      sourceRu: "US Navy, Raytheon",
-      dataYear: 2025,
+      sourceRu: "US Navy, Raytheon; DSCA, январь 2024; сообщения о первом пуске JMSDF, 2026",
+      dataYear: 2026,
       estimated: true,
     },
   },

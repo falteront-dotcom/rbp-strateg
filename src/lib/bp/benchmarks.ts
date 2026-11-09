@@ -11,7 +11,8 @@ export interface BPBenchmark {
   name: string;
   expectedBPRank: number;        // Expected rank in global BP ranking
   expectedTier: "CRITICAL" | "HIGH" | "MODERATE" | "LOW" | "MINIMAL";
-  gfpRank2025: number;           // GFP 2025 rank for cross-validation
+  gfpRank2025: number;           // GFP 2025 rank (historical, pre-2026 re-validation)
+  gfpRank2026: number;           // GFP 2026 rank for cross-validation (docs/validation-gfp-2026.md)
   knownStrengths: string[];      // Known military strengths
   knownWeaknesses: string[];     // Known military weaknesses
   nuclearTriad: boolean;         // Has complete nuclear triad
@@ -27,6 +28,7 @@ export const BP_BENCHMARKS: BPBenchmark[] = [
     expectedBPRank: 1,
     expectedTier: "CRITICAL",
     gfpRank2025: 1,
+    gfpRank2026: 1,
     knownStrengths: [
       "Глобальная проекция силы — 750+ баз в 80 странах",
       "11 авианосцев — единственная страна с таким флотом",
@@ -52,6 +54,7 @@ export const BP_BENCHMARKS: BPBenchmark[] = [
     expectedBPRank: 2,
     expectedTier: "CRITICAL",
     gfpRank2025: 2,
+    gfpRank2026: 2,
     knownStrengths: [
       "Крупнейший ядерный арсенал — 5580 боеголовок (FAS 2024)",
       "Гиперзвуковое оружие — Авангард, Кинжал, Циркон",
@@ -77,6 +80,7 @@ export const BP_BENCHMARKS: BPBenchmark[] = [
     expectedBPRank: 3,
     expectedTier: "CRITICAL",
     gfpRank2025: 3,
+    gfpRank2026: 3,
     knownStrengths: [
       "Крупнейшая армия мира — 2М+ активный состав",
       "Крупнейший флот по численности — 370+ кораблей",
@@ -101,6 +105,7 @@ export const BP_BENCHMARKS: BPBenchmark[] = [
     expectedBPRank: 4,
     expectedTier: "HIGH",
     gfpRank2025: 4,
+    gfpRank2026: 4,
     knownStrengths: [
       "2-я армия по численности — 1.45М активный состав",
       "Ядерная триада — завершена в 2018",
@@ -123,6 +128,7 @@ export const BP_BENCHMARKS: BPBenchmark[] = [
     expectedBPRank: 5,
     expectedTier: "HIGH",
     gfpRank2025: 6,
+    gfpRank2026: 8,
     knownStrengths: [
       "NATO — 2-я армия альянса",
       "Ядерная триада (SLBM только) — 4 Подслассы Vanguard",
@@ -145,6 +151,7 @@ export const BP_BENCHMARKS: BPBenchmark[] = [
     expectedBPRank: 6,
     expectedTier: "HIGH",
     gfpRank2025: 5,
+    gfpRank2026: 6,
     knownStrengths: [
       "Независимая ядерная триада — Force de frappe",
       "Экспедиционные силы — Операции в Африке",
@@ -166,6 +173,7 @@ export const BP_BENCHMARKS: BPBenchmark[] = [
     expectedBPRank: 7,
     expectedTier: "HIGH",
     gfpRank2025: 7,
+    gfpRank2026: 7,
     knownStrengths: [
       "Крупнейший военный бюджет в Азии после Китая — $55Мрд",
       "Технологическое превосходство — F-35, Aegis",
@@ -188,6 +196,7 @@ export const BP_BENCHMARKS: BPBenchmark[] = [
     expectedBPRank: 8,
     expectedTier: "HIGH",
     gfpRank2025: 5,
+    gfpRank2026: 5,
     knownStrengths: [
       "6-я армия мира по численности — 600K активный состав",
       "Мощный ВПК — K2, KF-21, FA-50 экспорт",
@@ -209,6 +218,7 @@ export const BP_BENCHMARKS: BPBenchmark[] = [
     expectedBPRank: 9,
     expectedTier: "HIGH",
     gfpRank2025: 8,
+    gfpRank2026: 9,
     knownStrengths: [
       "2-я армия NATO по численности",
       "БПЛА революция — Bayraktar TB2/3, ANKA",
@@ -232,6 +242,7 @@ export const BP_BENCHMARKS: BPBenchmark[] = [
     expectedBPRank: 15,
     expectedTier: "MODERATE",
     gfpRank2025: 18,
+    gfpRank2026: 20,
     knownStrengths: [
       "Реальный боевой опыт — СВО с 2022",
       "Высочайшая мораль — 9/10",
@@ -284,10 +295,10 @@ export function crossValidateGFP(
     return { gfpRank: calculatedRank, delta: 0, consistent: true };
   }
 
-  const delta = calculatedRank - benchmark.gfpRank2025;
+  const delta = calculatedRank - benchmark.gfpRank2026;
   const consistent = Math.abs(delta) <= 5;
 
-  return { gfpRank: benchmark.gfpRank2025, delta, consistent };
+  return { gfpRank: benchmark.gfpRank2026, delta, consistent };
 }
 
 // ─── Get all benchmarks ──────────────────────────────────────────────────────

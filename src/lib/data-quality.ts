@@ -49,7 +49,7 @@ export const DATA_SOURCES: DataSourceProfile[] = [
     updateFrequency: "Ежегодно (январь)",
     coverageScore: 0.55,       // 145/263 countries
     accuracyScore: 0.75,
-    timelinessScore: 0.8,      // релиз GFP 2026 (23.01.2026); слои v2 по нему ещё не ре-валидированы (P3 аудита 2026-11)
+    timelinessScore: 0.8,      // релиз GFP 2026 (23.01.2026); ре-валидация v2 по GFP 2026 выполнена 2026-11-07 (P3 аудита 2026-11): Спирмен ρ = 0,9495 на пересечении 144 стран, средний |Δранга| 9,74 — docs/validation-gfp-2026.md
     reliabilityScore: 0.7,
     fields: ["activePersonnel", "totalTanks", "totalAircraft", "totalNavy", "defensePctGdp", "oilProduction", "airfields", "ports", "merchantFleet", "roadways", "railways"],
     limitations: [

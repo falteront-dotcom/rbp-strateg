@@ -22,7 +22,7 @@ import {
   assertUniqueIso3,
   assertNoSeedAllyIsNeutral,
 } from "../src/scripts/data-pipeline/merge-validate";
-import { GFP_RANKINGS_2025 } from "../src/scripts/data-pipeline/scrape-gfp";
+import { GFP_RANKINGS_2026 } from "../src/scripts/data-pipeline/scrape-gfp";
 
 const failures: string[] = [];
 
@@ -53,10 +53,10 @@ try {
 
 // ─── GFP source data: no duplicate iso3 rows (AUS-dup regression) ───────────
 try {
-  assertUniqueIso3(GFP_RANKINGS_2025, "GFP_RANKINGS_2025");
-  check(true, "GFP_RANKINGS_2025 iso3 codes are unique");
+  assertUniqueIso3(GFP_RANKINGS_2026, "GFP_RANKINGS_2026");
+  check(true, "GFP_RANKINGS_2026 iso3 codes are unique");
 } catch (err) {
-  check(false, `GFP_RANKINGS_2025 iso3 codes are unique (${(err as Error).message})`);
+  check(false, `GFP_RANKINGS_2026 iso3 codes are unique (${(err as Error).message})`);
 }
 
 // ─── deriveSide spot checks (audit §1 sample) ───────────────────────────────

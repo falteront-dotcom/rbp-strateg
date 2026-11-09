@@ -15,7 +15,7 @@
  *   - Missing fields: fill from existing seed data or mark as unknown
  */
 
-import { getGFPData, GFP_RANKINGS_2025 } from "./scrape-gfp";
+import { getGFPData, GFP_RANKINGS_2026 } from "./scrape-gfp";
 import { getNuclearData } from "./nuclear-data";
 import { COUNTRY_NAMES_RU } from "@/lib/geo/country-names-ru";
 
@@ -283,7 +283,7 @@ export async function runPipeline(): Promise<{
   }
 
   // 2. GFP (fail loudly on duplicate iso3 rows before the Map hides them)
-  assertUniqueIso3(GFP_RANKINGS_2025, "GFP_RANKINGS_2025");
+  assertUniqueIso3(GFP_RANKINGS_2026, "GFP_RANKINGS_2026");
   const gfpData = getGFPData();
   stats.fromGFP = gfpData.size;
   console.log(`  ✓ GFP: ${gfpData.size} countries`);

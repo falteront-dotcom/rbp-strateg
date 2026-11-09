@@ -46,7 +46,8 @@ check(
   `снапшотов: ${registry.size()}, стран: ${registry.countries().length} (ожидалось 90/30)`,
 );
 
-// ── 2. Дельта бюджета считается верно (США 2023→2024: 916→997) ─────────────
+// ── 2. Дельта бюджета считается верно (США 2023→2024: 916,0→1004,9; ────────
+// ряд пересобран из SIPRI Milex, релиз апр. 2026 — задача P3 аудита) ───────
 const usa2023 = registry.at("USA", 2023);
 const usa2024 = registry.at("USA", 2024);
 if (usa2023 && usa2024) {
@@ -54,14 +55,14 @@ if (usa2023 && usa2024) {
   const budget = deltas.find((d) => d.metric === "budgetBnUsd");
   const ok =
     budget !== undefined &&
-    Math.abs(budget.absolute - 81) < 0.001 &&
+    Math.abs(budget.absolute - 88.9) < 0.001 &&
     budget.relativePct !== null &&
-    Math.abs(budget.relativePct - (81 / 916) * 100) < 0.01;
+    Math.abs(budget.relativePct - (88.9 / 916) * 100) < 0.01;
   check(
     "delta-budget-usa",
     ok,
     budget
-      ? `Δ=${budget.absolute.toFixed(1)} млрд $, ${budget.relativePct?.toFixed(2)}% (ожидалось 81.0 / 8.84%)`
+      ? `Δ=${budget.absolute.toFixed(1)} млрд $, ${budget.relativePct?.toFixed(2)}% (ожидалось 88.9 / 9.71%)`
       : "дельта бюджета не найдена",
   );
 } else {

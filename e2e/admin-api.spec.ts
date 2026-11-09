@@ -13,8 +13,8 @@ import { ADMIN_TOKEN_HEADER, openReadonlyDatabase } from '../src/db/runtime';
 // `RBP_PIPELINE_E2E=1` because it hits the live GFP/World Bank network.
 // ─────────────────────────────────────────────────────────────────────────────
 
-/** Canonical fixture size: top20 + extended + additional seed rows. */
-const EXPECTED_SEED_COUNT = 59;
+/** Canonical fixture size: top20 + extended + additional + world seed rows. */
+const EXPECTED_SEED_COUNT = 195;
 
 function countCountries(): number {
   const db = openReadonlyDatabase();

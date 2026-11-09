@@ -46,7 +46,7 @@ jobs:
       - name: Run tests (contract + e2e)
         env:
           # A configured token is required for the authenticated admin happy
-          # path; init-db only re-seeds the canonical 59-country fixture, so this
+          # path; init-db only re-seeds the canonical 195-country fixture, so this
           # never changes the committed data and validates the POST gate in CI.
           # run-pipeline stays opted-out (no RBP_PIPELINE_E2E) to keep e2e
           # deterministic and free of live-network flakiness.

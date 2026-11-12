@@ -1,6 +1,6 @@
 # RBP-Стратег — контекст проекта (для агента pi)
 
-Обновлено: 2026-11-12. Ветка аналитического комплекса и PR #6 актуализированы после визуального аудита.
+Обновлено: 2026-11-12. Оба PR зелёные, слияние проверено на объединённом дереве.
 
 ## Что это
 
@@ -29,7 +29,8 @@ npm run start     # прод-режим; для разработки npm run dev
 
 - `npm run lint`, `npx tsc --noEmit`, `npm run build` — зелёные, без предупреждений.
 - Playwright локально в условиях GitHub (`CI=true`, `RBP_ADMIN_TOKEN`, `RBP_PIPELINE_TEST_HOOK=1`): `80 passed, 1 skipped`.
-- CI PR #6 зелёный: run `43287963489`, те же `80 passed, 1 skipped`. Пропущен только opt-in тест живого pipeline (`RBP_PIPELINE_E2E=1`).
+- CI PR #6 зелёный: run `43297631087` (head `46a93e5`), `80 passed, 1 skipped`. Пропущен только opt-in тест живого pipeline (`RBP_PIPELINE_E2E=1`).
+- CI PR #7 зелёный: run `43296414683` (head `9e8f661`), `53 passed, 1 skipped`.
 - Визуально перепроверены главная, карточка США и `/v3`: BP 97.6 идёт тёплым цветом критического тира, дубль `NATO · NATO` устранён, `/v3` подсвечивает только текущий раздел.
 
 ### Почему CI падал на 262 странах (run 43248960187)
@@ -44,6 +45,39 @@ GitHub Actions выставляет `CI=true`, а код проверял `CI ==
 `server-refresh.ts`, `api/run-pipeline` и `playwright.config.ts`. Плюс
 `webServer.env.RBP_AUTO_REFRESH=false` — e2e больше не зависят от детекта CI
 и от живой сети. Регресс закрыт `e2e/ci-env.spec.ts`.
+
+### Один путь сева вместо двух
+
+`src/scripts/init-db.ts` содержал вторую реализацию сева: 59 стран, без
+пакетов знаний и без метаданных сева. CLI-«пересев» оставлял базу расходящейся
+с эталоном, а полное восстановление требовало рестарта сервера. Теперь скрипт —
+тонкая обёртка над `initializeDatabase()` (тот же код, что в `instrumentation.ts`
+и `POST /api/init-db`). Проверено: CLI даёт 195 стран, 2854 модели техники и
+публикует версию датасета. Файл одинаков в обеих ветках — конфликта при слиянии нет.
+
+### Слияние PR #7 + PR #6 (проверено до прода)
+
+Единственный конфликт — `src/db/bootstrap.ts`: ops добавляет `writeSeedMeta()`,
+аналитика — `publishSeedDataset()`. Функции независимы, решение — сохранить обе;
+порядок вызовов уже слит автоматически: сначала публикация версии, затем эталон
+(иначе `_seed_meta` не учёл бы строки `dataset_versions`).
+
+На объединённом дереве (worktree `worktrees/rbp-integration`, ветка `integration-check`):
+`lint`, `tsc --noEmit`, `build` — зелёные; Playwright при `CI=true` — `80 passed, 1 skipped`.
+Живые пробы: `/api/live`, `/api/health`, `/api/countries`, `/api/analytics`,
+`/api/data-quality`, `/api/export?format=csv&iso=USA`, `POST /api/what-if` — все 200.
+Саботаж: `DROP TABLE equipment_models` → `/api/health` 503 с расхождением
+`expected 2854, actual -1`, `/api/live` остаётся 200; рестарт (bootstrap) возвращает
+`ok:true`, 28 таблиц, 6891 строка, 195 стран. Без заданного `RBP_ADMIN_TOKEN`
+`POST /api/init-db` отвечает 401 — гейт закрыт по умолчанию.
+
+### Открытый вопрос: what-if молча принимает неизвестные параметры
+
+`POST /api/what-if` делает `{ ...DEFAULT_SCENARIO_PARAMS, ...body.params }`.
+Опечатка в имени (`budgetMultiplier` вместо `budgetChange`) не даёт ошибки:
+сценарий возвращается равным базовому BP. Рабочий контракт — `budgetChange`
+(дробь: `0.5` = +50%); проверено `97.5733 → 97.7135`, дельта по экономике.
+Стоит решить: отклонять неизвестные ключи с 400 или оставить как есть.
 
 ## Известные проблемы (аудит мейнтейнера, июнь 2026, docs в `maintainer-report-2026-06.md`)
 

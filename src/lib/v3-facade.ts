@@ -469,29 +469,42 @@ export function getSystemsList(q?: string, cls?: string): unknown[] {
 // ─── Доска I&W (intel) ────────────────────────────────────────────────────────
 
 /**
- * Каталог Indicators & Warnings, сгруппированный по категориям:
- * по каждой категории — её профиль и индикаторы (id, код, название RU,
- * вес, категория, фаза).
+ * Каталог Indicators & Warnings.
+ *
+ * Отдаётся и плоский список `indicators`, и группировка `categories`:
+ * доска предупреждения строит список по категориям, а скоринг работает
+ * с плоским набором. Раньше здесь были только категории, страница искала
+ * плоский список и показывала «0 из 0» — каталог был пуст, а оценка всегда
+ * нулевой. Описание индикатора тоже отдаётся: без него карточка признака
+ * оставалась без пояснения, что именно наблюдать.
  */
 export function getIWBoard(): unknown {
+  const indicators = IW_CATALOG.map((indicator) => ({
+    id: indicator.id,
+    code: indicator.code,
+    nameRu: indicator.nameRu,
+    descriptionRu: indicator.descriptionRu,
+    observableRu: indicator.observableRu,
+    thresholdRu: indicator.thresholdRu,
+    falsePositiveRu: indicator.falsePositiveRu,
+    weight: indicator.weight,
+    category: indicator.category as IWCategory,
+    phase: indicator.phase,
+    leadTimeMinDays: indicator.leadTimeMinDays,
+    leadTimeMaxDays: indicator.leadTimeMaxDays,
+  }));
   const categories = IW_CATEGORY_PROFILES.map((profile) => ({
     id: profile.id,
     code: profile.code,
     nameRu: profile.nameRu,
     descriptionRu: profile.descriptionRu,
-    indicators: IW_CATALOG.filter(
+    indicators: indicators.filter(
       (indicator) => indicator.category === profile.id,
-    ).map((indicator) => ({
-      id: indicator.id,
-      code: indicator.code,
-      nameRu: indicator.nameRu,
-      weight: indicator.weight,
-      category: indicator.category as IWCategory,
-      phase: indicator.phase,
-    })),
+    ),
   }));
   return {
-    totalIndicators: IW_CATALOG.length,
+    totalIndicators: indicators.length,
+    indicators,
     categories,
   };
 }

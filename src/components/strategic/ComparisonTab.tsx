@@ -121,7 +121,7 @@ export function ComparisonTab({ countries, onRemoveCountry, onAddCountry }: Comp
             </div>
             <button
               onClick={() => onRemoveCountry(c.isoCode)}
-              className="text-slate-500 hover:text-red-400 text-xs ml-1"
+              className="inline-flex h-8 w-8 items-center justify-center rounded text-slate-400 hover:bg-red-500/10 hover:text-red-400 text-xs ml-1"
             >
               ✕
             </button>
@@ -177,7 +177,7 @@ export function ComparisonTab({ countries, onRemoveCountry, onAddCountry }: Comp
                     const isMin = val === minVal && countries.length > 1;
                     return (
                       <td key={idx} className="text-right py-1">
-                        <span className={isMax ? "text-cyan-400 font-bold" : isMin ? "text-red-400" : "text-slate-300"}>
+                        <span className={isMax ? "text-tactical-accent font-bold" : isMin ? "text-red-400" : "text-slate-300"}>
                           {val.toFixed(1)}
                         </span>
                         {idx > 0 && delta !== 0 && (
@@ -276,7 +276,7 @@ export function ComparisonTab({ countries, onRemoveCountry, onAddCountry }: Comp
           <div className="space-y-1">
             {advantages.map((text, idx) => (
               <div key={idx} className="text-[10px] text-slate-300 flex items-start gap-2">
-                <span className="text-cyan-400">▸</span>
+                <span className="text-tactical-accent">▸</span>
                 <span>{text}</span>
               </div>
             ))}

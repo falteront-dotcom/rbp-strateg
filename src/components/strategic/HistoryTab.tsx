@@ -93,7 +93,7 @@ function ConflictCard({ c }: { c: HistoricalConflict }) {
           <div className="space-y-1">
             {c.belligerents.map((b, i) => (
               <div key={i} className="flex items-start gap-1.5 text-[10px]">
-                <span className={`mt-1 h-1.5 w-1.5 shrink-0 rounded-full ${i === 0 ? "bg-cyan-400" : "bg-orange-400"}`} />
+                <span className={`mt-1 h-1.5 w-1.5 shrink-0 rounded-full ${i === 0 ? "bg-tactical-primary" : "bg-orange-400"}`} />
                 <span className="text-slate-400">{b}</span>
               </div>
             ))}
@@ -238,7 +238,7 @@ export function HistoryTab({ isoCode }: { isoCode: string }) {
         <button
           type="button"
           onClick={() => setScopeAll(false)}
-          className={`rounded px-2 py-1 text-[10px] font-semibold transition-colors ${
+          className={`inline-flex min-h-8 items-center rounded px-2 py-1 text-[10px] font-semibold transition-colors ${
             !scopeAll ? "bg-tactical-primary/20 text-tactical-primary" : "bg-slate-800/60 text-slate-400 hover:text-slate-300"
           }`}
         >
@@ -247,7 +247,7 @@ export function HistoryTab({ isoCode }: { isoCode: string }) {
         <button
           type="button"
           onClick={() => setScopeAll(true)}
-          className={`rounded px-2 py-1 text-[10px] font-semibold transition-colors ${
+          className={`inline-flex min-h-8 items-center rounded px-2 py-1 text-[10px] font-semibold transition-colors ${
             scopeAll ? "bg-tactical-primary/20 text-tactical-primary" : "bg-slate-800/60 text-slate-400 hover:text-slate-300"
           }`}
         >
@@ -257,7 +257,7 @@ export function HistoryTab({ isoCode }: { isoCode: string }) {
         <button
           type="button"
           onClick={() => setTypeFilter("all")}
-          className={`rounded px-1.5 py-1 text-[10px] ${
+          className={`inline-flex min-h-8 items-center rounded px-1.5 py-1 text-[10px] ${
             typeFilter === "all" ? "bg-slate-700 text-slate-200" : "bg-slate-800/60 text-slate-500 hover:text-slate-300"
           }`}
         >
@@ -268,7 +268,7 @@ export function HistoryTab({ isoCode }: { isoCode: string }) {
             key={t}
             type="button"
             onClick={() => setTypeFilter(prev => (prev === t ? "all" : t))}
-            className={`rounded px-1.5 py-1 text-[10px] transition-colors ${
+            className={`inline-flex min-h-8 items-center rounded px-1.5 py-1 text-[10px] transition-colors ${
               typeFilter === t ? "text-slate-900" : "bg-slate-800/60 text-slate-400 hover:text-slate-300"
             }`}
             style={typeFilter === t ? { background: TYPE_COLORS[t] } : undefined}

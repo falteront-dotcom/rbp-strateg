@@ -940,7 +940,7 @@ export function MilitaryHardwareTab({ country }: MilitaryHardwareTabProps) {
                 href={NUCLEAR_SOURCE.url}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="mt-2 rounded border border-[#c76a5a33] bg-[#c76a5a11] px-2 py-1 font-mono text-[10px] uppercase text-[#c76a5a] transition-colors hover:border-[#c76a5a66] hover:text-[#c76a5a]"
+                className="mt-2 inline-flex min-h-8 items-center rounded border border-[#c76a5a66] bg-[#c76a5a11] px-2 py-1 font-mono text-[10px] uppercase text-[#c76a5a] transition-colors hover:border-[#c76a5a] hover:bg-[#c76a5a22]"
               >
                 {NUCLEAR_SOURCE.label}
               </a>

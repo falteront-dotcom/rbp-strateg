@@ -123,7 +123,7 @@ export function AnalyticsTab({ countries, selectedISO }: AnalyticsTabProps) {
               <button
                 key={key}
                 onClick={() => setSortKey(key)}
-                className={`px-2 py-0.5 text-[10px] rounded border ${
+                className={`inline-flex min-h-8 items-center px-2 py-0.5 text-[10px] rounded border ${
                   sortKey === key
                     ? "border-tactical-primary/50 text-tactical-primary bg-tactical-primary/10"
                     : "border-white/10 text-slate-400 hover:text-slate-200"
@@ -211,7 +211,7 @@ export function AnalyticsTab({ countries, selectedISO }: AnalyticsTabProps) {
             </AreaChart>
           </ResponsiveContainer>
           <div className="flex items-center gap-3 mt-2 text-[10px]">
-            <span className="flex items-center gap-1"><span className="w-4 h-0.5 bg-cyan-400 inline-block" /> Исторические</span>
+            <span className="flex items-center gap-1"><span className="w-4 h-0.5 bg-tactical-primary inline-block" /> Исторические</span>
             <span className="flex items-center gap-1"><span className="w-4 h-0.5 bg-purple-400 inline-block" style={{ borderStyle: "dashed" }} /> Прогноз</span>
           </div>
         </motion.div>

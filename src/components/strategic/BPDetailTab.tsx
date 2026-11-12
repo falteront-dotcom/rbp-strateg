@@ -77,7 +77,7 @@ const TIER_MAP: Record<string, { label: string; color: string; bg: string }> = {
   CRITICAL: { label: "КРИТИЧЕСКИЙ", color: "text-red-400", bg: "bg-red-500/20 border-red-500/40" },
   HIGH: { label: "ВЫСОКИЙ", color: "text-yellow-400", bg: "bg-yellow-500/20 border-yellow-500/40" },
   MODERATE: { label: "СРЕДНИЙ", color: "text-teal-400", bg: "bg-teal-500/20 border-teal-500/40" },
-  LOW: { label: "НИЗКИЙ", color: "text-cyan-400", bg: "bg-cyan-500/20 border-cyan-500/40" },
+  LOW: { label: "НИЗКИЙ", color: "text-tactical-accent", bg: "bg-tactical-primary/20 border-tactical-primary/40" },
   MINIMAL: { label: "МИНИМАЛЬНЫЙ", color: "text-slate-400", bg: "bg-slate-500/20 border-slate-500/40" },
 };
 

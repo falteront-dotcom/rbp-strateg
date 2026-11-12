@@ -11,11 +11,20 @@ test.describe('native strategic map modes', () => {
     await page.goto('/');
     await page.waitForSelector('canvas');
 
-    for (const label of ['BGT', 'FLEET', 'AIR', 'TNK', 'NUKE', 'BP']) {
-      await page.getByRole('button', { name: new RegExp(label) }).first().click();
+    // LayerSelector 3.0 — русские aria-label и короткие ярлыки
+    const modes: Array<[string, RegExp]> = [
+      ['БЮДЖ', /Оборонный бюджет|БЮДЖ/],
+      ['ФЛОТ', /Военно-морской флот|ФЛОТ/],
+      ['АВИА', /Военная авиация|АВИА/],
+      ['ТАНК', /Бронетехника|ТАНК/],
+      ['ЯДЕР', /Ядерный арсенал|ЯДЕР/],
+      ['БП', /Боевой потенциал|БП/],
+    ];
+    for (const [short, label] of modes) {
+      await page.getByRole('button', { name: label }).first().click();
       await page.waitForTimeout(350);
       await expect(page.locator('canvas')).toHaveCount(1);
-      await expect(page.getByText(label, { exact: false }).first()).toBeVisible();
+      await expect(page.getByText(short, { exact: false }).first()).toBeVisible();
     }
 
     expect(errors).toEqual([]);

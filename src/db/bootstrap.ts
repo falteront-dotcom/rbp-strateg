@@ -8,6 +8,10 @@ import { calculateAllCountriesBP } from "@/lib/bp";
 import type { CountryRawData } from "@/lib/bp/types";
 import type { NewCountry } from "./schema";
 import { openDatabase } from "./runtime";
+import { ensureDatasetSchema } from "./dataset-schema";
+import { recordPublishedDataset } from "./dataset-repository";
+import { validateCountryDataset } from "@/lib/dataset/validation";
+import type { RawCountryRow } from "./country-mapper";
 import { seedKnowledge, seedKnowledgeExtra, type KnowledgeSeedResult } from "./seed/knowledge";
 
 /**
@@ -127,6 +131,28 @@ export interface BootstrapResult {
   top10: { rank: number | null; iso: string; name: string; totalBP: number }[];
 }
 
+/**
+ * Каждый успешный сид публикует версию датасета: /api/dataset/health и
+ * /api/dataset/versions говорят правду на свежем старте без admin-POST.
+ * Провалившаяся валидация не публикуется (fail loud в логе).
+ */
+function publishSeedDataset(sqlite: import("better-sqlite3").Database) {
+  try {
+    ensureDatasetSchema(sqlite);
+    const rows = sqlite.prepare("SELECT * FROM countries").all() as RawCountryRow[];
+    const validation = validateCountryDataset(rows);
+    if (!validation.ok) {
+      console.error("[bootstrap] валидация сида не прошла, версия не публикуется:", validation.errors);
+      return;
+    }
+    const latest = sqlite.prepare("SELECT MAX(updated_at) AS v FROM countries").get() as { v: string | null };
+    const version = `seed-${latest.v ?? 'unknown'}`;
+    recordPublishedDataset(sqlite, version, validation, { source: "local-seed", countryCount: rows.length });
+  } catch (err) {
+    console.error("[bootstrap] публикация версии датасета не удалась:", err);
+  }
+}
+
 export function initializeDatabase(): BootstrapResult {
   const allData: NewCountry[] = [
     ...top20Countries,
@@ -167,6 +193,7 @@ export function initializeDatabase(): BootstrapResult {
     // Пакеты знаний (техника, досье, сражения…) — идемпотентны.
     const knowledge = seedKnowledge();
     const knowledgeExtra = seedKnowledgeExtra();
+    publishSeedDataset(sqlite);
 
     return {
       countriesSeeded: allData.length,

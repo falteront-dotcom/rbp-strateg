@@ -16,7 +16,6 @@
 
 import type { AdmiraltyGrade } from "../intel/admiralty";
 import type {
-  BriefAlternative,
   BriefInput,
   BriefKind,
   BriefSource,

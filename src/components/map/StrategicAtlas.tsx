@@ -12,7 +12,7 @@ import { STRATEGIC_FACILITIES } from "@/lib/facilities/strategic-facilities.gene
 import { CONFLICT_ZONES } from "@/lib/facilities/conflict-zones.generated";
 import { CONFLICT_TYPE_LABELS_RU, FACILITY_TYPE_LABELS_RU, type ConflictZone, type FacilityType, type StrategicFacility } from "@/lib/facilities/types";
 import type { CountryBPData } from "./ChoroplethLayer";
-import type { CountryMapData } from "./StrategicMap";
+import type { CountryMapData } from "./map-types";
 import { LayerSelector, type AnalyticsLayerKey } from "./LayerSelector";
 import styles from "./StrategicAtlas.module.css";
 

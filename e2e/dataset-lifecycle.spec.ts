@@ -80,7 +80,7 @@ test.describe('dataset lifecycle API', () => {
 
     expect(['OPERATIONAL', 'DEGRADED', 'STALE']).toContain(health.status);
     expect(health.datasetVersion).toBeTruthy();
-    expect(health.countryCount).toBe(59);
+    expect(health.countryCount).toBe(195);
     expect(typeof health.warningCount).toBe('number');
   });
 

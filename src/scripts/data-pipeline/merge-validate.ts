@@ -133,7 +133,7 @@ const BRICS_MEMBERS = new Set(["CHN", "RUS", "IND", "BRA", "ZAF", "ETH", "ARE"])
  * the taxonomy distinguishes Ukraine from the alliance itself.
  */
 export const ALLIES = new Set([
-  "JPN", "KOR", "ISR", "AUS", "TWN", "SGP", "PHI", "NZL", "UKR",
+  "JPN", "KOR", "ISR", "AUS", "TWN", "SGP", "PHL", "NZL", "UKR",
 ]);
 
 export type CountrySide = "NATO" | "RUS" | "CHINA" | "UKR" | "NEUTRAL";

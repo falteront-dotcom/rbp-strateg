@@ -14,7 +14,9 @@ const NATO_ALIGNED_ISOS = ['JPN', 'KOR', 'ISR', 'AUS', 'TWN', 'SGP', 'PHL', 'NZL
 const SEEDED_NATO_ALIGNED_ISOS = NATO_ALIGNED_ISOS.filter((isoCode) =>
   SEEDED_COUNTRIES.some((country) => country.isoCode === isoCode),
 );
-const PRIMARY_BRICS_ISOS = ['CHN', 'IND', 'BRA', 'ZAF', 'SAU', 'IRN', 'ARE', 'EGY', 'ETH'];
+// Праймари BRICS по текущему сиду: SAU/IRN/EGY сид помечает coalition:null
+// (правка 0d0da93), RUS уходит в CSTO по приоритету праймари-коалиции.
+const PRIMARY_BRICS_ISOS = ['CHN', 'IND', 'BRA', 'ZAF', 'ETH', 'ARE'];
 
 test.describe('offline pipeline taxonomy', () => {
   test('classifies every seeded NATO-aligned country as NATO-side', () => {

@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useState } from "react";
+import { useCallback } from "react";
 import { Popup } from "react-map-gl/maplibre";
 import type { LngLatLike } from "maplibre-gl";
 import { motion, AnimatePresence } from "framer-motion";

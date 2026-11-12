@@ -1,19 +1,12 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import { V3Nav } from "./V3Nav";
 
 export const metadata: Metadata = {
   title: "РБП-Стратег 3.0",
   description:
     "Модель боевого потенциала 3.0: рейтинг с интервалами неопределённости, предупреждения I&W, устойчивость в войне, системы вооружений",
 };
-
-const NAV: { href: string; label: string }[] = [
-  { href: "/", label: "← Карта" },
-  { href: "/v3", label: "РБП 3.0" },
-  { href: "/v3/systems", label: "Системы" },
-  { href: "/v3/intel", label: "Предупреждения I&W" },
-  { href: "/v3/warfare", label: "Устойчивость и бой" },
-];
 
 export default function V3Layout({
   children,
@@ -28,17 +21,7 @@ export default function V3Layout({
           >
             РБП-Стратег <span className="text-sky-400">3.0</span>
           </Link>
-          <nav className="flex flex-wrap items-center gap-x-4 gap-y-1 text-sm">
-            {NAV.map((item) => (
-              <Link
-                key={item.href}
-                href={item.href}
-                className="text-slate-300 transition-colors hover:text-sky-300"
-              >
-                {item.label}
-              </Link>
-            ))}
-          </nav>
+          <V3Nav />
         </div>
       </header>
       <main className="mx-auto max-w-7xl px-4 py-6">{children}</main>

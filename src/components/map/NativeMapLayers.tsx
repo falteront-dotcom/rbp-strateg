@@ -1,5 +1,6 @@
 "use client";
 
+import { bpColorInterpolator } from "@/lib/geo/oklch";
 import { useMemo } from "react";
 import { Layer, Source } from "react-map-gl/maplibre";
 import type { FeatureCollection, Point } from "geojson";
@@ -22,18 +23,14 @@ interface NativeMapLayersProps {
   objectTypes: ReadonlySet<string>;
 }
 
-function rgba(color: [number, number, number, number]): string {
-  return `rgba(${color[0]}, ${color[1]}, ${color[2]}, ${color[3] / 255})`;
-}
-
+// Шкала БП одна на весь продукт: та же OKLCH-кривая, что в легенде карты
+// (MapLegend → bpColorCss). Локальная rgb-математика расходилась с легендой
+// на глаз (заливка ≠ подписанная шкала) — аудит UI 2026-11-12.
+// MapLibre не парсит oklch() в paint-выражениях, поэтому интерполятор из
+// oklch.ts конвертируется в rgb() строку.
 function bpColor(t: number): string {
-  const clamped = Math.max(0, Math.min(1, t));
-  if (clamped <= 0.5) {
-    const s = clamped * 2;
-    return rgba([0, Math.round(205 + s * 35), Math.round(175 - s * 105), 220]);
-  }
-  const s = (clamped - 0.5) * 2;
-  return rgba([Math.round(s * 255), Math.round(240 - s * 90), Math.round(70 - s * 45), 225]);
+  const [r, g, b, a] = bpColorInterpolator(t);
+  return `rgba(${r}, ${g}, ${b}, ${a / 255})`;
 }
 
 function objectFeatures(objects: readonly StrategicObject[]): FeatureCollection<Point> {

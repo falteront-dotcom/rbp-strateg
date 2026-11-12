@@ -99,7 +99,7 @@ function StrategicDetailPanel({
             </span>
             <div className="min-w-0">
               <h2 className="truncate text-base font-semibold text-[#eef3f4]">{country.nameRu || country.name}</h2>
-              <p className="mt-0.5 font-mono text-[10px] text-[#7c9687]">{country.side} · {country.region}</p>
+              <p className="mt-0.5 font-mono text-[10px] text-[#7c9687]">{[country.side, country.region].filter((v, i, a) => v && a.indexOf(v) === i).join(" · ")}</p>
             </div>
           </div>
           <div className="flex items-center gap-1">
@@ -526,12 +526,12 @@ export default function Home() {
             Стратегический Режим
           </span>
           <span className="hidden xl:inline text-[10px] font-mono text-slate-400">АНАЛИТИЧЕСКАЯ МОДЕЛЬ</span>
-          <div className="live-badge">
-            <span className="live-dot" />
-            <span className="text-[8px] font-black tracking-[0.2em] text-red-400/90 uppercase">LIVE</span>
-          </div>
-          <span data-testid="dataset-health-indicator" className={`text-[8px] font-mono uppercase ${datasetHealth?.status === "OPERATIONAL" ? "text-emerald-400" : "text-amber-400"}`}>
-            DATA {datasetHealth?.status ?? "CHECKING"}
+          {/* Честный статус данных: сид статичен и пересевается при старте,
+              «LIVE»-пульс лгал бы о потоке, которого нет. Версия датасета —
+              из /api/dataset/health (публикуется каждым успешным севом). */}
+          <span data-testid="dataset-health-indicator" className={`text-[8px] font-mono uppercase tracking-[0.15em] ${datasetHealth?.status === "OPERATIONAL" ? "text-emerald-400" : "text-amber-400"}`}>
+            ДАННЫЕ {datasetHealth?.status ?? "ПРОВЕРКА"}
+            {datasetHealth?.datasetVersion ? ` · ${datasetHealth.datasetVersion.replace("seed-", "сид от ")}` : ""}
           </span>
         </div>
 

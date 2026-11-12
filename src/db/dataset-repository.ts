@@ -94,7 +94,11 @@ export function getPublishedDataset(db: Database.Database): DatasetVersion | nul
 
 export function listDatasetVersions(db: Database.Database, limit = 20): DatasetVersion[] {
   const safeLimit = Math.max(1, Math.min(100, Math.trunc(limit)));
-  const rows = db.prepare('SELECT * FROM dataset_versions ORDER BY created_at DESC LIMIT ?').all(safeLimit) as DatasetVersionRow[];
+  // Порядок: активная published-версия первой (созданные в одну секунду
+  // сид-версии при ORDER BY created_at DESC перемешиваются), затем по времени.
+  const rows = db.prepare(
+    "SELECT * FROM dataset_versions ORDER BY CASE WHEN status = 'published' THEN 0 ELSE 1 END, created_at DESC LIMIT ?",
+  ).all(safeLimit) as DatasetVersionRow[];
   return rows.map(mapVersion);
 }
 

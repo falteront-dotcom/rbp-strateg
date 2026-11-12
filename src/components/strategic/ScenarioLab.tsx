@@ -111,7 +111,7 @@ export function ScenarioLab({ allCountries, selectedIso, onWorkspaceChange, onSe
   const selectedName = useMemo(() => allCountries.find((country) => country.isoCode === selectedIso)?.nameRu ?? selectedIso ?? "—", [allCountries, selectedIso]);
 
   return (
-    <div className="fixed inset-y-0 right-0 z-50 w-[min(760px,100vw)] overflow-y-auto border-l border-cyan-400/10 bg-[#0e1520]/98 p-5 text-slate-100 shadow-2xl">
+    <div className="fixed inset-y-0 right-0 z-50 w-[min(760px,100vw)] overflow-y-auto border-l border-cyan-400/10 bg-[#0e1520] p-5 text-slate-100 shadow-2xl">
       <div className="mb-4 flex items-start justify-between">
         <div>
           <div className="text-[9px] font-mono uppercase tracking-[0.2em] text-cyan-400/70">RBP analytical complex</div>

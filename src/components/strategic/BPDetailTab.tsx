@@ -14,7 +14,7 @@ import {
   Tooltip,
 } from "recharts";
 import { motion } from "framer-motion";
-import { getBPTierKey } from "@/lib/bp/tiers";
+import { getBPTierHex, getBPTierKey } from "@/lib/bp/tiers";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 interface CountryData {
@@ -96,13 +96,17 @@ function getTier(score: number): keyof typeof TIER_MAP {
   return getBPTierKey(score);
 }
 
-function scoreToColor(): string {
-  return "#6bb995";
+// Цвет БП — из канонической шкалы тиров (та же, что на карте и в легенде):
+// 97.6 КРИТИЧЕСКИЙ обязан быть тем же цветом, что и конец шкалы легенды,
+// а не зелёным «всё хорошо».
+function scoreToColor(score: number): string {
+  return getBPTierHex(score);
 }
 
 function scoreBarGradient(score: number): string {
   const pct = Math.min(100, Math.max(0, score));
-  return `linear-gradient(90deg, #6bb995 0%, #6bb995 ${pct}%, #16241a ${pct}%)`;
+  const color = getBPTierHex(score);
+  return `linear-gradient(90deg, ${color} 0%, ${color} ${pct}%, #16241a ${pct}%)`;
 }
 
 function getWeaponSubFactors(c: CountryData): { label: string; value: number }[] {
@@ -257,7 +261,7 @@ export function BPDetailTab({ country }: BPDetailTabProps) {
 
               {/* Score */}
               <div className="flex items-end gap-1">
-                <span className="text-lg font-bold" style={{ color: scoreToColor() }}>
+                <span className="text-lg font-bold" style={{ color: scoreToColor(score) }}>
                   {score.toFixed(1)}
                 </span>
                 <span className="text-[10px] text-slate-500 pb-0.5">/100</span>
@@ -270,7 +274,7 @@ export function BPDetailTab({ country }: BPDetailTabProps) {
                   animate={{ width: `${Math.min(100, score)}%` }}
                   transition={{ duration: 0.8, delay: idx * 0.05 }}
                   className="h-full rounded-full"
-                  style={{ backgroundColor: scoreToColor() }}
+                  style={{ backgroundColor: scoreToColor(score) }}
                 />
               </div>
 
@@ -407,7 +411,7 @@ export function BPDetailTab({ country }: BPDetailTabProps) {
                   </span>
                   <span
                     className="text-[11px] font-bold"
-                    style={{ color: scoreToColor() }}
+                    style={{ color: scoreToColor(comp.score) }}
                   >
                     {comp.score.toFixed(1)}
                   </span>
@@ -428,7 +432,7 @@ export function BPDetailTab({ country }: BPDetailTabProps) {
                   </span>
                   <span
                     className="text-[11px] font-bold"
-                    style={{ color: scoreToColor() }}
+                    style={{ color: scoreToColor(comp.score) }}
                   >
                     {comp.score.toFixed(1)}
                   </span>
@@ -444,11 +448,11 @@ export function BPDetailTab({ country }: BPDetailTabProps) {
             <span className="text-tactical-primary">{country.nameRu}</span> занимает{" "}
             <span className="text-white font-bold">#{country.bpRank}</span> место в мировом рейтинге БП.
             Наибольший вклад вносит компонент{" "}
-            <span style={{ color: scoreToColor() }}>
+            <span className="text-tactical-primary font-semibold">
               {analysis.strengths[0].letter} ({analysis.strengths[0].name})
             </span>
             , а наименее развит —{" "}
-            <span style={{ color: scoreToColor() }}>
+            <span className="text-tactical-primary font-semibold">
               {analysis.weaknesses[0].letter} ({analysis.weaknesses[0].name})
             </span>
             .

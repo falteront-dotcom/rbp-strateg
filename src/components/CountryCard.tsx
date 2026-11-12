@@ -11,7 +11,7 @@ import {
   ResponsiveContainer,
 } from "recharts";
 import { X, GitCompareArrows, Shield, Users, Fuel, Radio, Landmark, BookOpen, AlertCircle, Mountain } from "lucide-react";
-import { getBPTierColor, getBPTierLabel } from "@/lib/bp/tiers";
+import { getBPTierColor, getBPTierHex, getBPTierLabel } from "@/lib/bp/tiers";
 
 /** 8 BP components with Russian labels and icons */
 const BP_COMPONENTS_META: ReadonlyArray<{
@@ -170,7 +170,7 @@ export function CountryCard({ country, onClose, onCompare, embedded = false }: C
                   >
                     {country.side}
                   </span>
-                  {country.coalition && (
+                  {country.coalition && country.coalition !== country.side && (
                     <span className="text-[10px] text-tactical-secondary/70 tracking-wider">
                       {country.coalition}
                     </span>
@@ -219,8 +219,11 @@ export function CountryCard({ country, onClose, onCompare, embedded = false }: C
           {/* BP progress bar */}
           <div className="mt-3 h-1.5 w-full bg-white/5 rounded-full overflow-hidden border border-white/5">
             <div
-              className="h-full rounded-full bg-[#6bb995] transition-all duration-700"
-              style={{ width: `${Math.min(country.bpTotal, 100)}%` }}
+              className="h-full rounded-full transition-all duration-700"
+              style={{
+                width: `${Math.min(country.bpTotal, 100)}%`,
+                backgroundColor: getBPTierHex(country.bpTotal),
+              }}
             />
           </div>
         </div>

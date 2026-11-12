@@ -109,7 +109,7 @@ export function CountryPopup({
             {/* Alliance / Region */}
             {country.alliance && (
               <div className="text-[10px] text-tactical-accent/60 tracking-wider uppercase mt-1">
-                {country.alliance} · {country.region}
+                {[country.alliance, country.region].filter((v, i, a) => v && a.indexOf(v) === i).join(" · ")}
               </div>
             )}
 

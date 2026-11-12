@@ -5,7 +5,8 @@
 // ─────────────────────────────────────────────────────────────────────────────
 
 import { NextRequest, NextResponse } from "next/server";
-import { calculateWhatIf, type ScenarioParams, DEFAULT_SCENARIO_PARAMS } from "@/lib/what-if-engine";
+import { calculateWhatIf, DEFAULT_SCENARIO_PARAMS, type ScenarioParams } from "@/lib/what-if-engine";
+import { validateScenarioParams } from "@/lib/what-if-validation";
 import { openReadonlyDatabase } from "@/db/runtime";
 import { mapCountryRow, mapCountryRows, type RawCountryRow } from "@/db/country-mapper";
 import { getDatasetHealth, getPublishedDataset } from "@/db/dataset-repository";
@@ -15,13 +16,22 @@ import type { ChangedInput } from "@/lib/analysis/types";
 
 export async function POST(request: NextRequest) {
   try {
-    const body = await request.json();
-    const iso: string = body.iso;
-    const params: ScenarioParams = { ...DEFAULT_SCENARIO_PARAMS, ...body.params };
+    const body: unknown = await request.json().catch(() => null);
+    if (body === null || typeof body !== "object" || Array.isArray(body)) {
+      return NextResponse.json({ error: "Request body must be a JSON object" }, { status: 400 });
+    }
+    const { iso, params: rawParams } = body as { iso?: unknown; params?: unknown };
 
-    if (!iso) {
+    if (typeof iso !== "string" || iso.length === 0) {
       return NextResponse.json({ error: "Missing iso parameter" }, { status: 400 });
     }
+
+    // Неизвестный ключ или неверный тип — 400, а не тихий «сценарий = база».
+    const validation = validateScenarioParams(rawParams);
+    if (!validation.ok) {
+      return NextResponse.json({ error: validation.error }, { status: 400 });
+    }
+    const params = validation.params;
 
     const db = openReadonlyDatabase();
     try {
@@ -45,7 +55,7 @@ export async function POST(request: NextRequest) {
       const dataset = getPublishedDataset(db);
       const health = getDatasetHealth(db);
       const confidence = buildConfidenceSummary(computeMissingFields(row), health.status);
-      const suppliedParams = body.params && typeof body.params === "object" ? body.params as Partial<ScenarioParams> : {};
+      const suppliedParams = validation.supplied;
       const changedInputs: ChangedInput[] = Object.entries(suppliedParams)
         .filter(([field, value]) => DEFAULT_SCENARIO_PARAMS[field as keyof ScenarioParams] !== value)
         .map(([field, value]) => ({

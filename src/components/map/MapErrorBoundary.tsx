@@ -15,7 +15,7 @@ interface State {
 }
 
 /**
- * ErrorBoundary that catches mapbox-gl "Invalid LngLat (NaN, ...)" errors
+ * ErrorBoundary that catches MapLibre "Invalid LngLat (NaN, ...)" errors
  * during initialization. These errors are recoverable — the map works fine
  * after init — but if uncaught they crash the entire React tree.
  *

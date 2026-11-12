@@ -28,7 +28,7 @@
 src/
 ├── app/                          # Next.js 16 App Router
 │   ├── page.tsx                  # Главная страница (724 строк)
-│   ├── layout.tsx                # Layout + Mapbox GL CSS
+│   ├── layout.tsx                # Layout + MapLibre CSS
 │   ├── globals.css               # Tailwind v4 theme (hex only)
 │   └── api/                      # 20 API маршрутов
 │       ├── countries/            # GET — список стран с БП
@@ -164,11 +164,12 @@ src/
 ## 🚀 Запуск
 
 ```bash
-# 1. Установить зависимости
 npm install
+npm run db:seed       # локальная детерминированная fixture: 59 стран
+npm run dev           # http://localhost:3000
+```
 
-# 2. Создать .env.local с Mapbox токеном
-echo "NEXT_PUBLIC_MAPBOX_TOKEN=pk.eyJ1Ijoi..." > .env.local
+Карта работает и без `NEXT_PUBLIC_MAPBOX_TOKEN`: включается no-token fallback. Токен, если он нужен, задаётся только локально в `.env.local` и не коммитится.
 
 # 3. Задать админ-токен в .env.local (туда же, куда Mapbox-токен выше).
 #    RBP_ADMIN_TOKEN читается ТОЛЬКО на сервере (см. src/db/runtime.ts) и
@@ -184,6 +185,53 @@ curl -X POST http://localhost:3000/api/init-db \
   -H "x-admin-token: $RBP_ADMIN_TOKEN"
 
 # 6. Открыть http://localhost:3000
+
+Production quality gates:
+
+```bash
+npm run lint
+npm run typecheck
+npm test              # Playwright API + UI contracts
+npm run build
+CI=1 npm test         # fresh production server, serial CI workers
+```
+
+## 🗃️ Local-first dataset lifecycle
+
+SQLite `sqlite.db` — runtime source of truth. При старте/seed создаются dataset metadata и workspace tables. Текущая published version доступна через:
+
+- `GET /api/dataset/health` — статус, версия, число стран и warning/error counters;
+- `GET /api/dataset/versions` — история версий без raw payloads;
+- `POST /api/init-db` и `POST /api/run-pipeline` — destructive admin operations, только с `x-admin-token` и серверным `RBP_ADMIN_TOKEN`.
+
+Pipeline сначала рассчитывается в памяти, затем публикуется одной транзакцией. Ошибка валидации сохраняет предыдущие страны и active dataset pointer. Для внешнего refresh используется bounded single-flight coordinator; offline режим продолжает работать на последней valid published version. Интервал можно настроить через `RBP_DATA_REFRESH_INTERVAL_MS` (по умолчанию 6 часов).
+
+## 🧪 Workspaces и Scenario Lab
+
+Workspace и ветви сценариев хранятся локально, а BP всегда пересчитывается на активном dataset:
+
+- `GET/POST /api/workspaces`;
+- `GET/PATCH/DELETE /api/workspaces/:workspaceId`;
+- `GET/POST /api/workspaces/:workspaceId/scenarios`;
+- `GET/PATCH/DELETE /api/workspaces/:workspaceId/scenarios/:scenarioId`;
+- `GET /api/workspaces/:workspaceId/analysis?scenarioId=...`;
+- `POST /api/workspaces/:workspaceId/analysis/snapshot`;
+- `GET /api/workspaces/:workspaceId/export?format=json|csv`.
+
+Analysis response содержит dataset/formula versions, calculation time, confidence, warnings, все 8 component deltas и top drivers. `ScenarioLab` доступна из country detail и поддерживает две сохраняемые ветви.
+
+## 🔐 Configuration
+
+```env
+# optional: карта сохраняет no-token fallback
+NEXT_PUBLIC_MAPBOX_TOKEN=
+# optional legacy Mapbox mode; default map uses MapLibre without a token
+# required for destructive admin POST routes
+RBP_ADMIN_TOKEN=
+# optional, minimum 60000 ms
+RBP_DATA_REFRESH_INTERVAL_MS=21600000
+# optional: set false to disable startup/periodic background refresh
+RBP_AUTO_REFRESH=true
 ```
 
 ## 🔑 Ключевые технологии
@@ -193,7 +241,8 @@ curl -X POST http://localhost:3000/api/init-db \
 | Next.js | 16.1.6 | App Router, SSR/API routes |
 | React | 19.2.3 | UI framework |
 | TypeScript | 5.x | Strict mode |
-| Mapbox GL | 3.24 | Векторная карта |
+| MapLibre GL | 5.x | Tokenless CARTO Dark Matter / OpenFreeMap basemaps |
+| Mapbox GL | 3.24 | Optional legacy dependency; not required for the default map |
 | Deck.gl | 9.3 | GPU-ускоренные слои |
 | Drizzle ORM | 0.45 | SQLite ORM |
 | better-sqlite3 | 12.6 | Embedded DB |
@@ -207,7 +256,7 @@ curl -X POST http://localhost:3000/api/init-db \
 1. **Turbopack CSS**: `oklch()` и `@keyframes` внутри `@theme {}` вызывают panic на Windows → используем hex colors
 2. **MapGL/DeckGL**: Рендерятся как siblings (не parent-child) с z-index; MapGL `pointerEvents: "none"`
 3. **Map SSR**: StrategicMap загружается через `dynamic(() => import(...), { ssr: false })`
-4. **NaN LngLat**: Известный баг Mapbox GL при dynamic/SSR-false; все практические guards на месте
+4. **MapLibre native layers**: Default BP mode uses a CARTO Dark Matter style and native MapLibre fill/line/cluster layers without a Mapbox token; country boundaries and documented public objects remain local/interactive. CARTO and OpenStreetMap attribution is rendered by the map.
 5. **Legacy compatibility modules**: `combat-engine.ts`, `rbp-engine.ts`, and `terrain.ts` are retained for tactical compatibility. They are not part of the strategic BP API; lint warnings in legacy/UI adapters remain visible but do not block typecheck/build.
 
 ## 📋 Смотрите также

@@ -101,6 +101,20 @@ test.describe('admin database operations — authentication contract', () => {
     },
   );
 
+  const failureInjectionEnabled = authorized && process.env.RBP_PIPELINE_TEST_HOOK === '1';
+  (failureInjectionEnabled ? test : test.skip)(
+    'failed authorized pipeline preserves the published dataset',
+    async ({ request }) => {
+      const before = countCountries();
+      const response = await request.post('/api/run-pipeline', {
+        headers: { [ADMIN_TOKEN_HEADER]: adminToken as string },
+        data: { testFailure: 'before-publish' },
+      });
+      expect(response.status()).toBe(500);
+      expect(countCountries()).toBe(before);
+    },
+  );
+
   // run-pipeline replaces the whole country set from the live network, so it
   // only runs on explicit opt-in to avoid flaky CI/network-dependent e2e.
   const pipelineOptIn = authorized && process.env.RBP_PIPELINE_E2E === '1';

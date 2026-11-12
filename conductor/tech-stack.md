@@ -14,7 +14,7 @@
 
 | Зависимость | Версия | Назначение |
 |---|---|---|
-| `react-map-gl` | ^7.x | React-обёртка для Mapbox GL |
+| `react-map-gl` | ^8.x | React-обёртка для MapLibre/Mapbox |
 | `mapbox-gl` | ^3.x | Векторная карта мира (WebGL) |
 | `deck.gl` | ^9.x | Аналитические слои (choropleth, arcs, heatmap) |
 | `@deck.gl/react` | ^9.x | React интеграция deck.gl |
@@ -49,6 +49,8 @@
 
 The application uses `src/db/runtime.ts` and `better-sqlite3` as the runtime database layer. Drizzle files remain only as type/schema history until regenerated safely; do not run `drizzle-kit push` against the current orphaned migration. Database-mutating endpoints are authenticated POST routes and require `RBP_ADMIN_TOKEN`/`x-admin-token`.
 
+The first analytical-complex milestone is local-first: the last published dataset remains usable without network, metadata is versioned, pipeline publication is atomic, and workspace/scenario state is local SQLite. `NEXT_PUBLIC_MAPBOX_TOKEN` is optional; no-token fallback must remain available.
+
 
 
 | Источник | Тип | Обновляемость |
@@ -62,12 +64,11 @@ The application uses `src/db/runtime.ts` and `better-sqlite3` as the runtime dat
 
 ## Ключ mapbox
 
-Требуется `NEXT_PUBLIC_MAPBOX_TOKEN` — access token для Mapbox GL JS.
-Карта будет работать с бесплатным тарифом (50,000 загрузок/мес).
+`NEXT_PUBLIC_MAPBOX_TOKEN` опционален. При отсутствии токена карта использует безопасный no-token fallback; credentials не должны попадать в git.
 
 ## Архитектурные решения
 
-1. **Mapbox GL + Deck.gl** вместо чистого Leaflet — нужен 3D terrain + высокая производительность аналитических слоёв
+1. **MapLibre GL + native layers + Deck.gl** вместо чистого Leaflet — tokenless CARTO/OpenFreeMap basemap, нативные fill/line/cluster слои и высокая производительность вторичных аналитических слоёв; Mapbox остаётся опциональным.
 2. **react-map-gl** — официальный React-биндинг, поддержка MapRef для императивного управления
 3. **Deck.gl overlay** поверх Mapbox — для choropleth, heatmap, arc-слоёв (GPU-ускоренные)
 4. **@turf/turf** — для расчётов: буферы дальности ПВО, пересечения зон, расстояния

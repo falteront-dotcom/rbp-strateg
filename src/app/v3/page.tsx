@@ -51,7 +51,13 @@ function IntervalBar({
     <div
       className="relative h-2.5 w-36 shrink-0 rounded bg-slate-800"
       title={`P10 ${fmt(p10)} — P90 ${fmt(p90)}, медиана ${fmt(total)}`}
+      role="img"
+      aria-label={`Интервал P10 ${fmt(p10)} — P90 ${fmt(p90)} на шкале 0–100, медиана ${fmt(total)}`}
     >
+      {/* общая ось 0–100: без неё ширина интервала не читается */}
+      <div className="absolute top-0 h-full w-px bg-slate-700" style={{ left: "25%" }} />
+      <div className="absolute top-0 h-full w-px bg-slate-700" style={{ left: "50%" }} />
+      <div className="absolute top-0 h-full w-px bg-slate-700" style={{ left: "75%" }} />
       <div
         className="absolute top-0 h-full rounded bg-sky-500/50"
         style={{ left: `${left}%`, width: `${width}%` }}
@@ -60,6 +66,8 @@ function IntervalBar({
         className="absolute top-1/2 h-3.5 w-1 -translate-y-1/2 rounded bg-sky-300"
         style={{ left: `calc(${dot}% - 2px)` }}
       />
+      <span className="absolute -bottom-3.5 left-0 text-[8px] leading-none text-slate-600">0</span>
+      <span className="absolute -bottom-3.5 right-0 text-[8px] leading-none text-slate-600">100</span>
     </div>
   );
 }

@@ -1,6 +1,11 @@
 import { NextResponse } from "next/server";
 import { initializeDatabase } from "@/db/bootstrap";
-import { isAuthorizedAdminRequest } from "@/db/runtime";
+import { isAuthorizedAdminRequest, openDatabase } from "@/db/runtime";
+import { ensureDatasetSchema } from "@/db/dataset-schema";
+import { ensureWorkspaceSchema } from "@/db/workspace-schema";
+import { recordPublishedDataset } from "@/db/dataset-repository";
+import { validateCountryDataset } from "@/lib/dataset/validation";
+import type { RawCountryRow } from "@/db/country-mapper";
 
 /**
  * POST /api/init-db — Пересев базы (страны + БП + пакеты знаний).
@@ -21,6 +26,24 @@ export async function POST(request: Request): Promise<NextResponse> {
 
   try {
     const result = initializeDatabase();
+
+    // Здоровье датасета: версия и валидация записываются тем же вызовом,
+    // эталон версий ведётся в таблицах dataset_* (см. dataset-schema.ts).
+    const sqlite = openDatabase();
+    try {
+      ensureDatasetSchema(sqlite);
+      ensureWorkspaceSchema(sqlite);
+      const rows = sqlite.prepare("SELECT * FROM countries").all() as RawCountryRow[];
+      const validation = validateCountryDataset(rows);
+      if (!validation.ok) {
+        throw new Error(`Seed validation failed: ${validation.errors.map((issue) => issue.message).join('; ')}`);
+      }
+      const latest = sqlite.prepare("SELECT MAX(updated_at) AS v FROM countries").get() as { v: string | null };
+      const version = `seed-${latest.v ?? 'unknown'}`;
+      recordPublishedDataset(sqlite, version, validation, { source: 'local-seed', countryCount: rows.length });
+    } finally {
+      sqlite.close();
+    }
     return NextResponse.json({
       ok: true,
       countriesSeeded: result.countriesSeeded,

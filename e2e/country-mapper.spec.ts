@@ -169,6 +169,7 @@ test.describe('shared country mapper', () => {
     expect(deriveRegion('NATO', null)).toBe('Western');
     expect(deriveRegion('RUS', null)).toBe('Eurasian');
     expect(deriveRegion('CHINA', null)).toBe('Asia-Pacific');
+    expect(deriveRegion('UKR', null)).toBe('Ukraine');
     expect(deriveRegion('NEUTRAL', null)).toBe('Non-Aligned');
   });
 

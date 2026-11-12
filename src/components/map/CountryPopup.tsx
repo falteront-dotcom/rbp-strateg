@@ -1,8 +1,8 @@
 "use client";
 
 import { useCallback } from "react";
-import { Popup } from "react-map-gl/mapbox";
-import type { LngLatLike } from "mapbox-gl";
+import { Popup } from "react-map-gl/maplibre";
+import type { LngLatLike } from "maplibre-gl";
 import { motion, AnimatePresence } from "framer-motion";
 import type { CountryBPData } from "./ChoroplethLayer";
 import { getBPTierKey, BPTIER_BY_KEY } from "@/lib/bp/tiers";
@@ -109,7 +109,7 @@ export function CountryPopup({
             {/* Alliance / Region */}
             {country.alliance && (
               <div className="text-[10px] text-tactical-accent/60 tracking-wider uppercase mt-1">
-                {country.alliance} · {country.region}
+                {[country.alliance, country.region].filter((v, i, a) => v && a.indexOf(v) === i).join(" · ")}
               </div>
             )}
 

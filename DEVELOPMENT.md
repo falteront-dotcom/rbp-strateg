@@ -113,7 +113,7 @@ DeckGL внутри MapGL вызывает container dimension 0×0 → NaN LngL
 DeckGL должен обрабатывать все взаимодействия (клики по странам, ховеры). MapGL только рендерит базовую карту.
 
 **Почему `dynamic(() => import(...), { ssr: false })`?**
-Mapbox GL использует `window` при инициализации. SSR вызывает hydration mismatch и NaN координат.
+MapLibre используется как tokenless basemap по умолчанию; BP-режим использует CARTO Dark Matter style и нативные MapLibre fill/line/cluster layers в одном canvas. Вторичные метрики пока остаются в DeckGL overlay. CARTO/OpenStreetMap attribution отображается картой.
 
 ### 2.2 БП Модель — Поток данных
 
@@ -195,7 +195,7 @@ export async function GET(request: NextRequest) {
 | 2.1 | Мигрировать БД на Turso (libSQL) для Vercel | P0 | Hard |
 | 2.2 | Настроить Vercel deployment | P0 | Easy |
 | 2.3 | Environment variables на Vercel | P0 | Easy |
-| 2.4 | Mapbox token rotation strategy | P1 | Easy |
+| 2.4 | Optional Mapbox token rotation strategy | P1 | Easy |
 | 2.5 | CDN для GeoJSON (countries.geojson 1.8MB) | P2 | Easy |
 
 ### Фаза 3: Фичи (2-4 недели)
@@ -266,11 +266,40 @@ export async function GET(request: NextRequest) {
 
 ## 5. ТЕСТИРОВАНИЕ
 
-### 5.1 Текущее покрытие
+### 5.1 Текущие quality gates
 
-- **E2E**: 7 тестов (Playwright) — загрузка, список стран, карта, детальная панель
-- **Unit**: 0 — нет вообще
-- **Integration**: 0 — API маршруты не протестированы
+Проверки выполняются через Playwright contract/E2E suite и production build:
+
+```bash
+npm run lint
+npm run typecheck
+npm run db:seed
+npm test
+CI=1 npm test
+npm run build
+```
+
+CI использует Node 22, Chromium и детерминированную 59-country seed fixture. Два live pipeline happy-path теста остаются opt-in и пропускаются без `RBP_PIPELINE_E2E`, чтобы обычная проверка не зависела от внешней сети. Локальные UI тесты при необходимости запускаются последовательно: `npx playwright test e2e/app.spec.ts --workers=1`.
+
+### 5.2 Dataset и local-first runtime
+
+`better-sqlite3` через `src/db/runtime.ts` остаётся runtime source of truth. `dataset_versions`, `source_snapshots`, `app_state` и workspace tables создаются идемпотентно из seed/admin paths. Последняя published version не блокирует UI при offline/error источника; pipeline publish transaction rollback-safe.
+
+Health API read-only:
+
+- `GET /api/dataset/health`
+- `GET /api/dataset/versions`
+
+Destructive endpoints требуют `RBP_ADMIN_TOKEN` на сервере и `x-admin-token` в запросе. Не помещайте токены в `NEXT_PUBLIC_*` и не коммитьте Mapbox credentials.
+
+### 5.3 Workspace/Scenario API
+
+Workspace хранит inputs и metadata, не производные BP. Анализ пересчитывается на active dataset через `/api/workspaces/:id/analysis`; export поддерживает JSON/CSV, а snapshots immutable и содержат dataset/formula versions.
+
+### 5.4 Legacy coverage
+
+- **E2E**: API contracts, dataset lifecycle, publisher rollback, explainability, workspace persistence, Scenario Lab и app shell.
+- **Unit**: pure domain contracts выполняются в Playwright runner без дополнительного test dependency.
 
 ### 5.2 Рекомендуемое покрытие
 
@@ -450,6 +479,8 @@ export function CountryPanel({ country, onSelect }: Props) {
 ---
 
 ## 9. ДАННЫЕ — ИСТОЧНИКИ И КАЧЕСТВО
+
+Map object layer uses public OSM/Overpass tags for cities, ports, airports and explicitly mapped military features. Every object carries source, source URL when available, source date and confidence. OSM coverage is not a complete inventory of all military or strategic installations; absent objects must be treated as unknown, not as evidence of absence.
 
 | Источник | Покрытие | Точность | Свежесть | Поля |
 |---|---|---|---|---|

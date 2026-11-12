@@ -11,9 +11,14 @@ services:
     region: frankfurt
     buildCommand: npm ci && npm run build
     startCommand: npm run start -- --port $PORT
-    healthCheckPath: /api/countries
+    # Лайвнесс без БД: частичный отказ сида не должен гасить живую половину
+    # сайта (стойкий 503 на healthCheckPath → стоп трафика 15 с → рестарт 60 с
+    # по докам Render). Глубокая проверка данных — /api/health для мониторинга.
+    healthCheckPath: /api/live
     envVars:
       - key: NODE_VERSION
         value: "22"
       - key: RBP_ADMIN_TOKEN
         generateValue: true
+      - key: RBP_SELF_PING
+        value: "on"

@@ -18,9 +18,14 @@ import { seedKnowledge, seedKnowledgeExtra, type KnowledgeSeedResult } from "./s
  * Инициализация производной БД из сидов и сгенерированных данных.
  *
  * База — производная (восстанавливаемая) сущность: всё содержимое выводится
- * из TS-сидов стран и сгенерированных модулей знаний. Поэтому на хостингах
- * с эфемерным диском (Render free) БД просто пересоздаётся при каждом старте
- * сервера — никаких ручных действий и теряемых данных быть не может.
+ * из TS-сидов стран и сгенерированных модулей знаний. На хостингах
+ * с эфемерным диском (Render free) БД пересоздаётся при каждом старте
+ * процесса.
+ *
+ * ВАЖНО: рантаймные записи POST /api/run-pipeline (замена таблицы countries)
+ * на эфемерном диске теряются при каждом рестарте и деплое — данные
+ * откатываются к статическим сидам. Это осознанный компромисс free-тарифа;
+ * постоянные результаты нужны — храни их вне БД.
  *
  * Идемпотентен: повторный запуск полностью пересобирает таблицы.
  */
@@ -153,6 +158,37 @@ function publishSeedDataset(sqlite: import("better-sqlite3").Database) {
   }
 }
 
+const SEED_META_SQL = `
+  CREATE TABLE IF NOT EXISTS _seed_meta (
+    key TEXT PRIMARY KEY,
+    value INTEGER NOT NULL
+  );
+`;
+
+/**
+ * Эталон для /api/health: в конце успешного сева сам сид записывает
+ * фактические COUNT(*) по всем таблицам в _seed_meta. Числа не хранятся
+ * в коде, поэтому дрейф «ожидали одно — засеяли другое» невозможен
+ * по построению. /api/health пересчитывает строки и сверяет с эталоном;
+ * countries проверяется мягко (run-pipeline легитимно меняет состав).
+ */
+function writeSeedMeta(sqlite: import("better-sqlite3").Database) {
+  sqlite.exec(SEED_META_SQL);
+  const tables = sqlite
+    .prepare(
+      "SELECT name FROM sqlite_master WHERE type = 'table' AND name NOT LIKE 'sqlite_%' AND name != '_seed_meta'",
+    )
+    .all() as { name: string }[];
+  const insert = sqlite.prepare("INSERT INTO _seed_meta (key, value) VALUES (?, ?)");
+  sqlite.transaction(() => {
+    sqlite.prepare("DELETE FROM _seed_meta").run();
+    for (const t of tables) {
+      const row = sqlite.prepare(`SELECT COUNT(*) AS n FROM "${t.name}"`).get() as { n: number };
+      insert.run(t.name, row.n);
+    }
+  })();
+}
+
 export function initializeDatabase(): BootstrapResult {
   const allData: NewCountry[] = [
     ...top20Countries,
@@ -194,6 +230,8 @@ export function initializeDatabase(): BootstrapResult {
     const knowledge = seedKnowledge();
     const knowledgeExtra = seedKnowledgeExtra();
     publishSeedDataset(sqlite);
+
+    writeSeedMeta(sqlite);
 
     return {
       countriesSeeded: allData.length,

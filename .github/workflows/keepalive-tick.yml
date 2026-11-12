@@ -1,0 +1,42 @@
+# keepalive-tick — ежемесячный тик-коммит против автоотключения расписаний.
+#
+# GitHub отключает scheduled workflows в репозитории после 60 дней без
+# активности. Пустой коммит в БОКОВУЮ ветку chore/keepalive-tick (не в
+# master!) не триггерит деплой Render: автодеплой слушает только
+# продакшн-ветку, а в сообщении дополнительно стоит [skip render] —
+# документированная фраза Render для пропуска деплоя ([skip ci] ею
+# НЕ является).
+#
+# fallback: если push в боковую ветку не считается «активностью»,
+# расписание всё же отключится — это видно по разрыву >15 минут в истории
+# прогонов keepalive; тогда нужен один ручной коммит или внешний пингер.
+
+name: keepalive-tick
+
+on:
+  schedule:
+    - cron: "23 3 1 * *" # 1-го числа, 03:23 UTC — вне пиков
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  tick:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: пустой коммит [skip ci] [skip render] в боковую ветку
+        run: |
+          if git ls-remote --exit-code --heads origin chore/keepalive-tick > /dev/null; then
+            git checkout chore/keepalive-tick
+          else
+            git checkout -b chore/keepalive-tick
+          fi
+          git config user.name "keepalive-tick"
+          git config user.email "actions@users.noreply.github.com"
+          git commit --allow-empty -m "chore: keepalive tick [skip ci] [skip render]"
+          git push origin chore/keepalive-tick

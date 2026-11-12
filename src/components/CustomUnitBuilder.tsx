@@ -6,6 +6,7 @@ import { Plus, X, BrainCircuit, Shield, Zap, Radio, Target, Download, Upload } f
 import { ARSENAL, Category, Country, IconType, Side, calculateCustomPotential, ParametricStats, ModuleType } from '@/lib/unit-database';
 import { cn } from '@/lib/utils';
 import { TRANSLATIONS } from '@/lib/i18n';
+import { useDialog } from '@/lib/use-dialog';
 
 interface CustomUnitBuilderProps {
     isOpen: boolean;
@@ -16,6 +17,7 @@ interface CustomUnitBuilderProps {
 export default function CustomUnitBuilder({ isOpen, onClose, onUnitAdded }: CustomUnitBuilderProps) {
     void TRANSLATIONS;
     const fileInputRef = useRef<HTMLInputElement>(null);
+    const dialogRef = useDialog(isOpen, onClose);
 
     const [name, setName] = useState('');
     const [country, setCountry] = useState<Country>('US');
@@ -125,23 +127,29 @@ export default function CustomUnitBuilder({ isOpen, onClose, onUnitAdded }: Cust
                             animate={{ opacity: 1, scale: 1, y: 0 }}
                             exit={{ opacity: 0, scale: 0.95, y: 20 }}
                             onClick={(e) => e.stopPropagation()}
-                            className="w-full max-w-lg bg-slate-900/90 border border-white/10 rounded-md shadow-2xl overflow-hidden glass-panel flex flex-col"
+                            ref={dialogRef}
+                            role="dialog"
+                            aria-modal="true"
+                            aria-labelledby="custom-unit-builder-title"
+                            data-testid="custom-unit-builder"
+                            tabIndex={-1}
+                            className="w-full max-w-lg max-h-[92vh] bg-tactical-panel border border-tactical-line rounded-md shadow-2xl overflow-hidden glass-panel flex flex-col"
                         >
                             {/* Header */}
                             <div className="p-4 border-b border-white/5 flex items-center justify-between bg-white/5">
-                                <div className="flex items-center gap-2 text-tactical-primary">
-                                    <BrainCircuit size={18} />
-                                    <h2 className="font-black tracking-widest uppercase text-sm">Конструктор Юнитов (Real TTx)</h2>
+                                <div className="flex min-w-0 items-center gap-2 text-tactical-primary">
+                                    <BrainCircuit size={18} className="shrink-0" />
+                                    <h2 id="custom-unit-builder-title" className="font-black tracking-widest uppercase text-sm">Конструктор Юнитов (Real TTx)</h2>
                                 </div>
-                                <div className="flex items-center gap-2">
-                                    <button onClick={() => fileInputRef.current?.click()} className="p-1.5 text-slate-400 hover:text-white hover:bg-white/10 rounded transition-colors" title="Импорт JSON">
+                                <div className="flex shrink-0 items-center gap-1">
+                                    <button type="button" onClick={() => fileInputRef.current?.click()} aria-label="Импорт арсенала из JSON" className="grid h-8 w-8 shrink-0 place-items-center text-slate-400 hover:text-white hover:bg-white/10 rounded transition-colors" title="Импорт JSON">
                                         <Upload size={14} />
                                     </button>
-                                    <button onClick={handleExport} className="p-1.5 text-slate-400 hover:text-white hover:bg-white/10 rounded transition-colors mr-2" title="Экспорт JSON">
+                                    <button type="button" onClick={handleExport} aria-label="Экспорт арсенала в JSON" className="grid h-8 w-8 shrink-0 place-items-center text-slate-400 hover:text-white hover:bg-white/10 rounded transition-colors" title="Экспорт JSON">
                                         <Download size={14} />
                                     </button>
-                                    <input type="file" ref={fileInputRef} onChange={handleImport} accept=".json" className="hidden" />
-                                    <button onClick={onClose} className="text-slate-500 hover:text-red-400 transition-colors">
+                                    <input type="file" ref={fileInputRef} onChange={handleImport} accept=".json" className="hidden" aria-label="Файл арсенала JSON" />
+                                    <button type="button" onClick={onClose} aria-label="Закрыть конструктор юнитов" className="grid h-8 w-8 shrink-0 place-items-center text-slate-400 hover:text-tactical-rus hover:bg-white/5 rounded transition-colors">
                                         <X size={18} />
                                     </button>
                                 </div>

@@ -12,6 +12,7 @@
 
 import { useMemo, useState } from "react";
 import { X, ChevronDown } from "lucide-react";
+import { useDialog } from "@/lib/use-dialog";
 import type { CountryCompareData } from "@/lib/comparison";
 import { getBPTierLabel } from "@/lib/bp/tiers";
 import { Flag } from "@/components/Flag";
@@ -158,6 +159,8 @@ export function ActiveCompareWindow({
     () => allCountries.filter(c => c.isoCode !== a.isoCode).sort((x, y) => y.bpTotal - x.bpTotal),
     [allCountries, a.isoCode],
   );
+  // Окно открыто, пока компонент смонтирован: закрытие размонтирует его.
+  const dialogRef = useDialog(true, onClose);
   const [bIso, setBIso] = useState<string>(opponents[0]?.isoCode ?? "CHN");
   const b = opponents.find(c => c.isoCode === bIso) ?? opponents[0];
   const [open, setOpen] = useState<Record<string, boolean>>({ troops: true, equipment: true });
@@ -246,11 +249,20 @@ export function ActiveCompareWindow({
   if (!b) return null;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-3" role="dialog" aria-label="Активное сравнение">
-      <div className="flex max-h-[92vh] w-full max-w-3xl flex-col overflow-hidden rounded-lg border border-[#223d38] bg-[#0d2019]">
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-3" onClick={onClose}>
+      <div
+        ref={dialogRef}
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="active-compare-title"
+        data-testid="active-compare-window"
+        tabIndex={-1}
+        onClick={e => e.stopPropagation()}
+        className="flex max-h-[92vh] w-full max-w-3xl flex-col overflow-hidden rounded-lg border border-tactical-line bg-tactical-panel"
+      >
         {/* Шапка окна */}
         <div className="flex items-center gap-2 border-b border-[#294138] px-4 py-3">
-          <h2 className="text-xs font-bold tracking-[.25em] text-[#4fb287] uppercase">Δ Активное сравнение</h2>
+          <h2 id="active-compare-title" className="text-xs font-bold tracking-[.25em] text-tactical-primary uppercase">Δ Активное сравнение</h2>
           <div className="ml-auto flex items-center gap-2">
             <span className="text-[10px] text-slate-500">Сторона B:</span>
             <select
@@ -263,7 +275,7 @@ export function ActiveCompareWindow({
                 <option key={c.isoCode} value={c.isoCode}>{c.nameRu}</option>
               ))}
             </select>
-            <button onClick={onClose} aria-label="Закрыть сравнение" className="grid h-7 w-7 place-items-center text-slate-400 hover:bg-white/5 hover:text-white">
+            <button type="button" onClick={onClose} aria-label="Закрыть активное сравнение" className="grid h-8 w-8 shrink-0 place-items-center rounded text-slate-400 hover:bg-white/5 hover:text-white">
               <X size={14} />
             </button>
           </div>

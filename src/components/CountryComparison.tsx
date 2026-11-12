@@ -1,6 +1,7 @@
 "use client";
 
 import { Flag } from "@/components/Flag";
+import { useDialog } from "@/lib/use-dialog";
 import React, { useState, useCallback, useEffect, useMemo } from "react";
 import {
   COMPARISON_BP_COMPONENTS,
@@ -108,14 +109,8 @@ export default function CountryComparison({
     setComparisonResult(null);
   }, [isOpen, initialIsoCodes]);
 
-  useEffect(() => {
-    if (!isOpen) return;
-    const handleKeyDown = (event: KeyboardEvent) => {
-      if (event.key === "Escape") onClose();
-    };
-    document.addEventListener("keydown", handleKeyDown);
-    return () => document.removeEventListener("keydown", handleKeyDown);
-  }, [isOpen, onClose]);
+  // Escape, ловушка фокуса и блокировка прокрутки — общие для всех окон продукта.
+  const dialogRef = useDialog(isOpen, onClose);
 
   // ─── Fetch comparison from API ──────────────────────────────────────────
   const fetchComparison = useCallback(async () => {
@@ -232,11 +227,13 @@ export default function CountryComparison({
             animate={{ opacity: 1, scale: 1, y: 0 }}
             exit={{ opacity: 0, scale: 0.95, y: 20 }}
             onClick={(e) => e.stopPropagation()}
+            ref={dialogRef}
+            tabIndex={-1}
             role="dialog"
             aria-modal="true"
             aria-labelledby="country-comparison-title"
             data-testid="country-comparison"
-            className="w-full max-w-5xl max-h-[92vh] bg-slate-950 border border-tactical-accent/20 rounded-md shadow-2xl overflow-hidden glass-panel flex flex-col"
+            className="w-full max-w-5xl max-h-[92vh] bg-tactical-panel border border-tactical-line rounded-md shadow-2xl overflow-hidden glass-panel flex flex-col"
           >
             {/* ─── Header ──────────────────────────────────────────────── */}
             <div className="p-4 border-b border-white/5 flex items-center justify-between bg-white/5 shrink-0">
@@ -247,8 +244,9 @@ export default function CountryComparison({
                 </h2>
               </div>
               <button
+                type="button"
                 onClick={onClose}
-                className="text-slate-500 hover:text-white transition-colors cursor-pointer"
+                className="grid h-8 w-8 shrink-0 place-items-center rounded text-slate-400 transition-colors hover:bg-white/5 hover:text-white cursor-pointer"
                 aria-label="Закрыть сравнение стран"
               >
                 <X size={20} />

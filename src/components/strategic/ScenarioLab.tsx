@@ -5,6 +5,7 @@ import type { DatasetHealth } from "@/lib/dataset/types";
 import type { Workspace, WorkspaceScenario } from "@/lib/workspace/types";
 import { DEFAULT_SCENARIO_PARAMS, type ScenarioParams } from "@/lib/what-if-engine";
 import type { CountryCompareData } from "@/lib/comparison";
+import { useDialog } from "@/lib/use-dialog";
 import { WorkspacePanel } from "./WorkspacePanel";
 
 interface AnalysisResponse {
@@ -33,6 +34,10 @@ export function ScenarioLab({ allCountries, selectedIso, onWorkspaceChange, onSe
   const [health, setHealth] = useState<DatasetHealth | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [editingScenarioId, setEditingScenarioId] = useState<string | null>(null);
+  // Панель боковая, карта остаётся доступной: Escape и возврат фокуса нужны,
+  // ловушка Tab и блокировка прокрутки — нет.
+  const closeLab = useCallback(() => onWorkspaceChange(null), [onWorkspaceChange]);
+  const panelRef = useDialog(true, closeLab, { modal: false });
 
   const loadWorkspace = useCallback(async (id: string): Promise<void> => {
     const response = await fetch(`/api/workspaces/${id}`);
@@ -111,14 +116,21 @@ export function ScenarioLab({ allCountries, selectedIso, onWorkspaceChange, onSe
   const selectedName = useMemo(() => allCountries.find((country) => country.isoCode === selectedIso)?.nameRu ?? selectedIso ?? "—", [allCountries, selectedIso]);
 
   return (
-    <div className="fixed inset-y-0 right-0 z-50 w-[min(760px,100vw)] overflow-y-auto border-l border-tactical-primary/10 bg-[#0e1520] p-5 text-slate-100 shadow-2xl">
+    <div
+      ref={panelRef}
+      role="dialog"
+      aria-labelledby="scenario-lab-title"
+      data-testid="scenario-lab"
+      tabIndex={-1}
+      className="fixed inset-y-0 right-0 z-50 w-[min(760px,100vw)] overflow-y-auto border-l border-tactical-line bg-tactical-panel p-5 text-slate-100 shadow-2xl custom-scrollbar"
+    >
       <div className="mb-4 flex items-start justify-between">
         <div>
           <div className="text-[9px] font-mono uppercase tracking-[0.2em] text-tactical-accent/70">RBP analytical complex</div>
-          <h2 className="mt-1 text-lg font-mono font-bold text-tactical-accent">Сценарная лаборатория</h2>
+          <h2 id="scenario-lab-title" className="mt-1 text-lg font-mono font-bold text-tactical-accent">Сценарная лаборатория</h2>
           <div className="text-[10px] font-mono text-slate-500">База: {selectedName}</div>
         </div>
-        <button type="button" aria-label="Закрыть сценарную лабораторию" onClick={() => onWorkspaceChange(null)} className="text-slate-500 hover:text-tactical-accent">×</button>
+        <button type="button" aria-label="Закрыть сценарную лабораторию" onClick={closeLab} className="grid h-8 w-8 shrink-0 place-items-center rounded text-lg text-slate-400 transition-colors hover:bg-white/5 hover:text-tactical-accent">×</button>
       </div>
 
       <WorkspacePanel workspace={workspace} health={health} onOpen={(item) => void loadWorkspace(item.id)} onCreate={createWorkspace} onDelete={deleteWorkspace} />

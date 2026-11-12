@@ -7,6 +7,7 @@ import { ARSENAL, UnitInfo, ParametricStats, applyModulesToUnit, ModuleType, sim
 import { getCombatCapabilities } from '@/lib/combat-engine';
 import { Radar, RadarChart, PolarGrid, PolarAngleAxis, PolarRadiusAxis, ResponsiveContainer } from 'recharts';
 import { cn } from '@/lib/utils';
+import { useDialog } from '@/lib/use-dialog';
 import DuelSimulator from './DuelSimulator';
 
 interface ComparisonMatrixProps {
@@ -32,6 +33,9 @@ function getUnitStats(unit: UnitInfo): ParametricStats {
 
 export default function ComparisonMatrix({ isOpen, onClose }: ComparisonMatrixProps) {
     const arsenalEntries = Object.entries(ARSENAL);
+    // Дуэль открывается поверх матрицы: верхним окном остаётся она, поэтому
+    // Escape закрывает симулятор, а не оба окна сразу.
+    const dialogRef = useDialog(isOpen, onClose);
 
     const [unitAId, setUnitAId] = useState<string>(arsenalEntries[0]?.[0] || '');
     const [unitBId, setUnitBId] = useState<string>(arsenalEntries[1]?.[0] || '');
@@ -140,15 +144,21 @@ export default function ComparisonMatrix({ isOpen, onClose }: ComparisonMatrixPr
                             animate={{ opacity: 1, scale: 1, y: 0 }}
                             exit={{ opacity: 0, scale: 0.95, y: 20 }}
                             onClick={(e) => e.stopPropagation()}
-                            className="w-full max-w-4xl bg-slate-950 border border-tactical-accent/20 rounded-md shadow-2xl overflow-hidden glass-panel flex flex-col max-h-[90vh]"
+                            ref={dialogRef}
+                            role="dialog"
+                            aria-modal="true"
+                            aria-labelledby="comparison-matrix-title"
+                            data-testid="comparison-matrix"
+                            tabIndex={-1}
+                            className="w-full max-w-4xl bg-tactical-panel border border-tactical-line rounded-md shadow-2xl overflow-hidden glass-panel flex flex-col max-h-[90vh]"
                         >
                             {/* Header */}
                             <div className="p-4 border-b border-white/5 flex items-center justify-between bg-white/5 shrink-0">
                                 <div className="flex items-center gap-2 text-tactical-accent">
                                     <Activity size={18} />
-                                    <h2 className="font-black tracking-widest uppercase text-sm">Матрица Сравнения Юнитов</h2>
+                                    <h2 id="comparison-matrix-title" className="font-black tracking-widest uppercase text-sm">Матрица Сравнения Юнитов</h2>
                                 </div>
-                                <button onClick={onClose} className="text-slate-500 hover:text-white transition-colors">
+                                <button type="button" onClick={onClose} aria-label="Закрыть матрицу сравнения" className="grid h-8 w-8 place-items-center text-slate-400 hover:text-white hover:bg-white/5 rounded transition-colors">
                                     <X size={20} />
                                 </button>
                             </div>

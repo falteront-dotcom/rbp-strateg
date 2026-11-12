@@ -6,6 +6,7 @@ import { X, Swords, Target, Eye, Clock, Zap, Shield, AlertTriangle, Info, Brain 
 import { UnitInfo } from '@/lib/unit-database';
 import { simulateEngagementAtDistance, CombatCapabilities } from '@/lib/combat-engine';
 import { cn } from '@/lib/utils';
+import { useDialog } from '@/lib/use-dialog';
 
 interface DuelSimulatorProps {
     isOpen: boolean;
@@ -17,6 +18,7 @@ interface DuelSimulatorProps {
 }
 
 export default function DuelSimulator({ isOpen, onClose, unitA, unitB, combatA, combatB }: DuelSimulatorProps) {
+    const dialogRef = useDialog(isOpen, onClose);
     // Determine a representative engagement distance
     // We'll pick the average of their effective ranges or a fixed value for the demo
     const engagementDistance = useMemo(() => {
@@ -95,8 +97,14 @@ export default function DuelSimulator({ isOpen, onClose, unitA, unitB, combatA, 
                         initial={{ opacity: 0, scale: 0.9, y: 20 }}
                         animate={{ opacity: 1, scale: 1, y: 0 }}
                         exit={{ opacity: 0, scale: 0.9, y: 20 }}
-                        className="w-full max-w-3xl bg-slate-950 border border-tactical-accent/30 rounded-md shadow-2xl overflow-hidden glass-panel"
+                        className="w-full max-w-3xl max-h-[92vh] overflow-y-auto bg-tactical-panel border border-tactical-line rounded-md shadow-2xl glass-panel custom-scrollbar"
                         onClick={e => e.stopPropagation()}
+                        ref={dialogRef}
+                        role="dialog"
+                        aria-modal="true"
+                        aria-labelledby="duel-simulator-title"
+                        data-testid="duel-simulator"
+                        tabIndex={-1}
                     >
                         {/* Header */}
                         <div className="p-6 border-b border-white/10 flex items-center justify-between bg-white/5">
@@ -105,11 +113,11 @@ export default function DuelSimulator({ isOpen, onClose, unitA, unitB, combatA, 
                                     <Swords size={24} />
                                 </div>
                                 <div>
-                                    <h2 className="text-xl font-black tracking-tighter text-white uppercase">Симулятор Боестолкновения</h2>
+                                    <h2 id="duel-simulator-title" className="text-xl font-black tracking-tighter text-white uppercase">Симулятор Боестолкновения</h2>
                                     <p className="text-xs font-mono text-slate-500">Тактический анализ 1v1 на дистанции {engagementDistance.toFixed(2)} км</p>
                                 </div>
                             </div>
-                            <button onClick={onClose} className="text-slate-500 hover:text-white transition-colors p-2 hover:bg-white/10 rounded-full">
+                            <button type="button" onClick={onClose} aria-label="Закрыть симулятор боестолкновения" className="grid h-8 w-8 shrink-0 place-items-center text-slate-400 hover:text-white transition-colors hover:bg-white/10 rounded">
                                 <X size={24} />
                             </button>
                         </div>

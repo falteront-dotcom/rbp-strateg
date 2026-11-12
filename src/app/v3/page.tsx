@@ -22,8 +22,8 @@ const LEVEL_STYLES: Record<AlertLevel, { badge: string; dot: string }> = {
     dot: "bg-amber-400",
   },
   watch: {
-    badge: "bg-sky-500/15 text-sky-300 border-sky-500/40",
-    dot: "bg-sky-400",
+    badge: "bg-tactical-primary/15 text-tactical-accent border-tactical-accent/40",
+    dot: "bg-tactical-primary",
   },
 };
 
@@ -49,25 +49,25 @@ function IntervalBar({
   const dot = Math.max(0, Math.min(100, total));
   return (
     <div
-      className="relative h-2.5 w-36 shrink-0 rounded bg-slate-800"
+      className="relative h-2.5 w-36 shrink-0 rounded bg-tactical-raised"
       title={`P10 ${fmt(p10)} — P90 ${fmt(p90)}, медиана ${fmt(total)}`}
       role="img"
       aria-label={`Интервал P10 ${fmt(p10)} — P90 ${fmt(p90)} на шкале 0–100, медиана ${fmt(total)}`}
     >
       {/* общая ось 0–100: без неё ширина интервала не читается */}
-      <div className="absolute top-0 h-full w-px bg-slate-700" style={{ left: "25%" }} />
-      <div className="absolute top-0 h-full w-px bg-slate-700" style={{ left: "50%" }} />
-      <div className="absolute top-0 h-full w-px bg-slate-700" style={{ left: "75%" }} />
+      <div className="absolute top-0 h-full w-px bg-tactical-raised" style={{ left: "25%" }} />
+      <div className="absolute top-0 h-full w-px bg-tactical-raised" style={{ left: "50%" }} />
+      <div className="absolute top-0 h-full w-px bg-tactical-raised" style={{ left: "75%" }} />
       <div
-        className="absolute top-0 h-full rounded bg-sky-500/50"
+        className="absolute top-0 h-full rounded bg-tactical-primary/50"
         style={{ left: `${left}%`, width: `${width}%` }}
       />
       <div
-        className="absolute top-1/2 h-3.5 w-1 -translate-y-1/2 rounded bg-sky-300"
+        className="absolute top-1/2 h-3.5 w-1 -translate-y-1/2 rounded bg-tactical-accent"
         style={{ left: `calc(${dot}% - 2px)` }}
       />
-      <span className="absolute -bottom-3.5 left-0 text-[8px] leading-none text-slate-600">0</span>
-      <span className="absolute -bottom-3.5 right-0 text-[8px] leading-none text-slate-600">100</span>
+      <span className="absolute -bottom-3.5 left-0 text-[10px] leading-none text-slate-600">0</span>
+      <span className="absolute -bottom-3.5 right-0 text-[10px] leading-none text-slate-600">100</span>
     </div>
   );
 }
@@ -75,7 +75,7 @@ function IntervalBar({
 function AlertItem({ alert }: { alert: Alert }) {
   const style = LEVEL_STYLES[alert.level] ?? LEVEL_STYLES.watch;
   return (
-    <li className="border-b border-slate-800 py-3 last:border-b-0">
+    <li className="border-b border-tactical-line py-3 last:border-b-0">
       <div className="flex items-center gap-2">
         <span className={`h-2 w-2 shrink-0 rounded-full ${style.dot}`} />
         <span
@@ -85,7 +85,7 @@ function AlertItem({ alert }: { alert: Alert }) {
         </span>
         <Link
           href={`/v3/country/${alert.iso3}`}
-          className="flex items-center gap-1.5 text-sm font-medium text-slate-100 hover:text-sky-300"
+          className="flex min-h-8 items-center gap-1.5 text-sm font-medium text-slate-100 hover:text-tactical-accent"
         >
           <Flag iso={alert.iso3} />
           {alert.nameRu}
@@ -141,11 +141,11 @@ export default function V3DashboardPage() {
           <Link
             key={card.href}
             href={card.href}
-            className="rounded-lg border border-slate-800 bg-slate-900 p-4 transition-colors hover:border-sky-500/50 hover:bg-slate-800/60"
+            className="rounded-lg border border-tactical-line bg-tactical-panel p-4 transition-colors hover:border-tactical-accent/50 hover:bg-tactical-raised/60"
           >
             <h2 className="font-semibold text-slate-100">{card.title}</h2>
             <p className="mt-1 text-sm text-slate-400">{card.text}</p>
-            <span className="mt-2 inline-block text-sm text-sky-400">
+            <span className="mt-2 inline-block text-sm text-tactical-accent">
               Открыть →
             </span>
           </Link>
@@ -153,14 +153,18 @@ export default function V3DashboardPage() {
       </section>
 
       <div className="grid gap-6 lg:grid-cols-3">
-        <section className="lg:col-span-2">
+        {/* min-w-0 обязателен: у grid-детей min-width:auto, и широкая таблица
+            распирает колонку мимо вьюпорта (на 390px документ уезжал на 149px),
+            а overflow-x-auto ниже так и не включался. */}
+        <section className="min-w-0 lg:col-span-2">
           <h2 className="mb-3 text-xl font-semibold text-slate-100">
             Рейтинг боевого потенциала 3.0
           </h2>
-          <div className="overflow-x-auto rounded-lg border border-slate-800 bg-slate-900">
+          <p className="mb-1 text-xs text-slate-500 sm:hidden">Таблица шире экрана — прокрутите её вбок.</p>
+          <div className="overflow-x-auto rounded-lg border border-tactical-line bg-tactical-panel">
             <table className="w-full text-sm">
               <thead>
-                <tr className="border-b border-slate-800 text-left text-xs uppercase tracking-wide text-slate-500">
+                <tr className="border-b border-tactical-line text-left text-xs uppercase tracking-wide text-slate-500">
                   <th className="px-3 py-2 font-medium">#</th>
                   <th className="px-3 py-2 font-medium">Страна</th>
                   <th className="px-3 py-2 font-medium">БП 3.0</th>
@@ -174,13 +178,13 @@ export default function V3DashboardPage() {
                 {ranking.map((row, i) => (
                   <tr
                     key={row.iso}
-                    className="border-b border-slate-800/60 last:border-b-0 hover:bg-slate-800/40"
+                    className="border-b border-tactical-line/60 last:border-b-0 hover:bg-tactical-raised/40"
                   >
                     <td className="px-3 py-2 text-slate-500">{i + 1}</td>
                     <td className="px-3 py-2">
                       <Link
                         href={`/v3/country/${row.iso}`}
-                        className="flex items-center gap-2 font-medium text-slate-100 hover:text-sky-300"
+                        className="flex min-h-8 items-center gap-2 font-medium text-slate-100 hover:text-tactical-accent"
                       >
                         <Flag iso={row.iso} title={row.name} />
                         <span>{row.name}</span>
@@ -233,11 +237,11 @@ export default function V3DashboardPage() {
           </p>
         </section>
 
-        <aside>
+        <aside className="min-w-0">
           <h2 className="mb-3 text-xl font-semibold text-slate-100">
             Лента мониторинга
           </h2>
-          <div className="rounded-lg border border-slate-800 bg-slate-900 px-4 py-1">
+          <div className="rounded-lg border border-tactical-line bg-tactical-panel px-4 py-1">
             {alerts.length === 0 ? (
               <p className="py-4 text-sm text-slate-400">
                 Сработавших правил мониторинга нет.

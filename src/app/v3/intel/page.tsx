@@ -45,7 +45,7 @@ const LEVEL_RU: Record<WarningLevel, string> = {
 };
 
 const LEVEL_STYLE: Record<WarningLevel, string> = {
-  ROUTINE: "border-slate-600 bg-slate-900 text-slate-200",
+  ROUTINE: "border-slate-600 bg-tactical-panel text-slate-200",
   ELEVATED: "border-yellow-600 bg-yellow-950/40 text-yellow-200",
   HIGH: "border-orange-600 bg-orange-950/40 text-orange-200",
   CRITICAL: "border-red-600 bg-red-950/50 text-red-200",
@@ -181,14 +181,14 @@ export default function IntelPage() {
           type="button"
           onClick={assess}
           disabled={assessing || loading}
-          className="rounded bg-sky-600 px-4 py-2 text-sm font-semibold text-white transition-colors hover:bg-sky-500 disabled:cursor-not-allowed disabled:bg-slate-700 disabled:text-slate-400"
+          className="rounded bg-tactical-primary px-4 py-2 text-sm font-semibold text-tactical-bg transition-colors hover:bg-tactical-primary/85 disabled:cursor-not-allowed disabled:bg-tactical-raised disabled:text-slate-400"
         >
           {assessing ? "Считаем…" : "Рассчитать оценку"}
         </button>
         <button
           type="button"
           onClick={resetStates}
-          className="rounded border border-slate-700 px-4 py-2 text-sm text-slate-300 transition-colors hover:border-slate-500 hover:text-slate-100"
+          className="rounded border border-tactical-line px-4 py-2 text-sm text-slate-300 transition-colors hover:border-slate-500 hover:text-slate-100"
         >
           Сбросить всё
         </button>
@@ -228,7 +228,7 @@ export default function IntelPage() {
                   className="grid grid-cols-[220px_1fr_90px] items-center gap-2 text-xs"
                 >
                   <span>{CATEGORY_RU[cs.category] ?? cs.category}</span>
-                  <span className="h-2 rounded bg-slate-800">
+                  <span className="h-2 rounded bg-tactical-raised">
                     <span
                       className="block h-2 rounded bg-current opacity-70"
                       style={{ width: `${Math.min(100, cs.score)}%` }}
@@ -290,9 +290,9 @@ export default function IntelPage() {
           return (
             <section
               key={cat}
-              className="rounded-lg border border-slate-800 bg-slate-900/60"
+              className="rounded-lg border border-tactical-line bg-tactical-panel/60"
             >
-              <header className="border-b border-slate-800 px-4 py-3">
+              <header className="border-b border-tactical-line px-4 py-3">
                 <h2 className="font-semibold text-slate-100">
                   {profile?.nameRu ?? CATEGORY_RU[cat]}
                   <span className="ml-2 text-xs font-normal text-slate-400">
@@ -313,7 +313,7 @@ export default function IntelPage() {
                     <li
                       key={ind.id}
                       className={`flex flex-wrap items-center gap-3 px-4 py-2.5 ${
-                        value !== "inactive" ? "bg-sky-950/30" : ""
+                        value !== "inactive" ? "bg-tactical-primary/10" : ""
                       }`}
                     >
                       <div className="min-w-56 flex-1">
@@ -332,7 +332,7 @@ export default function IntelPage() {
                         onChange={(e) =>
                           setState(ind.id, e.target.value as IndicatorState)
                         }
-                        className="rounded border border-slate-700 bg-slate-900 px-2 py-1.5 text-sm text-slate-100 outline-none focus:border-sky-500"
+                        className="rounded border border-tactical-line bg-tactical-panel px-2 py-1.5 text-sm text-slate-100 outline-none focus:border-tactical-accent"
                         aria-label={`Состояние индикатора ${ind.nameRu}`}
                       >
                         {STATE_OPTIONS.map((opt) => (

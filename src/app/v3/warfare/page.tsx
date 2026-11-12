@@ -37,9 +37,10 @@ export default function WarfarePage() {
         <h2 className="text-xl font-bold text-slate-50">
           Выносливость топ-30
         </h2>
-        <div className="overflow-x-auto rounded-lg border border-slate-800">
+        <p className="mb-1 text-xs text-slate-500 sm:hidden">Таблица шире экрана — прокрутите её вбок.</p>
+        <div className="overflow-x-auto rounded-lg border border-tactical-line">
           <table className="w-full min-w-[820px] text-left text-sm">
-            <thead className="bg-slate-900 text-slate-300">
+            <thead className="bg-tactical-panel text-slate-300">
               <tr>
                 <th className="px-3 py-2 font-medium">#</th>
                 <th className="px-3 py-2 font-medium">Страна</th>
@@ -53,7 +54,7 @@ export default function WarfarePage() {
               {reports.map((report, index) => (
                 <tr
                   key={report.iso3}
-                  className="border-t border-slate-800 transition-colors hover:bg-slate-900"
+                  className="border-t border-tactical-line transition-colors hover:bg-tactical-panel"
                   title={report.verdictRu}
                 >
                   <td className="px-3 py-2 text-slate-500">{index + 1}</td>
@@ -65,7 +66,7 @@ export default function WarfarePage() {
                       {report.iso3}
                     </span>
                   </td>
-                  <td className="px-3 py-2 text-right font-mono text-sky-300">
+                  <td className="px-3 py-2 text-right font-mono text-tactical-accent">
                     {report.overallScore}
                   </td>
                   <td className="px-3 py-2 text-slate-200">

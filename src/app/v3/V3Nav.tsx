@@ -30,9 +30,10 @@ export function V3Nav() {
             href={item.href}
             aria-current={active ? "page" : undefined}
             className={
+              // min-h-8: на 390px ссылки были 20px высотой — мимо пальца.
               active
-                ? "font-semibold text-sky-300 underline decoration-sky-400/60 decoration-2 underline-offset-4"
-                : "text-slate-300 transition-colors hover:text-sky-300"
+                ? "inline-flex min-h-8 items-center font-semibold text-tactical-accent underline decoration-tactical-accent/60 decoration-2 underline-offset-4"
+                : "inline-flex min-h-8 items-center text-slate-300 transition-colors hover:text-tactical-accent"
             }
           >
             {item.label}

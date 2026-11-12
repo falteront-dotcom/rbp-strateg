@@ -38,9 +38,9 @@ export function WorkspacePanel({ workspace, health, onOpen, onCreate, onDelete }
           <div className="text-[9px] font-mono text-slate-500 uppercase tracking-widest">Рабочее пространство</div>
           {workspace ? <div className="text-xs font-mono text-cyan-300" data-testid="workspace-name">{workspace.name}</div> : <div className="text-[10px] text-slate-500">Локальный режим</div>}
         </div>
-        {health && <span className={`text-[8px] font-mono ${health.status === "OPERATIONAL" ? "text-emerald-400" : "text-amber-400"}`}>{health.status}</span>}
+        {health && <span className={`text-[10px] font-mono ${health.status === "OPERATIONAL" ? "text-emerald-400" : "text-amber-400"}`}>{health.status}</span>}
       </div>
-      {health?.datasetVersion && <div className="text-[8px] font-mono text-slate-600">dataset {health.datasetVersion}</div>}
+      {health?.datasetVersion && <div className="text-[10px] font-mono text-slate-600">dataset {health.datasetVersion}</div>}
       <div className="flex gap-1.5">
         <button type="button" onClick={() => setCreating((value) => !value)} className="flex-1 rounded border border-cyan-400/20 px-2 py-1.5 text-[9px] font-mono text-cyan-300 hover:bg-cyan-400/10">Создать workspace</button>
         {workspace && <button type="button" onClick={() => { if (window.confirm(`Удалить workspace «${workspace.name}»?`)) void onDelete(); }} className="rounded border border-red-400/20 px-2 text-[9px] font-mono text-red-300 hover:bg-red-400/10">Удалить</button>}

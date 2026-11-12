@@ -32,9 +32,13 @@ export default function RootLayout({
         className={`${plexSans.variable} ${plexMono.variable} font-sans antialiased`}
       >
         {children}
+        {/* bottom-12, не bottom-4: атрибуция карты (OSM/CARTO/MapLibre) занимает
+            нижние 44px, и кнопка на bottom-4 накрывала её на 18px — лицензионная
+            подпись обязана быть видна. Вид — из токенов продукта: матовая панель
+            и золотой акцент вместо дефолтного sky + rounded-full + shadow. */}
         <a
           href="/v3"
-          className="fixed right-4 bottom-4 z-50 rounded-full border border-sky-700 bg-slate-900/95 px-3.5 py-2 text-sm font-semibold text-sky-300 shadow-lg shadow-black/40 backdrop-blur transition-colors hover:bg-slate-800 hover:text-sky-200"
+          className="fixed right-4 bottom-12 z-50 inline-flex min-h-8 items-center rounded-md border border-tactical-accent/40 bg-tactical-panel px-3.5 py-2 text-sm font-semibold text-tactical-accent transition-colors hover:border-tactical-accent/70 hover:bg-tactical-raised"
         >
           РБП 3.0
         </a>

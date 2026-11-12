@@ -312,7 +312,7 @@ function BigNumber({
       >
         {fmt(value)}
       </motion.span>
-      <span className="mt-1 font-mono text-xs uppercase tracking-[0.15em] text-[#c76a5a99]">
+      <span className="mt-1 font-mono text-xs uppercase tracking-[0.15em] text-[#c76a5a]">
         {label}
       </span>
       {sublabel && (
@@ -346,7 +346,7 @@ function TriadIndicator({
             "flex flex-col items-center rounded-md border px-3 py-2 font-mono",
             l.active
               ? "border-[#c76a5a44] bg-[#c76a5a11] text-[#c76a5a]"
-              : "border-[#ffffff11] bg-[#ffffff05] text-[#ffffff44]"
+              : "border-[#ffffff11] bg-[#ffffff05] text-[#8eb8a6]"
           )}
         >
           <span className="flex h-4 items-center">{l.icon}</span>
@@ -940,7 +940,7 @@ export function MilitaryHardwareTab({ country }: MilitaryHardwareTabProps) {
                 href={NUCLEAR_SOURCE.url}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="mt-2 rounded border border-[#c76a5a33] bg-[#c76a5a11] px-2 py-1 font-mono text-[10px] uppercase text-[#c76a5a99] transition-colors hover:border-[#c76a5a66] hover:text-[#c76a5acc]"
+                className="mt-2 rounded border border-[#c76a5a33] bg-[#c76a5a11] px-2 py-1 font-mono text-[10px] uppercase text-[#c76a5a] transition-colors hover:border-[#c76a5a66] hover:text-[#c76a5a]"
               >
                 {NUCLEAR_SOURCE.label}
               </a>
@@ -948,7 +948,7 @@ export function MilitaryHardwareTab({ country }: MilitaryHardwareTabProps) {
 
             {/* Delivery systems */}
             <div className="flex flex-col items-center justify-center gap-2">
-              <div className="font-mono text-[10px] uppercase tracking-widest text-[#c76a5a99]">
+              <div className="font-mono text-[10px] uppercase tracking-widest text-[#c76a5a]">
                 Средства доставки
               </div>
               <StatRow icon={<Rocket size={13} />} label="МБР" value={nuclearDelivery.icbm} highlight />
@@ -958,7 +958,7 @@ export function MilitaryHardwareTab({ country }: MilitaryHardwareTabProps) {
 
             {/* Triad indicator */}
             <div className="flex flex-col items-center justify-center gap-3">
-              <div className="font-mono text-[10px] uppercase tracking-widest text-[#c76a5a99]">
+              <div className="font-mono text-[10px] uppercase tracking-widest text-[#c76a5a]">
                 Ядерная триада
               </div>
               <TriadIndicator
@@ -1279,7 +1279,7 @@ export function MilitaryHardwareTab({ country }: MilitaryHardwareTabProps) {
       </GlassPanel>
 
       {/* Footer attribution */}
-      <div className="text-center font-mono text-[10px] uppercase tracking-[0.2em] text-[#8eb8a666]">
+      <div className="text-center font-mono text-[10px] uppercase tracking-[0.2em] text-[#8eb8a6]">
         Данные: GFP 2025 · FAS Nuclear Notebook · Оценки РБП-Стратег
       </div>
     </div>

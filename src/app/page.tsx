@@ -121,10 +121,10 @@ function StrategicDetailPanel({
           </div>
         </div>
         <div className="flex items-center gap-1">
-          <button onClick={onOpenScenarioLab} className="text-[9px] text-cyan-300 hover:text-cyan-100 border border-cyan-400/20 rounded px-1.5 py-0.5 transition-colors flex-shrink-0">
+          <button onClick={onOpenScenarioLab} className="inline-flex min-h-8 items-center rounded border border-tactical-accent/40 px-2 py-1 text-[10px] text-tactical-accent transition-colors hover:border-tactical-accent/70 hover:bg-tactical-accent/10 flex-shrink-0">
             Сценарная лаборатория
           </button>
-          <button onClick={() => onCompare(country.isoCode)} className="text-[9px] text-slate-400 hover:text-tactical-primary border border-white/10 rounded px-1.5 py-0.5 transition-colors flex-shrink-0">
+          <button onClick={() => onCompare(country.isoCode)} className="inline-flex min-h-8 items-center rounded border border-tactical-line px-2 py-1 text-[10px] text-slate-300 transition-colors hover:border-tactical-primary/50 hover:text-tactical-primary flex-shrink-0">
             Сравнить
           </button>
         </div>
@@ -511,8 +511,11 @@ export default function Home() {
   return (
     <main className="h-screen w-screen bg-tactical-bg flex flex-col overflow-hidden font-sans text-slate-100">
       {/* ═══ TOP BAR ═══ */}
-      <header className="glass-panel z-50 flex min-h-14 shrink-0 items-center justify-between gap-2 border-b border-white/5 px-3 py-2 md:px-6">
-        <div className="flex items-center gap-4">
+      {/* На узком вьюпорте шапка переносит строку: слева бренд и статус данных,
+            ниже на всю ширину — переключатель слоёв. Без переноса шесть кнопок
+            слоёв и статус выезжали за правый край на 5–9px (390px). */}
+      <header className="glass-panel z-50 flex min-h-14 shrink-0 flex-wrap items-center justify-between gap-2 border-b border-white/5 px-3 py-2 md:px-6">
+        <div className="flex w-full min-w-0 items-center gap-2 sm:w-auto sm:gap-4">
           <div className="flex items-center gap-2">
             <div className="p-1.5 bg-tactical-primary/10 rounded-sm">
               <Radio className="h-3.5 w-3.5 text-tactical-primary" />
@@ -529,7 +532,7 @@ export default function Home() {
           {/* Честный статус данных: сид статичен и пересевается при старте,
               «LIVE»-пульс лгал бы о потоке, которого нет. Версия датасета —
               из /api/dataset/health (публикуется каждым успешным севом). */}
-          <span data-testid="dataset-health-indicator" className={`text-[8px] font-mono uppercase tracking-[0.15em] ${datasetHealth?.status === "OPERATIONAL" ? "text-emerald-400" : "text-amber-400"}`}>
+          <span data-testid="dataset-health-indicator" className={`min-w-0 truncate text-[10px] font-mono uppercase tracking-[0.15em] ${datasetHealth?.status === "OPERATIONAL" ? "text-emerald-400" : "text-amber-400"}`}>
             ДАННЫЕ {datasetHealth?.status ?? "ПРОВЕРКА"}
             {datasetHealth?.datasetVersion ? ` · ${datasetHealth.datasetVersion.replace("seed-", "сид от ")}` : ""}
           </span>
@@ -547,7 +550,7 @@ export default function Home() {
           {/* Mode Toggle */}
           <button
             onClick={handleModeToggle}
-            className="hidden lg:flex glass-panel rounded-md px-3 py-1.5 font-mono text-[10px] tracking-widest uppercase text-tactical-accent/80 hover:text-tactical-accent hover:border-tactical-accent/30 transition-all cursor-pointer flex items-center gap-1.5"
+            className="hidden lg:flex min-h-8 items-center glass-panel rounded-md px-3 py-1.5 font-mono text-[10px] tracking-widest uppercase text-tactical-accent/80 hover:text-tactical-accent hover:border-tactical-accent/30 transition-all cursor-pointer flex items-center gap-1.5"
           >
             <Crosshair size={12} />
             Тактический

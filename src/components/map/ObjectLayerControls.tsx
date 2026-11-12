@@ -34,7 +34,7 @@ export function ObjectLayerControls({ objects, selected, onToggle }: ObjectLayer
             <label key={group.type} className="flex cursor-pointer items-center gap-2 text-white/65 hover:text-white/90">
               <input type="checkbox" checked={checked} onChange={() => onToggle(group.type)} className="sr-only" />
               <span className="inline-flex h-3 w-3 items-center justify-center rounded-sm border" style={{ borderColor: group.color, backgroundColor: checked ? group.color : "transparent" }}>
-                {checked && <span className="text-[8px] font-bold text-[#071018]">✓</span>}
+                {checked && <span className="text-[10px] font-bold text-[#071018]">✓</span>}
               </span>
               <span className="flex-1">{group.label}</span>
               <span className="tabular-nums text-white/30">{count}</span>
@@ -42,7 +42,7 @@ export function ObjectLayerControls({ objects, selected, onToggle }: ObjectLayer
           );
         })}
       </div>
-      <div className="mt-3 border-t border-white/10 pt-2 text-[8px] leading-relaxed text-white/35">
+      <div className="mt-3 border-t border-white/10 pt-2 text-[10px] leading-relaxed text-white/35">
         Open-source locations from OSM and reviewed public references. Coverage is incomplete.
       </div>
     </div>

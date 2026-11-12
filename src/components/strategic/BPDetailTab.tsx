@@ -82,7 +82,10 @@ const TIER_MAP: Record<string, { label: string; color: string; bg: string }> = {
 };
 
 const SIDE_COLORS: Record<string, string> = {
-  NATO: "#6b8fa0",
+  // Цвет альянса — из токена продукта (tactical-nato), а не отдельный
+  // приглушённый синий: на приподнятой поверхности старый давал 4.08:1
+  // при требуемых 4.5:1, токен даёт 5.06:1 и совпадает с картой.
+  NATO: "#5b9cf4",
   CSTO: "#ef4444",
   BRICS: "#f59e0b",
   AUKUS: "#4fb287",

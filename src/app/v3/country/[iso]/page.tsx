@@ -26,7 +26,7 @@ function Section({
   children: React.ReactNode;
 }) {
   return (
-    <section className="rounded-lg border border-slate-800 bg-slate-900 p-5">
+    <section className="rounded-lg border border-tactical-line bg-tactical-panel p-5">
       <h2 className="mb-4 text-lg font-semibold text-slate-100">{title}</h2>
       {children}
     </section>
@@ -38,7 +38,7 @@ function RangeBar({
   from,
   to,
   marker,
-  barClass = "bg-sky-500/60",
+  barClass = "bg-tactical-primary/60",
 }: {
   from: number;
   to: number;
@@ -48,7 +48,7 @@ function RangeBar({
   const left = Math.max(0, Math.min(100, Math.min(from, to)));
   const right = Math.max(0, Math.min(100, Math.max(from, to)));
   return (
-    <div className="relative h-2.5 w-full rounded bg-slate-800">
+    <div className="relative h-2.5 w-full rounded bg-tactical-raised">
       <div
         className={`absolute top-0 h-full rounded ${barClass}`}
         style={{ left: `${left}%`, width: `${Math.max(right - left, 0.5)}%` }}
@@ -77,7 +77,7 @@ function ScalarGrid({
       {entries.map(([label, value]) => (
         <div
           key={label}
-          className="flex items-baseline justify-between gap-3 border-b border-slate-800/70 pb-1"
+          className="flex items-baseline justify-between gap-3 border-b border-tactical-line/70 pb-1"
         >
           <dt className="text-sm text-slate-400">{label}</dt>
           <dd className="text-right font-mono text-sm font-medium text-slate-100">
@@ -192,7 +192,7 @@ function SustainabilityBlock({ data }: { data: unknown }) {
       categoryRows.push(
         <div
           key={catId}
-          className="rounded border border-slate-800 bg-slate-950/50 p-3"
+          className="rounded border border-tactical-line bg-tactical-bg/50 p-3"
         >
           <p className="mb-2 text-sm font-medium text-slate-200">{catId}</p>
           <ScalarGrid entries={inner.slice(0, 6)} />
@@ -261,7 +261,7 @@ function SeriesBlock({ series }: { series: unknown }) {
               {fmt(r.bpTotal)}
             </span>
             <div
-              className="w-10 rounded-t bg-sky-500/60"
+              className="w-10 rounded-t bg-tactical-primary/60"
               style={{ height: `${Math.max(6, (r.bpTotal / maxBp) * 72)}px` }}
               title={`БП ${r.year}: ${fmt(r.bpTotal)}`}
             />
@@ -272,10 +272,11 @@ function SeriesBlock({ series }: { series: unknown }) {
           Итоговый БП по годам
         </span>
       </div>
+      <p className="mb-1 text-xs text-slate-500 sm:hidden">Таблица шире экрана — прокрутите её вбок.</p>
       <div className="overflow-x-auto">
         <table className="w-full text-sm">
           <thead>
-            <tr className="border-b border-slate-800 text-left text-xs uppercase tracking-wide text-slate-500">
+            <tr className="border-b border-tactical-line text-left text-xs uppercase tracking-wide text-slate-500">
               <th className="py-2 pr-3 font-medium">Год</th>
               <th className="py-2 pr-3 font-medium">Бюджет, млрд $</th>
               <th className="py-2 pr-3 font-medium">Доля ВВП, %</th>
@@ -288,7 +289,7 @@ function SeriesBlock({ series }: { series: unknown }) {
             {rows.map((r) => (
               <tr
                 key={r.year}
-                className="border-b border-slate-800/60 last:border-b-0"
+                className="border-b border-tactical-line/60 last:border-b-0"
               >
                 <td className="py-2 pr-3 font-medium text-slate-100">
                   {r.year}
@@ -365,14 +366,14 @@ export default async function V3CountryPage({
       <div>
         <Link
           href="/v3"
-          className="text-sm text-slate-400 hover:text-sky-300"
+          className="inline-flex min-h-8 items-center text-sm text-slate-400 hover:text-tactical-accent"
         >
           ← Рейтинг БП 3.0
         </Link>
         <div className="mt-2 flex flex-wrap items-center gap-3">
           <Flag iso={row.iso} title={row.name} className="h-5 w-7" />
           <h1 className="text-3xl font-bold text-slate-50">{row.name}</h1>
-          <span className="rounded border border-slate-700 bg-slate-800 px-2 py-0.5 font-mono text-sm text-slate-300">
+          <span className="rounded border border-tactical-line bg-tactical-raised px-2 py-0.5 font-mono text-sm text-slate-300">
             {row.iso}
           </span>
           {!row.hasUP && (
@@ -483,12 +484,12 @@ export default async function V3CountryPage({
 
       {detail.briefText && (
         <Section title="Разведсводка">
-          <pre className="overflow-x-auto rounded border border-slate-800 bg-slate-950 p-4 font-sans text-sm leading-relaxed whitespace-pre-wrap text-slate-200">
+          <pre className="overflow-x-auto rounded border border-tactical-line bg-tactical-bg p-4 font-sans text-sm leading-relaxed whitespace-pre-wrap text-slate-200">
             {detail.briefText}
           </pre>
           <a
             href={`/api/v3/brief?iso=${row.iso}`}
-            className="mt-3 inline-block text-sm text-sky-400 hover:text-sky-300"
+            className="mt-3 inline-flex min-h-8 items-center text-sm text-tactical-accent underline decoration-tactical-accent/40 hover:decoration-tactical-accent"
           >
             Открыть сводку через API (/api/v3/brief?iso={row.iso}) →
           </a>

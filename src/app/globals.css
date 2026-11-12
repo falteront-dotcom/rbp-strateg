@@ -6,6 +6,11 @@
   --color-tactical-primary: #4fb287;
   --color-tactical-secondary: #74a5b2;
   --color-tactical-accent: #d8b56a;
+  /* Линии и приподнятые поверхности — из той же зелёной семьи, что панели.
+     Раздел /v3 раньше жил на дефолтных slate/sky Tailwind: два визуальных
+     языка в одном продукте. Токены дают ему те же поверхности и акценты. */
+  --color-tactical-line: #213d32;
+  --color-tactical-raised: #163026;
   --color-tactical-nato: #5b9cf4;
   --color-tactical-rus: #e76363;
   --color-tactical-china: #d8a640;
@@ -28,6 +33,53 @@ body {
   background: #07130e;
   color: #dbe5e8;
 }
+
+/* Атрибуция карты (OSM/CARTO/MapLibre) — часть интерфейса, а не чужой белый
+   бейдж: тот давал 4.47:1 и ссылку высотой 14px. Здесь палитра продукта
+   (#8eb8a6 на #0d2019 = 7.72:1) и тап 24px. Подпись остаётся видимой всегда. */
+/* Специфичность в два класса обязательна: собственный стиль MapLibre
+   `.maplibregl-ctrl.maplibregl-ctrl-attrib` задаёт белый полупрозрачный фон
+   и перебивает одно-классовое правило — зелёный текст оказывался на белом
+   (1.37:1). Здесь фон и текст задаются вместе и одним весом. */
+.maplibregl-ctrl-bottom-left .maplibregl-ctrl.maplibregl-ctrl-attrib,
+.maplibregl-ctrl-bottom-right .maplibregl-ctrl.maplibregl-ctrl-attrib,
+.mapboxgl-ctrl-bottom-left .mapboxgl-ctrl.mapboxgl-ctrl-attrib,
+.mapboxgl-ctrl-bottom-right .mapboxgl-ctrl.mapboxgl-ctrl-attrib,
+.maplibregl-ctrl.maplibregl-ctrl-attrib,
+.mapboxgl-ctrl.mapboxgl-ctrl-attrib,
+.maplibregl-ctrl-attrib,
+.mapboxgl-ctrl-attrib {
+  background: #0d2019;
+  border: 1px solid #213d32;
+  border-radius: 3px;
+  color: #8eb8a6;
+  font-family: var(--font-mono-face), monospace;
+  font-size: 10px;
+  line-height: 1.4;
+  padding: 2px 6px;
+}
+
+.maplibregl-ctrl-bottom-left .maplibregl-ctrl-attrib .maplibregl-ctrl-attrib-inner a,
+.maplibregl-ctrl-bottom-right .maplibregl-ctrl-attrib .maplibregl-ctrl-attrib-inner a,
+.maplibregl-ctrl-attrib .maplibregl-ctrl-attrib-inner a,
+.mapboxgl-ctrl-attrib .mapboxgl-ctrl-attrib-inner a,
+.maplibregl-ctrl-attrib a,
+.mapboxgl-ctrl-attrib a {
+  color: #4fb287;
+  display: inline-flex;
+  align-items: center;
+  min-height: 24px;
+  text-decoration: none;
+}
+
+.maplibregl-ctrl-bottom-left .maplibregl-ctrl-attrib .maplibregl-ctrl-attrib-inner a:hover,
+.maplibregl-ctrl-bottom-right .maplibregl-ctrl-attrib .maplibregl-ctrl-attrib-inner a:hover,
+.maplibregl-ctrl-attrib .maplibregl-ctrl-attrib-inner a:hover,
+.maplibregl-ctrl-attrib a:hover,
+.mapboxgl-ctrl-attrib a:hover { color: #d8b56a; text-decoration: underline; }
+
+.maplibregl-ctrl-attrib-button,
+.mapboxgl-ctrl-attrib-button { display: none; }
 
 /* Operational surfaces are matte. Transparency is reserved for real overlays. */
 .glass-panel {

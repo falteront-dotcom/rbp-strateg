@@ -1,0 +1,102 @@
+# keepalive — внешний watchdog продa на Render free.
+#
+# Зачем: держатель бодрствования — self-ping в instrumentation.ts (слой 1,
+# работает, пока жив процесс). Этот workflow — слой 2: внешний индикатор,
+# который переживает деплои и не зависит от репозиторной тишины.
+#
+# Расписание '2-57/5' — каждые 5 минут, но не в :00/:05-пограничные пики:
+# по докам GitHub scheduled-джобы в начале часа сбрасываются чаще всего.
+# Проверяются ДВЕ цели: /api/live (лайвнесс) и /api/health (правда о данных —
+# пинг только /api/countries был слеп к 21 из 22 таблиц).
+#
+# Алерт: открытый issue с меткой keepalive (открывается при падении,
+# закрывается с комментарием при восстановлении). Тик-коммит против
+# 60-дневного автоотключения расписаний живёт в keepalive-tick.yml.
+#
+# Ограничения (честно): смерть расписания после 60 дней тишины репо видна
+# историей прогонов (разрыв >15 минут = что-то умерло), но не алертится
+# сама — за этим следит тик-коммит.
+
+name: keepalive
+
+on:
+  schedule:
+    - cron: "2-57/5 * * * *"
+  workflow_dispatch:
+
+permissions:
+  issues: write
+
+concurrency:
+  group: keepalive
+  cancel-in-progress: false
+
+jobs:
+  ping:
+    runs-on: ubuntu-latest
+    steps:
+      - name: liveness (/api/live)
+        id: live
+        run: |
+          code=$(curl -s -o /dev/null -w '%{http_code}' --max-time 30 -I https://rbp-strateg.onrender.com/api/live)
+          echo "code=$code" >> "$GITHUB_OUTPUT"
+          if [ "$code" != "200" ]; then
+            echo "::error::prod не отвечает на liveness (HTTP $code; сон — до ~45 с на free, retry встроен в cron)"
+            exit 1
+          fi
+
+      - name: правда о данных (/api/health)
+        id: health
+        run: |
+          code=$(curl -s -o /dev/null -w '%{http_code}' --max-time 30 https://rbp-strateg.onrender.com/api/health)
+          echo "code=$code" >> "$GITHUB_OUTPUT"
+          if [ "$code" != "200" ]; then
+            echo "::error::/api/health = HTTP $code — сломан или недосеян сид (не сон)"
+            exit 1
+          fi
+
+      - name: открыть issue-алерт
+        if: failure()
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const open = await github.rest.issues.listForRepo({
+              owner: context.repo.owner, repo: context.repo.repo,
+              state: 'open', labels: 'keepalive',
+            });
+            if (open.data.length === 0) {
+              await github.rest.issues.create({
+                owner: context.repo.owner, repo: context.repo.repo,
+                title: 'keepalive: прод не проходит проверку',
+                labels: ['keepalive'],
+                body: [
+                  'Автоматический алерт внешнего watchdog-а.',
+                  '',
+                  '- /api/live: ${{ steps.live.outputs.code || 'шаг не дошёл' }}',
+                  '- /api/health: ${{ steps.health.outputs.code || 'шаг не дошёл' }}',
+                  '',
+                  'Issue закроется само при первом успешном прогоне. Смотреть: https://rbp-strateg.onrender.com/api/health',
+                ].join('\n'),
+              });
+            }
+
+      - name: закрыть issue-алерт
+        if: success()
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const open = await github.rest.issues.listForRepo({
+              owner: context.repo.owner, repo: context.repo.repo,
+              state: 'open', labels: 'keepalive',
+            });
+            for (const issue of open.data) {
+              await github.rest.issues.createComment({
+                owner: context.repo.owner, repo: context.repo.repo,
+                issue_number: issue.number,
+                body: 'Восстановлено: /api/live и /api/health снова 200.',
+              });
+              await github.rest.issues.update({
+                owner: context.repo.owner, repo: context.repo.repo,
+                issue_number: issue.number, state: 'closed',
+              });
+            }

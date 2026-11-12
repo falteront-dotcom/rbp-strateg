@@ -15,8 +15,12 @@
   --color-tactical-rus: #e76363;
   --color-tactical-china: #d8a640;
   --color-tactical-ukr: #d8c24b;
-  --font-sans: var(--font-sans-face), sans-serif;
-  --font-mono: var(--font-mono-face), monospace;
+  /* Имена семейств из @fontsource: файлы шрифтов идут из пакета,
+     поэтому сборка не зависит от доступности Google Fonts. */
+  --font-sans-face: "IBM Plex Sans";
+  --font-mono-face: "IBM Plex Mono";
+  --font-sans: var(--font-sans-face), ui-sans-serif, system-ui, sans-serif;
+  --font-mono: var(--font-mono-face), ui-monospace, "SFMono-Regular", monospace;
 }
 
 * {

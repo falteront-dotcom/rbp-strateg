@@ -226,9 +226,9 @@ export function BPDetailTab({ country }: BPDetailTabProps) {
             <span
               className="px-2 py-0.5 text-[10px] font-bold tracking-widest rounded border"
               style={{
-                borderColor: SIDE_COLORS[country.side] ?? "#647a7244",
+                borderColor: SIDE_COLORS[country.side] ?? "#9db3a844",
                 color: SIDE_COLORS[country.side] ?? "#94a3a4",
-                backgroundColor: `${SIDE_COLORS[country.side] ?? "#647a72"}20`,
+                backgroundColor: `${SIDE_COLORS[country.side] ?? "#9db3a8"}20`,
               }}
             >
               {country.side}
@@ -300,7 +300,7 @@ export function BPDetailTab({ country }: BPDetailTabProps) {
         </h3>
         <ResponsiveContainer width="100%" height={260}>
           <RadarChart data={radarData} cx="50%" cy="50%" outerRadius="75%">
-            <PolarGrid stroke="#1e293b" />
+            <PolarGrid stroke="#213d32" />
             <PolarAngleAxis
               dataKey="component"
               tick={{ fill: "#94a3a4", fontSize: 11, fontWeight: "bold" }}
@@ -308,7 +308,7 @@ export function BPDetailTab({ country }: BPDetailTabProps) {
             <PolarRadiusAxis
               angle={90}
               domain={[0, 100]}
-              tick={{ fill: "#47584c", fontSize: 10 }}
+              tick={{ fill: "#8eb8a6", fontSize: 10 }}
             />
             <Radar
               name={country.nameRu}

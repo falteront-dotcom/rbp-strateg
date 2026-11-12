@@ -211,9 +211,9 @@ export function ComparisonTab({ countries, onRemoveCountry, onAddCountry }: Comp
           </h3>
           <ResponsiveContainer width="100%" height={260}>
             <RadarChart data={radarData} cx="50%" cy="50%" outerRadius="70%">
-              <PolarGrid stroke="#1e293b" />
+              <PolarGrid stroke="#213d32" />
               <PolarAngleAxis dataKey="component" tick={{ fill: "#94a3a4", fontSize: 10 }} />
-              <PolarRadiusAxis angle={90} domain={[0, 100]} tick={{ fill: "#47584c", fontSize: 10 }} />
+              <PolarRadiusAxis angle={90} domain={[0, 100]} tick={{ fill: "#8eb8a6", fontSize: 10 }} />
               {countries.map((c, idx) => (
                 <Radar
                   key={c.isoCode}
@@ -247,9 +247,9 @@ export function ComparisonTab({ countries, onRemoveCountry, onAddCountry }: Comp
         </h3>
         <ResponsiveContainer width="100%" height={200}>
           <BarChart data={hardwareData}>
-            <CartesianGrid strokeDasharray="3 3" stroke="#1e293b" />
+            <CartesianGrid strokeDasharray="3 3" stroke="#213d32" />
             <XAxis dataKey="metric" tick={{ fill: "#94a3a4", fontSize: 10 }} />
-            <YAxis tick={{ fill: "#47584c", fontSize: 10 }} />
+            <YAxis tick={{ fill: "#8eb8a6", fontSize: 10 }} />
             {countries.map((c, idx) => (
               <Bar key={c.isoCode} dataKey={c.nameRu} fill={COLORS[idx]} />
             ))}

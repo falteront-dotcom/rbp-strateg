@@ -1,20 +1,20 @@
 import type { Metadata } from "next";
-import { IBM_Plex_Mono, IBM_Plex_Sans } from "next/font/google";
 // MapLibre CSS is imported in StrategicMap.tsx — loaded only when the map component renders
 import "./globals.css";
 import "flag-icons/css/flag-icons.min.css";
 
-const plexSans = IBM_Plex_Sans({
-  variable: "--font-sans-face",
-  subsets: ["latin", "cyrillic"],
-  weight: ["400", "500", "600", "700"],
-});
-
-const plexMono = IBM_Plex_Mono({
-  variable: "--font-mono-face",
-  subsets: ["latin", "cyrillic"],
-  weight: ["400", "500", "600"],
-});
+// Шрифты лежат в пакете, а не тянутся из Google Fonts во время сборки.
+// next/font/google ходил в fonts.googleapis.com на каждом `next build`:
+// при недоступности сети сборка падала целиком (и локально, и на Render),
+// хотя код был исправен. Тот же IBM Plex, те же начертания и кириллица —
+// теперь сборка не зависит от внешнего сервиса.
+import "@fontsource/ibm-plex-sans/400.css";
+import "@fontsource/ibm-plex-sans/500.css";
+import "@fontsource/ibm-plex-sans/600.css";
+import "@fontsource/ibm-plex-sans/700.css";
+import "@fontsource/ibm-plex-mono/400.css";
+import "@fontsource/ibm-plex-mono/500.css";
+import "@fontsource/ibm-plex-mono/600.css";
 
 export const metadata: Metadata = {
   title: "РБП Командный Центр",
@@ -29,7 +29,7 @@ export default function RootLayout({
   return (
     <html lang="ru">
       <body
-        className={`${plexSans.variable} ${plexMono.variable} font-sans antialiased`}
+        className="font-sans antialiased"
       >
         {children}
         {/* bottom-12, не bottom-4: атрибуция карты (OSM/CARTO/MapLibre) занимает

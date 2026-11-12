@@ -76,9 +76,9 @@ export function TrendChart({
       )}
       <ResponsiveContainer width="100%" height={height}>
         <AreaChart data={combinedData}>
-          <CartesianGrid strokeDasharray="3 3" stroke="#1e293b" />
+          <CartesianGrid strokeDasharray="3 3" stroke="#213d32" />
           <XAxis dataKey="year" tick={{ fill: "#94a3a4", fontSize: 10 }} />
-          <YAxis domain={[0, 100]} tick={{ fill: "#47584c", fontSize: 10 }} />
+          <YAxis domain={[0, 100]} tick={{ fill: "#8eb8a6", fontSize: 10 }} />
           <Tooltip
             contentStyle={{
               backgroundColor: "#0e1710ee",
@@ -126,7 +126,7 @@ export function TrendChart({
           {forecastStart && (
             <ReferenceLine
               x={forecastStart}
-              stroke="#47584c"
+              stroke="#8eb8a6"
               strokeDasharray="3 3"
               label={undefined}
             />

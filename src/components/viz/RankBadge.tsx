@@ -12,9 +12,9 @@ interface RankBadgeProps {
 function getRankStyle(rank: number): { color: string; bg: string; stars: number; chevrons: number } {
   if (rank <= 3) return { color: "#fbbf24", bg: "#fbbf2420", stars: 5 - Math.floor((rank - 1) / 1), chevrons: 0 };
   if (rank <= 10) return { color: "#94a3a4", bg: "#94a3a420", stars: 4, chevrons: 0 };
-  if (rank <= 25) return { color: "#b45309", bg: "#b4530920", stars: 3, chevrons: 0 };
-  if (rank <= 50) return { color: "#647a72", bg: "#647a7220", stars: 2, chevrons: 1 };
-  return { color: "#47584c", bg: "#47584c20", stars: 1, chevrons: 2 };
+  if (rank <= 25) return { color: "#d8a03c", bg: "#d8a03c20", stars: 3, chevrons: 0 };
+  if (rank <= 50) return { color: "#9db3a8", bg: "#9db3a820", stars: 2, chevrons: 1 };
+  return { color: "#7f9188", bg: "#7f918820", stars: 1, chevrons: 2 };
 }
 
 const SIZES = {

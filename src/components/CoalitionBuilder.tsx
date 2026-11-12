@@ -1,6 +1,7 @@
 "use client";
 
 import { Flag } from "@/components/Flag";
+import { useDialog } from "@/lib/use-dialog";
 import { useState, useMemo, useCallback, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Search, X, Plus, Minus, Users, Loader2 } from "lucide-react";
@@ -93,14 +94,8 @@ export function CoalitionBuilder({ isOpen, onClose, countries: countriesProp }: 
     return () => { cancelled = true; };
   }, [isOpen, countriesProp]);
 
-  useEffect(() => {
-    if (!isOpen) return;
-    const handleKeyDown = (event: KeyboardEvent) => {
-      if (event.key === "Escape") onClose();
-    };
-    document.addEventListener("keydown", handleKeyDown);
-    return () => document.removeEventListener("keydown", handleKeyDown);
-  }, [isOpen, onClose]);
+  // Escape, ловушка фокуса и блокировка прокрутки — общие для всех окон продукта.
+  const dialogRef = useDialog(isOpen, onClose);
 
   /** Search-filtered list of countries NOT already selected */
   const filteredCountries = useMemo(() => {
@@ -194,6 +189,8 @@ export function CoalitionBuilder({ isOpen, onClose, countries: countriesProp }: 
             animate={{ opacity: 1, scale: 1, y: 0 }}
             exit={{ opacity: 0, scale: 0.95, y: 20 }}
             onClick={(e) => e.stopPropagation()}
+            ref={dialogRef}
+            tabIndex={-1}
             role="dialog"
             aria-modal="true"
             aria-labelledby="coalition-builder-title"

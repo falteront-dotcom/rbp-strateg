@@ -1,6 +1,7 @@
 import { getDatasetHealth } from '@/db/dataset-repository';
 import { openReadonlyDatabase } from '@/db/runtime';
 import { getRefreshIntervalMs, refreshDatasetFromSources, refreshDatasetIfDue } from './updater';
+import { isCiEnvironment } from '@/lib/env';
 
 let refreshTimer: ReturnType<typeof setInterval> | undefined;
 let startupRefresh: Promise<void> | null = null;
@@ -19,7 +20,9 @@ async function refreshIfDue(): Promise<void> {
 }
 
 export function ensureDatasetRefreshScheduler(): void {
-  if (process.env.CI === '1' || process.env.NODE_ENV === 'test' || process.env.RBP_AUTO_REFRESH === 'false') return;
+  // В CI датасет обязан остаться сидовым: живой pipeline даёт другое число
+  // стран и ломает контракты. См. isCiEnvironment — GitHub ставит CI=true.
+  if (isCiEnvironment() || process.env.NODE_ENV === 'test' || process.env.RBP_AUTO_REFRESH === 'false') return;
   if (refreshTimer || startupRefresh) return;
 
   const runSafely = (): Promise<void> => refreshIfDue().catch((error: unknown) => {

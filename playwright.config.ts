@@ -1,4 +1,7 @@
 import { defineConfig, devices } from '@playwright/test';
+import { isCiEnvironment } from './src/lib/env';
+
+const ci = isCiEnvironment();
 
 /**
  * E2E + contract tests for RBP-Strateg 2.0.
@@ -15,9 +18,9 @@ export default defineConfig({
     testDir: './e2e',
     testMatch: '*.spec.ts',
     fullyParallel: true,
-    forbidOnly: !!process.env.CI,
-    retries: process.env.CI ? 2 : 0,
-    workers: process.env.CI ? 1 : undefined,
+    forbidOnly: ci,
+    retries: ci ? 2 : 0,
+    workers: ci ? 1 : undefined,
     timeout: 30_000,
     reporter: [
       ['html', { outputFolder: 'playwright-report' }],
@@ -32,10 +35,13 @@ export default defineConfig({
     webServer: {
         command: 'npm run start',
         url: 'http://localhost:3000/api/countries',
-        reuseExistingServer: !process.env.CI,
+        reuseExistingServer: !ci,
         timeout: 180_000,
         stdout: 'ignore',
         stderr: 'pipe',
+        // Тесты не должны зависеть от живой сети: авто-refresh датасета
+        // выключен явно, а не только через детект CI.
+        env: { RBP_AUTO_REFRESH: 'false' },
     },
     projects: [
         {

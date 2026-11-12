@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { isAuthorizedAdminRequest } from "@/db/runtime";
+import { isCiEnvironment } from "@/lib/env";
 
 /**
  * Authenticated pipeline entrypoint. Candidate construction and publication
@@ -12,7 +13,7 @@ export async function POST(request: Request): Promise<NextResponse> {
 
   try {
     const body = await request.json().catch(() => ({})) as Record<string, unknown>;
-    if (process.env.CI === "1" && process.env.RBP_PIPELINE_TEST_HOOK === "1" && body.testFailure === "before-publish") {
+    if (isCiEnvironment() && process.env.RBP_PIPELINE_TEST_HOOK === "1" && body.testFailure === "before-publish") {
       throw new Error("Injected pipeline failure before publish");
     }
     const { refreshDatasetFromSources } = await import("@/lib/dataset/updater");

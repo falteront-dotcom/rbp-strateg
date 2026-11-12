@@ -77,12 +77,15 @@ const TIER_MAP: Record<string, { label: string; color: string; bg: string }> = {
   CRITICAL: { label: "КРИТИЧЕСКИЙ", color: "text-red-400", bg: "bg-red-500/20 border-red-500/40" },
   HIGH: { label: "ВЫСОКИЙ", color: "text-yellow-400", bg: "bg-yellow-500/20 border-yellow-500/40" },
   MODERATE: { label: "СРЕДНИЙ", color: "text-teal-400", bg: "bg-teal-500/20 border-teal-500/40" },
-  LOW: { label: "НИЗКИЙ", color: "text-cyan-400", bg: "bg-cyan-500/20 border-cyan-500/40" },
+  LOW: { label: "НИЗКИЙ", color: "text-tactical-accent", bg: "bg-tactical-primary/20 border-tactical-primary/40" },
   MINIMAL: { label: "МИНИМАЛЬНЫЙ", color: "text-slate-400", bg: "bg-slate-500/20 border-slate-500/40" },
 };
 
 const SIDE_COLORS: Record<string, string> = {
-  NATO: "#6b8fa0",
+  // Цвет альянса — из токена продукта (tactical-nato), а не отдельный
+  // приглушённый синий: на приподнятой поверхности старый давал 4.08:1
+  // при требуемых 4.5:1, токен даёт 5.06:1 и совпадает с картой.
+  NATO: "#5b9cf4",
   CSTO: "#ef4444",
   BRICS: "#f59e0b",
   AUKUS: "#4fb287",
@@ -223,9 +226,9 @@ export function BPDetailTab({ country }: BPDetailTabProps) {
             <span
               className="px-2 py-0.5 text-[10px] font-bold tracking-widest rounded border"
               style={{
-                borderColor: SIDE_COLORS[country.side] ?? "#647a7244",
+                borderColor: SIDE_COLORS[country.side] ?? "#9db3a844",
                 color: SIDE_COLORS[country.side] ?? "#94a3a4",
-                backgroundColor: `${SIDE_COLORS[country.side] ?? "#647a72"}20`,
+                backgroundColor: `${SIDE_COLORS[country.side] ?? "#9db3a8"}20`,
               }}
             >
               {country.side}
@@ -297,7 +300,7 @@ export function BPDetailTab({ country }: BPDetailTabProps) {
         </h3>
         <ResponsiveContainer width="100%" height={260}>
           <RadarChart data={radarData} cx="50%" cy="50%" outerRadius="75%">
-            <PolarGrid stroke="#1e293b" />
+            <PolarGrid stroke="#213d32" />
             <PolarAngleAxis
               dataKey="component"
               tick={{ fill: "#94a3a4", fontSize: 11, fontWeight: "bold" }}
@@ -305,7 +308,7 @@ export function BPDetailTab({ country }: BPDetailTabProps) {
             <PolarRadiusAxis
               angle={90}
               domain={[0, 100]}
-              tick={{ fill: "#47584c", fontSize: 10 }}
+              tick={{ fill: "#8eb8a6", fontSize: 10 }}
             />
             <Radar
               name={country.nameRu}

@@ -58,7 +58,7 @@ export function LayerSelector({
               aria-pressed={isActive}
               onClick={() => onLayerChange(opt.key)}
               className={`
-                relative min-w-0 border px-1 py-1.5 font-mono text-[10px]
+                relative inline-flex min-h-8 min-w-0 items-center justify-center border px-1 py-1.5 font-mono text-[10px]
                 cursor-pointer select-none sm:px-2.5
                 ${
                   isActive

@@ -41,25 +41,25 @@ export function MapDataLegend({
       <div className="glass-panel rounded-md border border-white/10 bg-[#0c1822]/95 p-3 shadow-xl">
         <div className="mb-2 flex items-center justify-between gap-3">
           <span className="truncate tracking-[0.18em] text-cyan-200/80 uppercase">{metric.title}</span>
-          <span className="shrink-0 text-[8px] text-white/35 uppercase">{metric.unit}</span>
+          <span className="shrink-0 text-[10px] text-white/35 uppercase">{metric.unit}</span>
         </div>
         <div className="h-2 rounded-sm" style={{ background: gradient }} />
-        <div className="mt-1 flex justify-between text-[8px] tabular-nums text-white/45">
+        <div className="mt-1 flex justify-between text-[10px] tabular-nums text-white/45">
           <span>{compactNumber(minValue)}</span>
           <span>{compactNumber(maxValue)}</span>
         </div>
-        <div className="mt-1.5 flex justify-between text-[8px] tracking-[0.12em] uppercase">
+        <div className="mt-1.5 flex justify-between text-[10px] tracking-[0.12em] uppercase">
           <span style={{ color: metric.colors[0] }}>{metric.low}</span>
           <span style={{ color: metric.colors[1] }}>{metric.high}</span>
         </div>
         <div className="mt-3 border-t border-white/10 pt-2">
           <div className="mb-1 tracking-[0.16em] text-white/45 uppercase">Object layer</div>
           <div className="flex items-center gap-2 text-white/65">
-            <span className="inline-flex h-3 min-w-3 items-center justify-center rounded-full border border-[#071018] bg-[#24b8c7] px-0.5 text-[7px] font-bold text-[#071018]">n</span>
+            <span className="inline-flex h-4 min-w-4 items-center justify-center rounded-full border border-[#071018] bg-[#24b8c7] px-1 text-[9px] leading-none font-bold text-[#071018]">n</span>
             <span>{objectsVisible ? `${visibleObjects} visible / ${totalObjects} loaded` : "hidden"}</span>
           </div>
           {objectsVisible && (
-            <div className="mt-2 grid grid-cols-2 gap-x-2 gap-y-1 text-[8px] text-white/55">
+            <div className="mt-2 grid grid-cols-2 gap-x-2 gap-y-1 text-[10px] text-white/55">
               <span><i className="mr-1 inline-block h-2 w-2 rounded-full bg-[#f5c85b]" />capital</span>
               <span><i className="mr-1 inline-block h-2 w-2 rounded-full bg-[#e56b68]" />military base</span>
               <span><i className="mr-1 inline-block h-2 w-2 rounded-full bg-[#dc6be5]" />naval base</span>
@@ -70,7 +70,7 @@ export function MapDataLegend({
               <span><i className="mr-1 inline-block h-2 w-2 rounded-full bg-[#34b8cb]" />city</span>
             </div>
           )}
-          <div className="mt-2 text-[8px] leading-relaxed text-white/35">
+          <div className="mt-2 text-[10px] leading-relaxed text-white/35">
             Cluster numbers show documented objects in the area. Click a cluster to zoom in.
           </div>
         </div>

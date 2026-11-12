@@ -159,7 +159,7 @@ export default function SystemsPage() {
             value={query}
             onChange={(e) => setQuery(e.target.value)}
             placeholder="Например: Т-14, Patriot, Bayraktar…"
-            className="rounded border border-slate-700 bg-slate-900 px-3 py-2 text-slate-100 outline-none placeholder:text-slate-500 focus:border-sky-500"
+            className="rounded border border-tactical-line bg-tactical-panel px-3 py-2 text-slate-100 outline-none placeholder:text-slate-500 focus:border-tactical-accent"
           />
         </label>
         <label className="flex flex-col gap-1 text-sm">
@@ -167,7 +167,7 @@ export default function SystemsPage() {
           <select
             value={classFilter}
             onChange={(e) => setClassFilter(e.target.value)}
-            className="rounded border border-slate-700 bg-slate-900 px-3 py-2 text-slate-100 outline-none focus:border-sky-500"
+            className="rounded border border-tactical-line bg-tactical-panel px-3 py-2 text-slate-100 outline-none focus:border-tactical-accent"
           >
             <option value="">Все классы</option>
             {knownClasses.map((cls) => (
@@ -181,7 +181,7 @@ export default function SystemsPage() {
           type="button"
           onClick={runDuel}
           disabled={selected.length !== 2 || duelLoading}
-          className="rounded bg-sky-600 px-4 py-2 text-sm font-semibold text-white transition-colors hover:bg-sky-500 disabled:cursor-not-allowed disabled:bg-slate-700 disabled:text-slate-400"
+          className="rounded bg-tactical-primary px-4 py-2 text-sm font-semibold text-tactical-bg transition-colors hover:bg-tactical-primary/85 disabled:cursor-not-allowed disabled:bg-tactical-raised disabled:text-slate-400"
         >
           {duelLoading ? "Считаем…" : "Дуэль"}
         </button>
@@ -199,7 +199,7 @@ export default function SystemsPage() {
       )}
 
       {duel !== null && (
-        <section className="rounded-lg border border-sky-800 bg-slate-900 p-4">
+        <section className="rounded-lg border border-tactical-line bg-tactical-panel p-4">
           <h2 className="text-lg font-semibold text-slate-50">
             Дуэль: {duel.a.nameRu} — {duel.b.nameRu}
           </h2>
@@ -217,7 +217,7 @@ export default function SystemsPage() {
                   className={`rounded border p-3 ${
                     isWinner
                       ? "border-emerald-600 bg-emerald-950/30"
-                      : "border-slate-700 bg-slate-950/40"
+                      : "border-tactical-line bg-tactical-bg/40"
                   }`}
                 >
                   <div className="flex items-baseline justify-between gap-2">
@@ -229,7 +229,7 @@ export default function SystemsPage() {
                         </span>
                       )}
                     </span>
-                    <span className="font-mono text-xl text-sky-300">
+                    <span className="font-mono text-xl text-tactical-accent">
                       {score.toFixed(1)}
                     </span>
                   </div>
@@ -249,7 +249,7 @@ export default function SystemsPage() {
                   <span className="text-slate-300">{AXIS_RU[axis]}</span>
                   <span className="w-40">
                     <span
-                      className="block h-2 rounded bg-sky-500"
+                      className="block h-2 rounded bg-tactical-primary"
                       style={{ width: `${va * 10}%` }}
                     />
                   </span>
@@ -266,7 +266,7 @@ export default function SystemsPage() {
               );
             })}
             <div className="flex justify-end gap-6 pt-1 text-[11px] text-slate-500">
-              <span><span className="mr-1 inline-block h-2 w-3 rounded bg-sky-500" />{duel.a.nameRu}</span>
+              <span><span className="mr-1 inline-block h-2 w-3 rounded bg-tactical-primary" />{duel.a.nameRu}</span>
               <span><span className="mr-1 inline-block h-2 w-3 rounded bg-amber-500" />{duel.b.nameRu}</span>
             </div>
           </div>
@@ -278,9 +278,10 @@ export default function SystemsPage() {
         </section>
       )}
 
-      <div className="overflow-x-auto rounded-lg border border-slate-800">
+      <p className="mb-1 text-xs text-slate-500 sm:hidden">Таблица шире экрана — прокрутите её вбок.</p>
+      <div className="overflow-x-auto rounded-lg border border-tactical-line">
         <table className="w-full min-w-[760px] text-left text-sm">
-          <thead className="bg-slate-900 text-slate-300">
+          <thead className="bg-tactical-panel text-slate-300">
             <tr>
               <th className="px-3 py-2 font-medium">Дуэль</th>
               <th className="px-3 py-2 font-medium">Название</th>
@@ -312,8 +313,8 @@ export default function SystemsPage() {
                   <tr
                     key={system.id}
                     onClick={() => toggleSelected(system.id)}
-                    className={`cursor-pointer border-t border-slate-800 transition-colors hover:bg-slate-900 ${
-                      checked ? "bg-sky-950/40" : ""
+                    className={`cursor-pointer border-t border-tactical-line transition-colors hover:bg-tactical-panel ${
+                      checked ? "bg-tactical-primary/10" : ""
                     }`}
                   >
                     <td className="px-3 py-2">
@@ -322,7 +323,7 @@ export default function SystemsPage() {
                         checked={checked}
                         onChange={() => toggleSelected(system.id)}
                         onClick={(e) => e.stopPropagation()}
-                        className="h-4 w-4 accent-sky-500"
+                        className="h-4 w-4 accent-tactical-primary"
                         aria-label={`Выбрать ${system.nameRu} для дуэли`}
                       />
                     </td>
@@ -336,7 +337,7 @@ export default function SystemsPage() {
                       <span className="block text-xs text-slate-500">{system.manufacturerRu}</span>
                     </td>
                     <td className="px-3 py-2 text-slate-300">{system.statusRu}</td>
-                    <td className="px-3 py-2 text-right font-mono text-sky-300">
+                    <td className="px-3 py-2 text-right font-mono text-tactical-accent">
                       {overallScore(system).toFixed(2)}
                     </td>
                   </tr>

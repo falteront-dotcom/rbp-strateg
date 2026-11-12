@@ -121,7 +121,7 @@ export function ComparisonTab({ countries, onRemoveCountry, onAddCountry }: Comp
             </div>
             <button
               onClick={() => onRemoveCountry(c.isoCode)}
-              className="text-slate-500 hover:text-red-400 text-xs ml-1"
+              className="inline-flex h-8 w-8 items-center justify-center rounded text-slate-400 hover:bg-red-500/10 hover:text-red-400 text-xs ml-1"
             >
               ✕
             </button>
@@ -177,7 +177,7 @@ export function ComparisonTab({ countries, onRemoveCountry, onAddCountry }: Comp
                     const isMin = val === minVal && countries.length > 1;
                     return (
                       <td key={idx} className="text-right py-1">
-                        <span className={isMax ? "text-cyan-400 font-bold" : isMin ? "text-red-400" : "text-slate-300"}>
+                        <span className={isMax ? "text-tactical-accent font-bold" : isMin ? "text-red-400" : "text-slate-300"}>
                           {val.toFixed(1)}
                         </span>
                         {idx > 0 && delta !== 0 && (
@@ -211,9 +211,9 @@ export function ComparisonTab({ countries, onRemoveCountry, onAddCountry }: Comp
           </h3>
           <ResponsiveContainer width="100%" height={260}>
             <RadarChart data={radarData} cx="50%" cy="50%" outerRadius="70%">
-              <PolarGrid stroke="#1e293b" />
+              <PolarGrid stroke="#213d32" />
               <PolarAngleAxis dataKey="component" tick={{ fill: "#94a3a4", fontSize: 10 }} />
-              <PolarRadiusAxis angle={90} domain={[0, 100]} tick={{ fill: "#47584c", fontSize: 10 }} />
+              <PolarRadiusAxis angle={90} domain={[0, 100]} tick={{ fill: "#8eb8a6", fontSize: 10 }} />
               {countries.map((c, idx) => (
                 <Radar
                   key={c.isoCode}
@@ -247,9 +247,9 @@ export function ComparisonTab({ countries, onRemoveCountry, onAddCountry }: Comp
         </h3>
         <ResponsiveContainer width="100%" height={200}>
           <BarChart data={hardwareData}>
-            <CartesianGrid strokeDasharray="3 3" stroke="#1e293b" />
+            <CartesianGrid strokeDasharray="3 3" stroke="#213d32" />
             <XAxis dataKey="metric" tick={{ fill: "#94a3a4", fontSize: 10 }} />
-            <YAxis tick={{ fill: "#47584c", fontSize: 10 }} />
+            <YAxis tick={{ fill: "#8eb8a6", fontSize: 10 }} />
             {countries.map((c, idx) => (
               <Bar key={c.isoCode} dataKey={c.nameRu} fill={COLORS[idx]} />
             ))}
@@ -276,7 +276,7 @@ export function ComparisonTab({ countries, onRemoveCountry, onAddCountry }: Comp
           <div className="space-y-1">
             {advantages.map((text, idx) => (
               <div key={idx} className="text-[10px] text-slate-300 flex items-start gap-2">
-                <span className="text-cyan-400">▸</span>
+                <span className="text-tactical-accent">▸</span>
                 <span>{text}</span>
               </div>
             ))}

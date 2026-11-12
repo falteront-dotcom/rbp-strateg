@@ -52,7 +52,7 @@ export function StrategicObjectPopup({ object, longitude, latitude, onCountryCli
             <div className="text-sm font-semibold uppercase tracking-wider text-cyan-100">{object.name}</div>
             <div className="mt-1 text-[9px] uppercase tracking-[0.14em] text-cyan-300/70">{TYPE_LABELS[object.type]}</div>
           </div>
-          <span className="shrink-0 rounded border px-1.5 py-0.5 text-[8px] uppercase tracking-wider" style={{ borderColor: CONFIDENCE_COLORS[object.confidence], color: CONFIDENCE_COLORS[object.confidence] }}>
+          <span className="shrink-0 rounded border px-1.5 py-0.5 text-[10px] uppercase tracking-wider" style={{ borderColor: CONFIDENCE_COLORS[object.confidence], color: CONFIDENCE_COLORS[object.confidence] }}>
             {object.confidence}
           </span>
         </div>

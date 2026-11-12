@@ -630,12 +630,12 @@ export function EconomicsTab({ country, allCountries }: EconomicsTabProps) {
                 <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.05)" vertical={false} />
                 <XAxis
                   dataKey="name"
-                  tick={{ fill: '#647a72', fontSize: 10, fontFamily: 'monospace' }}
+                  tick={{ fill: '#9db3a8', fontSize: 10, fontFamily: 'monospace' }}
                   axisLine={{ stroke: 'rgba(255,255,255,0.08)' }}
                   tickLine={false}
                 />
                 <YAxis
-                  tick={{ fill: '#47584c', fontSize: 10, fontFamily: 'monospace' }}
+                  tick={{ fill: '#8eb8a6', fontSize: 10, fontFamily: 'monospace' }}
                   axisLine={false}
                   tickLine={false}
                   tickFormatter={(v: number) => fmtBn(v)}
@@ -704,12 +704,12 @@ export function EconomicsTab({ country, allCountries }: EconomicsTabProps) {
                 <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.05)" vertical={false} />
                 <XAxis
                   dataKey="year"
-                  tick={{ fill: '#647a72', fontSize: 10, fontFamily: 'monospace' }}
+                  tick={{ fill: '#9db3a8', fontSize: 10, fontFamily: 'monospace' }}
                   axisLine={{ stroke: 'rgba(255,255,255,0.08)' }}
                   tickLine={false}
                 />
                 <YAxis
-                  tick={{ fill: '#47584c', fontSize: 10, fontFamily: 'monospace' }}
+                  tick={{ fill: '#8eb8a6', fontSize: 10, fontFamily: 'monospace' }}
                   axisLine={false}
                   tickLine={false}
                   tickFormatter={(v: number) => `$${v}B`}

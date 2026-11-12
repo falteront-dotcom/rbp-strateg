@@ -123,7 +123,7 @@ export function AnalyticsTab({ countries, selectedISO }: AnalyticsTabProps) {
               <button
                 key={key}
                 onClick={() => setSortKey(key)}
-                className={`px-2 py-0.5 text-[10px] rounded border ${
+                className={`inline-flex min-h-8 items-center px-2 py-0.5 text-[10px] rounded border ${
                   sortKey === key
                     ? "border-tactical-primary/50 text-tactical-primary bg-tactical-primary/10"
                     : "border-white/10 text-slate-400 hover:text-slate-200"
@@ -163,9 +163,9 @@ export function AnalyticsTab({ countries, selectedISO }: AnalyticsTabProps) {
         </h3>
         <ResponsiveContainer width="100%" height={160}>
           <BarChart data={distribution}>
-            <CartesianGrid strokeDasharray="3 3" stroke="#1e293b" />
+            <CartesianGrid strokeDasharray="3 3" stroke="#213d32" />
             <XAxis dataKey="range" tick={{ fill: "#94a3a4", fontSize: 10 }} />
-            <YAxis tick={{ fill: "#47584c", fontSize: 10 }} tickFormatter={(v: number) => Math.round(v).toLocaleString("ru-RU")} />
+            <YAxis tick={{ fill: "#8eb8a6", fontSize: 10 }} tickFormatter={(v: number) => Math.round(v).toLocaleString("ru-RU")} />
             <Tooltip
               contentStyle={{
                 backgroundColor: "#0e1710ee",
@@ -177,7 +177,7 @@ export function AnalyticsTab({ countries, selectedISO }: AnalyticsTabProps) {
             />
             <Bar dataKey="count" fill="#4fb287" radius={[4, 4, 0, 0]}>
               {distribution.map((_, idx) => (
-                <Cell key={idx} fill={["#647a72", "#6b8fa0", "#4fb287", "#f59e0b", "#ef4444"][idx]} />
+                <Cell key={idx} fill={["#9db3a8", "#6b8fa0", "#4fb287", "#f59e0b", "#ef4444"][idx]} />
               ))}
             </Bar>
           </BarChart>
@@ -192,9 +192,9 @@ export function AnalyticsTab({ countries, selectedISO }: AnalyticsTabProps) {
           </h3>
           <ResponsiveContainer width="100%" height={180}>
             <AreaChart data={trendData}>
-              <CartesianGrid strokeDasharray="3 3" stroke="#1e293b" />
+              <CartesianGrid strokeDasharray="3 3" stroke="#213d32" />
               <XAxis dataKey="year" tick={{ fill: "#94a3a4", fontSize: 10 }} />
-              <YAxis domain={[0, 100]} tick={{ fill: "#47584c", fontSize: 10 }} tickFormatter={(v: number) => Math.round(v).toLocaleString("ru-RU")} />
+              <YAxis domain={[0, 100]} tick={{ fill: "#8eb8a6", fontSize: 10 }} tickFormatter={(v: number) => Math.round(v).toLocaleString("ru-RU")} />
               <Tooltip
                 contentStyle={{
                   backgroundColor: "#0e1710ee",
@@ -211,7 +211,7 @@ export function AnalyticsTab({ countries, selectedISO }: AnalyticsTabProps) {
             </AreaChart>
           </ResponsiveContainer>
           <div className="flex items-center gap-3 mt-2 text-[10px]">
-            <span className="flex items-center gap-1"><span className="w-4 h-0.5 bg-cyan-400 inline-block" /> Исторические</span>
+            <span className="flex items-center gap-1"><span className="w-4 h-0.5 bg-tactical-primary inline-block" /> Исторические</span>
             <span className="flex items-center gap-1"><span className="w-4 h-0.5 bg-purple-400 inline-block" style={{ borderStyle: "dashed" }} /> Прогноз</span>
           </div>
         </motion.div>

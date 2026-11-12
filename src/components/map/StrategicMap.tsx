@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import MapGL from "react-map-gl/maplibre";
+import { AttributionControl } from "@vis.gl/react-maplibre";
 import type { MapRef, MapMouseEvent } from "react-map-gl/maplibre";
 import type { AnalyticsLayerKey } from "./LayerSelector";
 import type { PickingInfo } from "@deck.gl/core";
@@ -459,12 +460,17 @@ export function StrategicMap({
                 }));
               }}
               mapStyle={styleUrl}
+              attributionControl={false}
               interactiveLayerIds={["rbp-country-fill", "rbp-object-points", "rbp-object-clusters"]}
               onClick={handleNativeMapClick}
               onMouseMove={handleNativeMapHover}
               style={{ width: `${pixelSize.w}px`, height: `${pixelSize.h}px` }}
               projection="mercator"
             >
+              {/* Атрибуция OSM/CARTO/MapLibre обязана быть видна: справа её
+                  накрывает панель страны, снизу-справа — кнопка «РБП 3.0».
+                  Левый нижний угол свободен всегда. */}
+              <AttributionControl position="bottom-left" compact={false} />
               <NativeMapLayers
                 countries={enrichedGeoJson}
                 objects={visibleStrategicObjects}

@@ -289,7 +289,7 @@ function getPostureMeta(p: DefensePosture): { label: string; color: string; icon
     case "Deterrent":
       return { label: "Сдерживание", color: "text-yellow-400", icon: <Radiation size={14} /> };
     case "Mixed":
-      return { label: "Смешанная", color: "text-cyan-400", icon: <Target size={14} /> };
+      return { label: "Смешанная", color: "text-tactical-accent", icon: <Target size={14} /> };
   }
 }
 
@@ -307,7 +307,7 @@ function getExperienceLabel(level: ExperienceLevel): { ru: string; color: string
   switch (level) {
     case "None": return { ru: "Отсутствует", color: "text-slate-500" };
     case "Limited": return { ru: "Ограниченный", color: "text-slate-400" };
-    case "Moderate": return { ru: "Умеренный", color: "text-cyan-400" };
+    case "Moderate": return { ru: "Умеренный", color: "text-tactical-accent" };
     case "Extensive": return { ru: "Обширный", color: "text-yellow-400" };
     case "Heavy": return { ru: "Тяжёлый", color: "text-red-400" };
   }
@@ -328,7 +328,7 @@ function getModernizationLevel(c: CountryData): ModernizationLevel {
 function getModernizationLabel(level: ModernizationLevel): { ru: string; color: string } {
   switch (level) {
     case "Legacy": return { ru: "Устаревшая", color: "text-slate-500" };
-    case "Mixed": return { ru: "Смешанная", color: "text-cyan-400" };
+    case "Mixed": return { ru: "Смешанная", color: "text-tactical-accent" };
     case "Modern": return { ru: "Современная", color: "text-teal-400" };
     case "Cutting-edge": return { ru: "Передовая", color: "text-tactical-primary" };
   }
@@ -432,7 +432,7 @@ export function DoctrineTab({ country }: DoctrineTabProps) {
             posture === "Offensive" ? "border-red-400/30 bg-red-400/10" :
             posture === "Defensive" ? "border-blue-400/30 bg-blue-400/10" :
             posture === "Deterrent" ? "border-yellow-400/30 bg-yellow-400/10" :
-            "border-cyan-400/30 bg-cyan-400/10"
+            "border-tactical-primary/30 bg-tactical-primary/10"
           }`}>
             <span className={postureMeta.color}>{postureMeta.icon}</span>
             <span className={`text-sm font-bold tracking-wider ${postureMeta.color}`}>

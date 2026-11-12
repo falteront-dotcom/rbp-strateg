@@ -32,17 +32,17 @@ export function WorkspacePanel({ workspace, health, onOpen, onCreate, onDelete }
   };
 
   return (
-    <section className="border-b border-cyan-400/10 pb-3 mb-3 space-y-2" data-testid="workspace-panel">
+    <section className="border-b border-tactical-primary/10 pb-3 mb-3 space-y-2" data-testid="workspace-panel">
       <div className="flex items-center justify-between">
         <div>
           <div className="text-[9px] font-mono text-slate-500 uppercase tracking-widest">Рабочее пространство</div>
-          {workspace ? <div className="text-xs font-mono text-cyan-300" data-testid="workspace-name">{workspace.name}</div> : <div className="text-[10px] text-slate-500">Локальный режим</div>}
+          {workspace ? <div className="text-xs font-mono text-tactical-accent" data-testid="workspace-name">{workspace.name}</div> : <div className="text-[10px] text-slate-500">Локальный режим</div>}
         </div>
-        {health && <span className={`text-[8px] font-mono ${health.status === "OPERATIONAL" ? "text-emerald-400" : "text-amber-400"}`}>{health.status}</span>}
+        {health && <span className={`text-[10px] font-mono ${health.status === "OPERATIONAL" ? "text-emerald-400" : "text-amber-400"}`}>{health.status}</span>}
       </div>
-      {health?.datasetVersion && <div className="text-[8px] font-mono text-slate-600">dataset {health.datasetVersion}</div>}
+      {health?.datasetVersion && <div className="text-[10px] font-mono text-slate-600">dataset {health.datasetVersion}</div>}
       <div className="flex gap-1.5">
-        <button type="button" onClick={() => setCreating((value) => !value)} className="flex-1 rounded border border-cyan-400/20 px-2 py-1.5 text-[9px] font-mono text-cyan-300 hover:bg-cyan-400/10">Создать workspace</button>
+        <button type="button" onClick={() => setCreating((value) => !value)} className="flex-1 rounded border border-tactical-primary/20 px-2 py-1.5 text-[9px] font-mono text-tactical-accent hover:bg-tactical-primary/10">Создать workspace</button>
         {workspace && <button type="button" onClick={() => { if (window.confirm(`Удалить workspace «${workspace.name}»?`)) void onDelete(); }} className="rounded border border-red-400/20 px-2 text-[9px] font-mono text-red-300 hover:bg-red-400/10">Удалить</button>}
         {workspaces.length > 0 && (
           <select aria-label="Открыть workspace" value={workspace?.id ?? ""} onChange={(event) => { const selected = workspaces.find((item) => item.id === event.target.value); if (selected) onOpen(selected); }} className="min-w-0 flex-1 rounded border border-white/10 bg-slate-900 px-1 text-[9px] font-mono text-slate-300">
@@ -55,7 +55,7 @@ export function WorkspacePanel({ workspace, health, onOpen, onCreate, onDelete }
         <div className="flex gap-1.5">
           <label className="sr-only" htmlFor="workspace-name">Название workspace</label>
           <input id="workspace-name" value={name} onChange={(event) => setName(event.target.value)} placeholder="Название workspace" className="min-w-0 flex-1 rounded border border-white/10 bg-slate-900 px-2 py-1.5 text-[10px] text-slate-200" />
-          <button type="button" onClick={() => void create()} className="rounded bg-cyan-400/15 px-2 text-[9px] font-mono text-cyan-300 hover:bg-cyan-400/25">Сохранить workspace</button>
+          <button type="button" onClick={() => void create()} className="rounded bg-tactical-primary/15 px-2 text-[9px] font-mono text-tactical-accent hover:bg-tactical-primary/25">Сохранить workspace</button>
         </div>
       )}
     </section>

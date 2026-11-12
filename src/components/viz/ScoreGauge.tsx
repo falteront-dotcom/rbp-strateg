@@ -16,7 +16,8 @@ function defaultColorScale(score: number): string {
   if (score >= 60) return "#f59e0b";
   if (score >= 40) return "#4fb287";
   if (score >= 20) return "#6b8fa0";
-  return "#647a72";
+  // Нижний тир обязан быть тише среднего (4.90:1), но читаемым: 5.10:1.
+  return "#7f9188";
 }
 
 function getTier(score: number): string {
@@ -51,7 +52,7 @@ export function ScoreGauge({
         <path
           d={`M 4 ${size / 2 + 4} A ${radius} ${radius} 0 0 1 ${size - 4} ${size / 2 + 4}`}
           fill="none"
-          stroke="#1e293b"
+          stroke="#213d32"
           strokeWidth={6}
           strokeLinecap="round"
         />
@@ -84,7 +85,7 @@ export function ScoreGauge({
           x={size / 2}
           y={size / 2 + 10}
           textAnchor="middle"
-          fill="#647a72"
+          fill="#9db3a8"
           fontSize={size * 0.09}
           fontFamily="monospace"
         >

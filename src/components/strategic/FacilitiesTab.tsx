@@ -69,7 +69,7 @@ export function FacilitiesTab({ isoCode, onLocate }: { isoCode: string; onLocate
                   <span className="flex shrink-0 items-center gap-2">
                     <span className="font-mono text-[10px] text-[#d8a48a]">{z.intensity}/10</span>
                     {onLocate && (
-                      <button type="button" aria-label={`Показать на карте: ${z.nameRu}`} title="Показать на карте" onClick={() => onLocate(z.lat, z.lng)} className="text-[#6f92a0] hover:text-[#8fd4e2]">
+                      <button type="button" aria-label={`Показать на карте: ${z.nameRu}`} title="Показать на карте" onClick={() => onLocate(z.lat, z.lng)} className="inline-flex h-8 w-8 items-center justify-center rounded text-[#8fb0c1] hover:bg-tactical-primary/10 hover:text-tactical-primary">
                         <MapPin size={13} />
                       </button>
                     )}
@@ -104,7 +104,7 @@ export function FacilitiesTab({ isoCode, onLocate }: { isoCode: string; onLocate
                         {f.operator !== f.hostIso && <span className="text-[#c9a44a]" title="Оператор">{f.operator}</span>}
                         <span title="Значимость">{f.strategicValue}/10</span>
                         {onLocate && (
-                          <button type="button" aria-label={`Показать на карте: ${f.nameRu}`} title="Показать на карте" onClick={() => onLocate(f.lat, f.lng)} className="text-[#6f92a0] hover:text-[#8fd4e2]">
+                          <button type="button" aria-label={`Показать на карте: ${f.nameRu}`} title="Показать на карте" onClick={() => onLocate(f.lat, f.lng)} className="inline-flex h-8 w-8 items-center justify-center rounded text-[#8fb0c1] hover:bg-tactical-primary/10 hover:text-tactical-primary">
                             <MapPin size={13} />
                           </button>
                         )}
@@ -130,7 +130,7 @@ export function FacilitiesTab({ isoCode, onLocate }: { isoCode: string; onLocate
                 <span className="flex shrink-0 items-center gap-2 font-mono text-[10px] text-[#7f9fac]">
                   <span>{f.hostIso}</span>
                   {onLocate && (
-                    <button type="button" aria-label={`Показать на карте: ${f.nameRu}`} title="Показать на карте" onClick={() => onLocate(f.lat, f.lng)} className="text-[#6f92a0] hover:text-[#8fd4e2]">
+                    <button type="button" aria-label={`Показать на карте: ${f.nameRu}`} title="Показать на карте" onClick={() => onLocate(f.lat, f.lng)} className="inline-flex h-8 w-8 items-center justify-center rounded text-[#8fb0c1] hover:bg-tactical-primary/10 hover:text-tactical-primary">
                       <MapPin size={13} />
                     </button>
                   )}

@@ -18,7 +18,7 @@ function defaultHeatColor(value: number, max: number): string {
   if (t >= 0.6) return "#f59e0b";
   if (t >= 0.4) return "#4fb287";
   if (t >= 0.2) return "#6b8fa0";
-  return "#1e293b";
+  return "#213d32";
 }
 
 // ─── Component ───────────────────────────────────────────────────────────────
@@ -77,7 +77,7 @@ export function HeatMapGrid({
       {/* Legend */}
       <div className="flex items-center gap-1 mt-1">
         <span className="text-[10px] text-slate-600">0</span>
-        {["#1e293b", "#6b8fa0", "#4fb287", "#f59e0b", "#ef4444"].map((color, idx) => (
+        {["#213d32", "#6b8fa0", "#4fb287", "#f59e0b", "#ef4444"].map((color, idx) => (
           <div
             key={idx}
             className="w-4 h-2 rounded-sm"

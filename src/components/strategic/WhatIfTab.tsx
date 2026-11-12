@@ -160,7 +160,7 @@ function SliderControl({
     ((value - min) / (max - min)) * 100;
   const trackColor: string =
     color === "cyan"
-      ? "bg-cyan-400"
+      ? "bg-tactical-primary"
       : color === "red"
         ? "bg-red-400"
         : "bg-amber-400";
@@ -172,7 +172,7 @@ function SliderControl({
     <div className="space-y-1.5">
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-1.5">
-          <span className="text-cyan-400/70">{icon}</span>
+          <span className="text-tactical-accent/70">{icon}</span>
           <span className="text-[10px] font-mono text-slate-300 uppercase tracking-wider">
             {label}
           </span>
@@ -180,7 +180,7 @@ function SliderControl({
         <span
           className={cn(
             "text-[11px] font-mono font-bold",
-            isNegative ? "text-red-400" : value > 0 ? "text-cyan-400" : "text-slate-400",
+            isNegative ? "text-red-400" : value > 0 ? "text-tactical-accent" : "text-slate-400",
           )}
         >
           {displayValue}{unit === "%" ? "" : ` ${unit}`}
@@ -200,14 +200,14 @@ function SliderControl({
             [&::-webkit-slider-thumb]:w-3.5
             [&::-webkit-slider-thumb]:h-3.5
             [&::-webkit-slider-thumb]:rounded-full
-            [&::-webkit-slider-thumb]:bg-cyan-400
+            [&::-webkit-slider-thumb]:bg-tactical-primary
             [&::-webkit-slider-thumb]:cursor-pointer
             [&::-webkit-slider-thumb]:border-2
-            [&::-webkit-slider-thumb]:border-cyan-300/50
+            [&::-webkit-slider-thumb]:border-tactical-primary/50
             [&::-moz-range-thumb]:w-3.5
             [&::-moz-range-thumb]:h-3.5
             [&::-moz-range-thumb]:rounded-full
-            [&::-moz-range-thumb]:bg-cyan-400
+            [&::-moz-range-thumb]:bg-tactical-primary
             [&::-moz-range-thumb]:border-none
             [&::-moz-range-thumb]:cursor-pointer"
         />
@@ -250,7 +250,7 @@ function ToggleControl({
   return (
     <div className="flex items-center justify-between py-1.5">
       <div className="flex items-center gap-1.5">
-        <span className={active ? "text-cyan-400" : "text-slate-500"}>
+        <span className={active ? "text-tactical-accent" : "text-slate-500"}>
           {icon}
         </span>
         <div>
@@ -264,32 +264,42 @@ function ToggleControl({
           )}
         </div>
       </div>
+      {/* Зона нажатия 32px: сам переключатель остаётся 20px по виду,
+          но палец попадает в увеличенную кнопку, а не в тонкую полоску. */}
       <button
+        type="button"
+        role="switch"
+        aria-checked={active}
+        aria-label={label}
         onClick={() => onChange(!active)}
-        className={cn(
-          "relative w-10 h-5 rounded-full transition-all duration-200",
-          active
-            ? "bg-cyan-500/30 border border-cyan-400/50"
-            : "bg-slate-700/30 border border-slate-600/30",
-        )}
+        className="inline-flex h-8 w-12 items-center justify-center"
       >
-        <div
-          className={cn(
-            "absolute top-0.5 w-3.5 h-3.5 rounded-full transition-all duration-200",
-            active
-              ? "left-5.5 bg-cyan-400"
-              : "left-0.5 bg-slate-500",
-          )}
-        />
         <span
           className={cn(
-            "absolute text-[10px] font-mono top-0.5 font-bold",
+            "relative block h-5 w-10 rounded-full transition-all duration-200",
             active
-              ? "left-1 text-cyan-300"
-              : "left-4 text-slate-500",
+              ? "bg-tactical-primary/30 border border-tactical-primary/50"
+              : "bg-slate-700/30 border border-slate-600/30",
           )}
         >
-          {active ? activeLabel : inactiveLabel}
+          <span
+            className={cn(
+              "absolute top-0.5 w-3.5 h-3.5 rounded-full transition-all duration-200",
+              active
+                ? "left-5.5 bg-tactical-primary"
+                : "left-0.5 bg-slate-500",
+            )}
+          />
+          <span
+            className={cn(
+              "absolute text-[10px] font-mono top-0.5 font-bold",
+              active
+                ? "left-1 text-tactical-accent"
+                : "left-4 text-slate-300",
+            )}
+          >
+            {active ? activeLabel : inactiveLabel}
+          </span>
         </span>
       </button>
     </div>
@@ -533,22 +543,22 @@ export default function WhatIfTab({
             "bg-[#0e1710] flex min-h-0 flex-col overflow-hidden",
             embedded
               ? "relative h-full w-full"
-              : "fixed inset-y-0 right-0 z-50 w-[860px] border-l border-cyan-400/10",
+              : "fixed inset-y-0 right-0 z-50 w-[860px] border-l border-tactical-primary/10",
           )}
         >
           {/* ── Header ──────────────────────────────────────────────── */}
           {!embedded && <div className="flex items-center justify-between px-5 py-3
-            border-b border-cyan-400/10 bg-[#10232c]">
+            border-b border-tactical-primary/10 bg-[#10232c]">
             <div className="flex items-center gap-2.5">
-              <FlaskConical size={18} className="text-cyan-400" />
-              <h2 className="text-sm font-mono font-bold text-cyan-300 tracking-wider uppercase">
+              <FlaskConical size={18} className="text-tactical-accent" />
+              <h2 className="text-sm font-mono font-bold text-tactical-accent tracking-wider uppercase">
                 Анализ Сценариев «Что Если»
               </h2>
             </div>
             <button
               onClick={onClose}
-              className="p-1.5 rounded-md hover:bg-cyan-400/10
-                text-slate-400 hover:text-cyan-400 transition-colors"
+              className="p-1.5 rounded-md hover:bg-tactical-primary/10
+                text-slate-400 hover:text-tactical-accent transition-colors"
             >
               <X size={16} />
             </button>
@@ -558,7 +568,7 @@ export default function WhatIfTab({
             {/* ── Left: Parameters Panel ────────────────────────────── */}
             <div className={cn(
               "flex-shrink-0 overflow-y-auto p-4 space-y-4",
-              embedded ? "w-full border-b border-cyan-400/10" : "w-[310px] border-r border-cyan-400/10",
+              embedded ? "w-full border-b border-tactical-primary/10" : "w-[310px] border-r border-tactical-primary/10",
             )}>
 
               {/* Country selector */}
@@ -570,9 +580,9 @@ export default function WhatIfTab({
                   <button
                     onClick={() => setCountryDropdownOpen(!countryDropdownOpen)}
                     className="w-full flex items-center justify-between px-3 py-2
-                      bg-slate-800/50 border border-cyan-400/15 rounded-md
+                      bg-slate-800/50 border border-tactical-primary/15 rounded-md
                       text-xs font-mono text-slate-200
-                      hover:border-cyan-400/30 transition-colors"
+                      hover:border-tactical-primary/30 transition-colors"
                   >
                     <span className="flex items-center gap-2">
                       <span><Flag iso={selectedIso} /></span>
@@ -595,7 +605,7 @@ export default function WhatIfTab({
                         animate={{ opacity: 1, y: 0 }}
                         exit={{ opacity: 0, y: -4 }}
                         className="absolute top-full left-0 right-0 mt-1
-                          bg-slate-900/95 border border-cyan-400/15 rounded-md
+                          bg-slate-900/95 border border-tactical-primary/15 rounded-md
                           max-h-48 overflow-y-auto z-10"
                       >
                         {sortedCountries.map((c) => (
@@ -608,9 +618,9 @@ export default function WhatIfTab({
                             className={cn(
                               "w-full flex items-center gap-2 px-3 py-1.5",
                               "text-[11px] font-mono text-slate-300",
-                              "hover:bg-cyan-400/10 transition-colors",
+                              "hover:bg-tactical-primary/10 transition-colors",
                               c.isoCode === selectedIso &&
-                                "bg-cyan-400/10 text-cyan-300",
+                                "bg-tactical-primary/10 text-tactical-accent",
                             )}
                           >
                             <span><Flag iso={c.isoCode} /></span>
@@ -629,7 +639,7 @@ export default function WhatIfTab({
               </div>
 
               {/* Divider */}
-              <div className="h-px bg-cyan-400/10" />
+              <div className="h-px bg-tactical-primary/10" />
 
               {/* Sliders */}
               <div className="space-y-3">
@@ -697,7 +707,7 @@ export default function WhatIfTab({
               </div>
 
               {/* Divider */}
-              <div className="h-px bg-cyan-400/10" />
+              <div className="h-px bg-tactical-primary/10" />
 
               {/* Alliance dropdown */}
               <div className="space-y-1.5">
@@ -713,9 +723,9 @@ export default function WhatIfTab({
                     )
                   }
                   className="w-full px-3 py-1.5 rounded-md
-                    bg-slate-800/50 border border-cyan-400/15
+                    bg-slate-800/50 border border-tactical-primary/15
                     text-[11px] font-mono text-slate-200
-                    focus:border-cyan-400/40 focus:outline-none
+                    focus:border-tactical-primary/40 focus:outline-none
                     transition-colors appearance-none cursor-pointer"
                 >
                   <option value="">Без изменений</option>
@@ -761,7 +771,7 @@ export default function WhatIfTab({
               </div>
 
               {/* Divider */}
-              <div className="h-px bg-cyan-400/10" />
+              <div className="h-px bg-tactical-primary/10" />
 
               {/* Presets */}
               <div className="space-y-2">
@@ -774,17 +784,17 @@ export default function WhatIfTab({
                       key={preset.id}
                       onClick={() => applyPreset(preset)}
                       className="flex items-center gap-2 px-2.5 py-1.5 rounded-md
-                        bg-slate-800/40 border border-cyan-400/10
-                        text-left hover:border-cyan-400/25
-                        hover:bg-cyan-400/5 transition-all group"
+                        bg-slate-800/40 border border-tactical-primary/10
+                        text-left hover:border-tactical-primary/25
+                        hover:bg-tactical-primary/5 transition-all group"
                     >
                       <Zap
                         size={12}
-                        className="text-cyan-400/50 group-hover:text-cyan-400
+                        className="text-tactical-accent/50 group-hover:text-tactical-accent
                           transition-colors flex-shrink-0"
                       />
                       <div className="flex-1 min-w-0">
-                        <div className="text-[10px] font-mono text-slate-300 group-hover:text-cyan-300 transition-colors">
+                        <div className="text-[10px] font-mono text-slate-300 group-hover:text-tactical-accent transition-colors">
                           {preset.nameRu}
                         </div>
                         <div className="text-[10px] font-mono text-slate-500">
@@ -800,7 +810,7 @@ export default function WhatIfTab({
               <div className="flex gap-2 pt-2">
                 <button
                   onClick={resetParams}
-                  className="flex-1 flex items-center justify-center gap-1.5 px-3 py-1.5
+                  className="flex-1 flex min-h-8 items-center justify-center gap-1.5 px-3 py-1.5
                     rounded-md border border-slate-600/30
                     text-[10px] font-mono text-slate-400 uppercase
                     hover:border-slate-500/50 hover:text-slate-300
@@ -811,10 +821,10 @@ export default function WhatIfTab({
                 </button>
                 <button
                   onClick={copyScenarioURL}
-                  className="flex-1 flex items-center justify-center gap-1.5 px-3 py-1.5
-                    rounded-md border border-cyan-400/20
-                    text-[10px] font-mono text-cyan-400/70 uppercase
-                    hover:border-cyan-400/40 hover:text-cyan-400
+                  className="flex-1 flex min-h-8 items-center justify-center gap-1.5 px-3 py-1.5
+                    rounded-md border border-tactical-primary/20
+                    text-[10px] font-mono text-tactical-accent/70 uppercase
+                    hover:border-tactical-primary/40 hover:text-tactical-accent
                     transition-colors"
                 >
                   {copiedURL ? <Check size={12} /> : <Copy size={12} />}
@@ -828,9 +838,9 @@ export default function WhatIfTab({
               {isCalculating && (
                 <div className="absolute inset-0 flex items-center justify-center
                   bg-[#0e1710]/50 z-10 pointer-events-none">
-                  <div className="flex items-center gap-2 text-cyan-400 font-mono text-xs">
-                    <div className="w-4 h-4 border-2 border-cyan-400/30
-                      border-t-cyan-400 rounded-full animate-spin" />
+                  <div className="flex items-center gap-2 text-tactical-accent font-mono text-xs">
+                    <div className="w-4 h-4 border-2 border-tactical-primary/30
+                      border-t-tactical-primary rounded-full animate-spin" />
                     Пересчёт...
                   </div>
                 </div>
@@ -862,7 +872,7 @@ export default function WhatIfTab({
                             className={cn(
                               getDeltaColor(result.rankChange),
                               result.rankChange > 0
-                                ? "text-cyan-400"
+                                ? "text-tactical-accent"
                                 : result.rankChange < 0
                                   ? "text-red-400"
                                   : "text-slate-400",
@@ -881,7 +891,7 @@ export default function WhatIfTab({
                     </div>
 
                     {/* Total BP before/after */}
-                    <div className="grid grid-cols-3 gap-2 mt-3 pt-3 border-t border-cyan-400/10">
+                    <div className="grid grid-cols-3 gap-2 mt-3 pt-3 border-t border-tactical-primary/10">
                       <div className="text-center">
                         <div className="text-[10px] font-mono text-slate-500 uppercase tracking-widest">
                           Базовый БП
@@ -900,7 +910,7 @@ export default function WhatIfTab({
                       </div>
 
                       <div className="flex flex-col items-center">
-                        <span className="text-cyan-400/40">→</span>
+                        <span className="text-tactical-accent/40">→</span>
                         <span
                           className={cn(
                             "text-lg font-mono font-bold",
@@ -960,11 +970,11 @@ export default function WhatIfTab({
                         key={key}
                         onClick={() => setActiveView(key)}
                         className={cn(
-                          "flex items-center gap-1.5 px-3 py-1.5 rounded-md",
+                          "flex min-h-8 items-center gap-1.5 px-3 py-1.5 rounded-md",
                           "text-[10px] font-mono uppercase tracking-wider",
                           "transition-all",
                           activeView === key
-                            ? "bg-cyan-400/15 text-cyan-400 border border-cyan-400/30"
+                            ? "bg-tactical-primary/15 text-tactical-accent border border-tactical-primary/30"
                             : "text-slate-500 border border-transparent hover:text-slate-300",
                         )}
                       >
@@ -1021,7 +1031,7 @@ export default function WhatIfTab({
 
                         {/* After radar */}
                         <div className="space-y-2">
-                          <div className="text-[10px] font-mono text-cyan-400/70 uppercase tracking-widest text-center">
+                          <div className="text-[10px] font-mono text-tactical-accent/70 uppercase tracking-widest text-center">
                             Сценарный Профиль
                           </div>
                           <ResponsiveContainer width="100%" height={220}>
@@ -1062,7 +1072,7 @@ export default function WhatIfTab({
                       </div>
 
                       {/* Overlay comparison */}
-                      <div className="mt-2 pt-2 border-t border-cyan-400/10">
+                      <div className="mt-2 pt-2 border-t border-tactical-primary/10">
                         <div className="text-[10px] font-mono text-slate-500 uppercase tracking-widest text-center mb-2">
                           Наложение
                         </div>
@@ -1117,7 +1127,7 @@ export default function WhatIfTab({
                     <div className="glass-panel rounded-lg overflow-hidden">
                       <table className="w-full text-[11px] font-mono">
                         <thead>
-                          <tr className="border-b border-cyan-400/10">
+                          <tr className="border-b border-tactical-primary/10">
                             <th className="px-3 py-2 text-left text-[10px]
                               text-slate-500 uppercase tracking-widest">
                               Компонент
@@ -1146,11 +1156,11 @@ export default function WhatIfTab({
                               <tr
                                 key={delta.component}
                                 className="border-b border-slate-700/30
-                                  hover:bg-cyan-400/5 transition-colors"
+                                  hover:bg-tactical-primary/5 transition-colors"
                               >
                                 <td className="px-3 py-2">
                                   <div className="flex items-center gap-1.5">
-                                    <span className="text-cyan-400/50">
+                                    <span className="text-tactical-accent/50">
                                       {BP_ICONS[delta.component]}
                                     </span>
                                     <span className="text-slate-300">
@@ -1194,7 +1204,7 @@ export default function WhatIfTab({
                           )}
                         </tbody>
                         <tfoot>
-                          <tr className="border-t-2 border-cyan-400/20 bg-cyan-400/5">
+                          <tr className="border-t-2 border-tactical-primary/20 bg-tactical-primary/5">
                             <td className="px-3 py-2.5 font-bold text-slate-200">
                               ИТОГО БП
                             </td>
@@ -1381,7 +1391,7 @@ export default function WhatIfTab({
                                   px-3 py-2 rounded-md bg-slate-800/30"
                               >
                                 <div className="flex items-center gap-2">
-                                  <span className="text-cyan-400/50">
+                                  <span className="text-tactical-accent/50">
                                     {BP_ICONS[delta.component]}
                                   </span>
                                   <span className="text-[11px] font-mono text-slate-300">
@@ -1437,7 +1447,7 @@ export default function WhatIfTab({
                               "transition-colors",
                               copiedURL
                                 ? "bg-green-400/10 border-green-400/30 text-green-400"
-                                : "bg-cyan-400/10 border-cyan-400/20 text-cyan-400/70 hover:text-cyan-400",
+                                : "bg-tactical-primary/10 border-tactical-primary/20 text-tactical-accent/70 hover:text-tactical-accent",
                             )}
                           >
                             {copiedURL ? "✓" : "Копировать"}
@@ -1490,14 +1500,14 @@ function EffectCard({
       className={cn(
         "px-3 py-2.5 rounded-md border transition-colors",
         positive
-          ? "bg-cyan-400/5 border-cyan-400/15"
+          ? "bg-tactical-primary/5 border-tactical-primary/15"
           : "bg-red-400/5 border-red-400/15",
       )}
     >
       <div className="flex items-center gap-1.5 mb-1">
         <span
           className={cn(
-            positive ? "text-cyan-400/70" : "text-red-400/70",
+            positive ? "text-tactical-accent/70" : "text-red-400/70",
           )}
         >
           {icon}
@@ -1509,7 +1519,7 @@ function EffectCard({
       <div
         className={cn(
           "text-sm font-mono font-bold",
-          positive ? "text-cyan-400" : "text-red-400",
+          positive ? "text-tactical-accent" : "text-red-400",
         )}
       >
         {value}

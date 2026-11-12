@@ -64,7 +64,7 @@ const STATUS_LABELS_RU: Record<TransferStatus, string> = {
 
 const STATUS_STYLES: Record<TransferStatus, string> = {
   delivered: "bg-emerald-500/15 text-emerald-400",
-  contracted: "bg-cyan-500/15 text-cyan-400",
+  contracted: "bg-tactical-primary/15 text-tactical-accent",
   cancelled: "bg-slate-600/30 text-slate-500",
 };
 
@@ -74,7 +74,7 @@ function ScopeToggle({ all, onChange }: { all: boolean; onChange: (v: boolean) =
       <button
         type="button"
         onClick={() => onChange(false)}
-        className={`rounded px-2 py-1 text-[10px] font-semibold transition-colors ${
+        className={`inline-flex min-h-8 items-center rounded px-2 py-1 text-[10px] font-semibold transition-colors ${
           !all ? "bg-tactical-primary/20 text-tactical-primary" : "bg-slate-800/60 text-slate-400 hover:text-slate-300"
         }`}
       >
@@ -83,7 +83,7 @@ function ScopeToggle({ all, onChange }: { all: boolean; onChange: (v: boolean) =
       <button
         type="button"
         onClick={() => onChange(true)}
-        className={`rounded px-2 py-1 text-[10px] font-semibold transition-colors ${
+        className={`inline-flex min-h-8 items-center rounded px-2 py-1 text-[10px] font-semibold transition-colors ${
           all ? "bg-tactical-primary/20 text-tactical-primary" : "bg-slate-800/60 text-slate-400 hover:text-slate-300"
         }`}
       >
@@ -420,7 +420,7 @@ export function IndustryTab({ isoCode }: { isoCode: string }) {
               key={c}
               type="button"
               onClick={() => setWCat(c)}
-              className={`rounded px-1.5 py-1 text-[10px] transition-colors ${
+              className={`inline-flex min-h-8 items-center rounded px-1.5 py-1 text-[10px] transition-colors ${
                 wCat === c ? "bg-tactical-primary/20 text-tactical-primary" : "bg-slate-800/60 text-slate-500 hover:text-slate-300"
               }`}
             >
@@ -433,7 +433,7 @@ export function IndustryTab({ isoCode }: { isoCode: string }) {
               key={s}
               type="button"
               onClick={() => setWSort(s)}
-              className={`rounded px-1.5 py-1 text-[10px] transition-colors ${
+              className={`inline-flex min-h-8 items-center rounded px-1.5 py-1 text-[10px] transition-colors ${
                 wSort === s ? "bg-slate-700 text-slate-200" : "bg-slate-800/60 text-slate-500 hover:text-slate-300"
               }`}
             >

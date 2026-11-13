@@ -3,9 +3,9 @@ import { test, expect } from '@playwright/test';
 // ─────────────────────────────────────────────────────────────────────────────
 // Публичный API v1 (мост к продукту, путь B дорожной карты).
 //
-// Спека запускается с webServer.env RBP_RATE_LIMIT_PER_MIN='5' (временный
-// конфиг playwright.public-api.config.ts), поэтому каждый тест ходит со своим
-// x-forwarded-for: бакеты лимитера изолированы, burst-тест не мешает
+// Тесты адаптивны к реальному лимиту (RBP_RATE_LIMIT_PER_MIN, дефолт 60):
+// burst-тест читает лимит из /meta и бьёт limit+N запросов. Каждый тест ходит
+// со своим x-forwarded-for: бакеты лимитера изолированы, burst не мешает
 // контрактным проверкам. Канонический размер сида — 195 (как в admin-api).
 // ─────────────────────────────────────────────────────────────────────────────
 
@@ -121,19 +121,27 @@ test.describe('public API v1 — contracts', () => {
     expect(body.data.benchmarks.gfpReference).toBeGreaterThan(100);
     expect(body.data.sources.length).toBeGreaterThanOrEqual(4);
 
-    expect(body.limits.rateLimitPerMinute).toBe(5); // из временного конфига
+    expect(typeof body.limits.rateLimitPerMinute).toBe('number');
+    expect(body.limits.rateLimitPerMinute).toBeGreaterThan(0);
     expect(body.links.methodology).toBe('/v3/methodology');
   });
 });
 
-test.describe('public API v1 — rate limit (RBP_RATE_LIMIT_PER_MIN=5)', () => {
+test.describe('public API v1 — rate limit', () => {
   test('burst exceeds the bucket → 429 with Retry-After; other IPs unaffected', async ({ request }) => {
+    // Лимит читаем из /meta (другой IP): тест адаптивен к любому
+    // RBP_RATE_LIMIT_PER_MIN, включая дефолт 60 в каноническом CI-конфиге.
+    const metaResponse = await request.get('/api/public/v1/meta', ip(8));
+    expect(metaResponse.status()).toBe(200);
+    const limit = (await metaResponse.json()).limits.rateLimitPerMinute as number;
+    expect(limit).toBeGreaterThan(0);
+
     const burstIp = ip(6);
     const statuses: number[] = [];
     let throttled = null as null | Awaited<ReturnType<typeof request.get>>;
 
-    // Лимит 5/мин: первые 5 запросов проходят, дальше 429.
-    for (let i = 0; i < 8; i++) {
+    // Первые limit запросов проходят, дальше 429.
+    for (let i = 0; i < limit + 3; i++) {
       const response = await request.get('/api/public/v1/meta', burstIp);
       statuses.push(response.status());
       if (response.status() === 429) throttled = response;

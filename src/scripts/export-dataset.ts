@@ -61,6 +61,22 @@ export function exportDatasetSnapshot(
   outPath: string = defaultSnapshotPath(),
 ): DatasetSnapshot {
   const snapshot = buildDatasetSnapshot(db);
+  // Payload не изменился — файл не трогаем: иначе exportedAt штампует каждый
+  // экспорт, и weekly bot-коммит создавался бы даже при нулевом изменении
+  // данных (гейт «пустых коммитов нет» в pipeline-refresh.yml должен работать).
+  if (fs.existsSync(outPath)) {
+    try {
+      const prev = parseDatasetSnapshot(
+        JSON.parse(fs.readFileSync(outPath, "utf8")),
+      );
+      const samePayload =
+        JSON.stringify(prev.countries) === JSON.stringify(snapshot.countries) &&
+        JSON.stringify(prev.seedMeta) === JSON.stringify(snapshot.seedMeta);
+      if (samePayload) return prev;
+    } catch {
+      // предыдущий снапшот битый — перезаписываем валидным
+    }
+  }
   fs.mkdirSync(path.dirname(outPath), { recursive: true });
   fs.writeFileSync(outPath, JSON.stringify(snapshot, null, 2) + "\n", "utf8");
   return snapshot;

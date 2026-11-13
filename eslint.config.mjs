@@ -12,6 +12,9 @@ const eslintConfig = defineConfig([
     "out/**",
     "build/**",
     "next-env.d.ts",
+    // Локальные инструменты агентов (worktree, todos) — не исходники проекта:
+    // копии репо внутри .pi/wt/* иначе линтятся без override-правил legacy-зон.
+    ".pi/**",
   ]),
   // These files are integration adapters for libraries whose callback/data
   // shapes are intentionally dynamic (DeckGL, Mapbox, Recharts) plus the

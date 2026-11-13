@@ -579,8 +579,16 @@ export default function TacticalHUD() {
                                                         </div>
                                                     </div>
                                                 </div>
-                                                <button onClick={() => removeUnit(u.id)} className="p-1.5 text-slate-600 hover:text-tactical-accent transition-all opacity-0 group-hover:opacity-100">
-                                                    <Trash2 size={12} />
+                                                {/* Кнопка видна всегда: на touch и с клавиатуры наведения
+                                                    нет, а удаление юнита — необратимое действие. */}
+                                                <button
+                                                    type="button"
+                                                    onClick={() => removeUnit(u.id)}
+                                                    aria-label={`Удалить юнит ${u.unit.displayName || u.unit.name}`}
+                                                    title="Удалить юнит"
+                                                    className="grid h-8 w-8 shrink-0 place-items-center rounded text-slate-400 transition-colors hover:bg-white/5 hover:text-tactical-rus"
+                                                >
+                                                    <Trash2 size={14} />
                                                 </button>
                                             </motion.div>
                                         ))}

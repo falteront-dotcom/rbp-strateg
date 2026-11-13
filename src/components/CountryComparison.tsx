@@ -283,7 +283,8 @@ export default function CountryComparison({
                           onChange={(e) =>
                             handleIsoChange(idx, e.target.value)
                           }
-                          className="appearance-none bg-slate-900 border border-white/10 text-sm pl-2 pr-6 py-1 rounded outline-none text-white font-bold font-mono cursor-pointer"
+                          aria-label={`Страна ${idx + 1} для сравнения`}
+                          className="min-h-8 appearance-none rounded border border-tactical-line bg-tactical-panel pl-2 pr-6 py-1 text-sm font-bold font-mono text-white outline-none cursor-pointer focus:border-tactical-accent"
                         >
                           {allCountries
                             .filter(
@@ -312,9 +313,10 @@ export default function CountryComparison({
                       </span>
                       {selectedIsoCodes.length > 2 && (
                         <button
+                          type="button"
                           onClick={() => removeCountry(iso)}
-                          className="ml-1 text-white/30 hover:text-red-400 transition-colors cursor-pointer"
-                          aria-label={`Remove ${iso}`}
+                          className="ml-1 grid h-8 w-8 shrink-0 place-items-center rounded text-white/40 transition-colors hover:bg-white/5 hover:text-tactical-rus cursor-pointer"
+                          aria-label={`Убрать ${iso} из сравнения`}
                         >
                           <X size={14} />
                         </button>
@@ -326,7 +328,7 @@ export default function CountryComparison({
                 {selectedIsoCodes.length < 4 && (
                   <button
                     onClick={addCountry}
-                    className="px-3 py-2 border border-dashed border-white/15 rounded-lg text-white/40 hover:text-tactical-accent hover:border-tactical-accent/40 transition-all text-sm font-mono cursor-pointer"
+                    className="min-h-8 px-3 py-2 border border-dashed border-tactical-line rounded-lg text-white/50 hover:text-tactical-accent hover:border-tactical-accent/40 transition-all text-sm font-mono cursor-pointer"
                   >
                     + Добавить
                   </button>
@@ -337,7 +339,7 @@ export default function CountryComparison({
                   onClick={fetchComparison}
                   disabled={selectedIsoCodes.length < 2 || isLoading}
                   className={cn(
-                    "ml-auto px-5 py-2 bg-tactical-accent text-slate-950 font-black uppercase tracking-widest text-xs rounded-lg transition-all duration-300 flex items-center gap-2 cursor-pointer",
+                    "ml-auto min-h-8 px-5 py-2 bg-tactical-accent text-tactical-bg font-black uppercase tracking-widest text-xs rounded-lg transition-all duration-300 flex items-center gap-2 cursor-pointer",
                     "disabled:opacity-40 disabled:cursor-not-allowed disabled:shadow-none",
                   )}
                 >

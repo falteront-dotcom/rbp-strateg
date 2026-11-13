@@ -1,133 +1,28 @@
 // ─────────────────────────────────────────────────────────────────────────────
-// /api/compare — Multi-country comparison API
-// Accepts 2–4 ISO codes, returns full comparison with deltas & summary
+// /api/compare — сравнение 2–4 стран
+//
+// Контракт ответа — ComparisonResult из src/lib/comparison.ts. Раньше маршрут
+// собирал свой ответ (deltas/summary), а окно сравнения читало componentDeltas,
+// metricDeltas и overallLeader: кнопка «Сравнить» роняла всё приложение
+// ошибкой «Cannot read properties of undefined (reading 'side')».
+// Теперь дельты считает одна функция — compareCountriesList, и разойтись
+// ответ с интерфейсом не может.
 // ─────────────────────────────────────────────────────────────────────────────
 
 import { NextResponse } from "next/server";
 import { openReadonlyDatabase } from "@/db/runtime";
 import { mapCountryRows, type RawCountryRow } from "@/db/country-mapper";
 import {
-  COMPARISON_BP_COMPONENTS,
+  compareCountriesList,
   type CountryCompareData,
 } from "@/lib/comparison";
-
-// ─────────────────────────────────────────────────────────────────────────────
-// Enhanced response types
-// ─────────────────────────────────────────────────────────────────────────────
-
-/** Per-component delta with value, delta, and rank among selected countries */
-interface ComponentDelta {
-  component: string;
-  value: number;
-  delta: number;
-  rank: number;
-}
-
-/** Strongest/weakest country ISO per component */
-interface ComparisonSummary {
-  strongest: Record<string, string>;
-  weakest: Record<string, string>;
-}
-
-/** Full API response shape */
-interface CompareResponse {
-  countries: CountryCompareData[];
-  deltas: ComponentDelta[][];
-  summary: ComparisonSummary;
-}
-
-/**
- * Build ComponentDelta[][] for each country across all BP components.
- * For country[i], component[j]: value = that component score,
- * delta = difference from the average of others, rank among selected.
- */
-function buildComponentDeltas(
-  countries: CountryCompareData[],
-): ComponentDelta[][] {
-  const result: ComponentDelta[][] = [];
-
-  for (let ci = 0; ci < countries.length; ci++) {
-    const countryDeltas: ComponentDelta[] = [];
-
-    for (const comp of COMPARISON_BP_COMPONENTS) {
-      const value = countries[ci][comp] as number;
-
-      // Delta from average of OTHER countries
-      const othersAvg =
-        countries.reduce(
-          (sum, c, idx) => (idx === ci ? sum : sum + (c[comp] as number)),
-          0,
-        ) / Math.max(1, countries.length - 1);
-      const delta = Number((value - othersAvg).toFixed(2));
-
-      // Rank among all selected countries for this component (1 = highest)
-      const allValues = countries.map((c) => c[comp] as number);
-      const sorted = [...allValues].sort((a, b) => b - a);
-      const rank = sorted.indexOf(value) + 1;
-
-      countryDeltas.push({
-        component: comp,
-        value: Number(value.toFixed(2)),
-        delta,
-        rank,
-      });
-    }
-
-    result.push(countryDeltas);
-  }
-
-  return result;
-}
-
-/**
- * Build ComparisonSummary: strongest and weakest ISO per component.
- */
-function buildSummary(
-  countries: CountryCompareData[],
-): ComparisonSummary {
-  const strongest: Record<string, string> = {};
-  const weakest: Record<string, string> = {};
-
-  for (const comp of COMPARISON_BP_COMPONENTS) {
-    let maxVal = -Infinity;
-    let minVal = Infinity;
-    let maxISO = "";
-    let minISO = "";
-
-    for (const c of countries) {
-      const val = c[comp] as number;
-      if (val > maxVal) { maxVal = val; maxISO = c.isoCode; }
-      if (val < minVal) { minVal = val; minISO = c.isoCode; }
-    }
-
-    strongest[comp] = maxISO;
-    weakest[comp] = minISO;
-  }
-
-  // Also include bpTotal
-  let maxTotal = -Infinity;
-  let minTotal = Infinity;
-  let maxTotalISO = "";
-  let minTotalISO = "";
-  for (const c of countries) {
-    if (c.bpTotal > maxTotal) { maxTotal = c.bpTotal; maxTotalISO = c.isoCode; }
-    if (c.bpTotal < minTotal) { minTotal = c.bpTotal; minTotalISO = c.isoCode; }
-  }
-  strongest["bpTotal"] = maxTotalISO;
-  weakest["bpTotal"] = minTotalISO;
-
-  return { strongest, weakest };
-}
-
-// ─────────────────────────────────────────────────────────────────────────────
-// Route handler
-// ─────────────────────────────────────────────────────────────────────────────
 
 /**
  * GET /api/compare?iso=USA&iso=RUS&iso=CHN
  *
- * Accepts 2–4 ISO 3166-1 alpha-3 codes as repeated `iso` query params.
- * Returns countries, per-country component deltas, and strongest/weakest summary.
+ * Принимает 2–4 кода ISO 3166-1 alpha-3 повторяющимся параметром `iso`.
+ * Возвращает ComparisonResult: страны, попарные дельты компонентов,
+ * дельты ключевых метрик, лидера по суммарному БП и значения БП.
  */
 export async function GET(request: Request): Promise<NextResponse> {
   try {
@@ -157,19 +52,12 @@ export async function GET(request: Request): Promise<NextResponse> {
       sqlite.close();
     }
 
-    // Order-preserving, O(1) resolution of the 2–4 requested ISO codes.
-    // Building a single Map by isoCode (IDs are unique) is behavior-identical
-    // to the previous repeated `.find` scan: same objects, same request order,
-    // same skip-when-not-found. Behavior-preserving performance hardening only.
-    const byIso = new Map(
-      allCountries.map((c) => [c.isoCode, c] as const),
-    );
+    // Порядок запроса сохраняется, поиск по Map — O(1) на код.
+    const byIso = new Map(allCountries.map((c) => [c.isoCode, c] as const));
     const requestedCountries: CountryCompareData[] = [];
     for (const iso of isoCodes) {
       const found = byIso.get(iso.toUpperCase());
-      if (found) {
-        requestedCountries.push(found);
-      }
+      if (found) requestedCountries.push(found);
     }
 
     if (requestedCountries.length < 2) {
@@ -179,17 +67,7 @@ export async function GET(request: Request): Promise<NextResponse> {
       );
     }
 
-    // Build enhanced response
-    const deltas = buildComponentDeltas(requestedCountries);
-    const summary = buildSummary(requestedCountries);
-
-    const response: CompareResponse = {
-      countries: requestedCountries,
-      deltas,
-      summary,
-    };
-
-    return NextResponse.json(response);
+    return NextResponse.json(compareCountriesList(requestedCountries));
   } catch (error: unknown) {
     const message = error instanceof Error ? error.message : "Unknown error";
     return NextResponse.json({ error: message }, { status: 500 });

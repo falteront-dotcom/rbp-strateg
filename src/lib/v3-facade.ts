@@ -222,20 +222,40 @@ interface BP3Cache {
 
 let bp3Cache: BP3Cache | null = null;
 
-function ensureBP3Cache(): BP3Cache {
-  if (bp3Cache !== null) {
-    return bp3Cache;
-  }
+/** Страны БД в порядке v2-балла — общий вход для рейтинга и диагностик. */
+function readCountriesForBP3(): CountryApiData[] {
   const db = openReadonlyDatabase();
-  let countries: CountryApiData[];
   try {
     const rows = db
       .prepare("SELECT * FROM countries ORDER BY bp_total DESC")
       .all() as RawCountryRow[];
-    countries = mapCountryRows(rows);
+    return mapCountryRows(rows);
   } finally {
     db.close();
   }
+}
+
+/**
+ * Входы БП3 для всех стран БД — для диагностик (leave-one-component-out
+ * и т.п.). Тот же путь построения, что у рейтинга, без кэша результатов.
+ */
+export function getBP3Inputs(): { input: CountryBP3Input; hasUP: boolean }[] {
+  const out: { input: CountryBP3Input; hasUP: boolean }[] = [];
+  for (const country of readCountriesForBP3()) {
+    try {
+      out.push(buildBP3Input(country));
+    } catch {
+      continue;
+    }
+  }
+  return out;
+}
+
+function ensureBP3Cache(): BP3Cache {
+  if (bp3Cache !== null) {
+    return bp3Cache;
+  }
+  const countries = readCountriesForBP3();
 
   const results: { result: CountryBP3Result; entry: BP3CacheEntry }[] = [];
   const byIso = new Map<string, BP3CacheEntry>();

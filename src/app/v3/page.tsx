@@ -169,6 +169,7 @@ export default function V3DashboardPage() {
                   <th className="px-3 py-2 font-medium">Страна</th>
                   <th className="px-3 py-2 font-medium">БП 3.0</th>
                   <th className="px-3 py-2 font-medium">Интервал P10–P90</th>
+                  <th className="px-3 py-2 font-medium">Ранг P10–P90</th>
                   <th className="px-3 py-2 text-right font-medium">
                     Δ к 2.0
                   </th>
@@ -214,6 +215,16 @@ export default function V3DashboardPage() {
                       </div>
                     </td>
                     <td
+                      className="px-3 py-2 font-mono text-xs text-slate-400"
+                      title={
+                        row.rankStability.pAboveNext === null
+                          ? "Ранг по итерациям Монте-Карло (весовая неопределённость)"
+                          : `P(выше следующего соседа): ${(row.rankStability.pAboveNext * 100).toFixed(1)}%`
+                      }
+                    >
+                      {row.rankStability.rankP10}–{row.rankStability.rankP90}
+                    </td>
+                    <td
                       className={`px-3 py-2 text-right font-mono ${
                         row.deltaV2 > 0
                           ? "text-emerald-400"
@@ -233,7 +244,11 @@ export default function V3DashboardPage() {
           <p className="mt-2 text-xs text-slate-500">
             Пометка «нет U/P» — по стране нет надёжных открытых данных по БПЛА и
             производству боеприпасов; итог для неё посчитан по восьми
-            компонентам и не полностью сопоставим с полным профилем.
+            компонентам и не полностью сопоставим с полным профилем. Интервалы
+            и ранг P10–P90 учитывают весовую неопределённость (веса экспертные,
+            тянутся из Dirichlet на каждой итерации Монте-Карло); наведение на
+            ранг показывает P(страна выше следующего соседа). Происхождение
+            весов: docs/weights-elicitation.md.
           </p>
         </section>
 

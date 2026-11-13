@@ -49,6 +49,16 @@ export const DEFAULT_MONTE_CARLO_ITERATIONS = 4000;
 /** Базовый сид по умолчанию: фиксирован, расчёты воспроизводимы из коробки */
 export const DEFAULT_BASE_SEED = 20261107;
 
+/**
+ * Концентрация Dirichlet для весов по умолчанию (κ = 100).
+ * Веса экспертные (docs/weights-elicitation.md), поэтому тянутся на каждой
+ * итерации MC: дисперсия веса w(1−w)/(κ+1), для weapon 0.16 это σ ≈ 0.036
+ * (±23% относительно) — интервалы P10/P90 покрывают главный эпистемический
+ * риск модели, а не только разброс входных данных. 0 отключает (старое
+ * поведение с весами-константами).
+ */
+export const DEFAULT_WEIGHT_CONCENTRATION = 100;
+
 // ─── Компоненты v2 как входы ─────────────────────────────────────────────────
 
 /** Строит ComponentResultBP3 для унаследованного компонента v2 */
@@ -144,6 +154,7 @@ export function calculateCountryBP3(
     distributionInputs,
     iterations,
     seed,
+    { weightConcentration: options.weightConcentration ?? DEFAULT_WEIGHT_CONCENTRATION },
   );
 
   return {
@@ -156,6 +167,7 @@ export function calculateCountryBP3(
     components: componentsTyped,
     weightsUsed: weights,
     rank: null,
+    ...(options.keepSamples ? { samples: monteCarlo.samples } : {}),
   };
 }
 

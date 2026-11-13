@@ -9,7 +9,15 @@ services:
     runtime: node
     plan: free
     region: frankfurt
-    buildCommand: npm ci && npm run build
+    # Сборка требует посеянную БД: /v3-страницы читают SQLite на статическом
+    # пререндере (CI сеет перед build тем же способом). Без db:seed деплой
+    # падал на каждом пуше с 7 ноября 2026 — Render держал билд от 7 октября.
+    # RBP_AUTO_SEED=off на время сборки: instrumentation иначе пересеивает БД
+    # параллельно с пререндер-воркерами → «database is locked» (воспроизведено).
+    # --include=dev: tsx и typescript — devDependencies, NODE_ENV=production
+    # на Render иначе их пропускает. Typecheck при сборке на Render отключён
+    # (next.config.ts, 512 МБ free-тира) — его отдельно гоняет CI.
+    buildCommand: npm ci --include=dev && npm run db:seed && RBP_AUTO_SEED=off npm run build
     startCommand: npm run start -- --port $PORT
     # Лайвнесс без БД: частичный отказ сида не должен гасить живую половину
     # сайта (стойкий 503 на healthCheckPath → стоп трафика 15 с → рестарт 60 с

@@ -11,6 +11,12 @@
 //
 // Это НЕ healthCheckPath: внешний монитор (GitHub Actions keepalive) проверяет
 // этот роут и поднимает алерт, а лайвнесс Render — /api/live.
+//
+// Отпечаток релиза: каждый ответ несёт commit собранного билда
+// (RENDER_GIT_COMMIT на Render, вне Render — пусто). keepalive сверяет его
+// с master: стейл-билд ноября 2026 прошёл бы отпечаток «195 стран», но не SHA.
+// Поле есть и в 503-ответах: «старый билд» и «новый билд с broken данными» —
+// разные аварии, монитор должен их различать.
 // ─────────────────────────────────────────────────────────────────────────────
 
 import { NextResponse } from "next/server";
@@ -25,6 +31,7 @@ const COUNTRIES_MIN = 150;
 const COUNTRIES_MAX = 250;
 
 export function GET() {
+  const commit = process.env.RENDER_GIT_COMMIT ?? "";
   try {
     const db = openReadonlyDatabase();
     try {
@@ -33,7 +40,7 @@ export function GET() {
         .all() as MetaRow[];
       if (meta.length === 0) {
         return NextResponse.json(
-          { ok: false, error: "сид не завершён: _seed_meta пуст" },
+          { ok: false, error: "сид не завершён: _seed_meta пуст", commit },
           { status: 503, headers: { "cache-control": "no-store" } },
         );
       }
@@ -76,7 +83,7 @@ export function GET() {
 
       if (mismatches.length > 0) {
         return NextResponse.json(
-          { ok: false, error: "данные расходятся с эталоном сида", mismatches },
+          { ok: false, error: "данные расходятся с эталоном сида", mismatches, commit },
           { status: 503, headers: { "cache-control": "no-store" } },
         );
       }
@@ -87,6 +94,7 @@ export function GET() {
           tables: expected.size,
           rows: totalRows,
           countries: actual.get("countries") ?? 0,
+          commit,
         },
         { headers: { "cache-control": "no-store" } },
       );
@@ -95,7 +103,7 @@ export function GET() {
     }
   } catch (err) {
     return NextResponse.json(
-      { ok: false, error: `база недоступна: ${String(err)}` },
+      { ok: false, error: `база недоступна: ${String(err)}`, commit },
       { status: 503, headers: { "cache-control": "no-store" } },
     );
   }

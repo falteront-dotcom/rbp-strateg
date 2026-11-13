@@ -233,7 +233,7 @@ export function CoalitionBuilder({ isOpen, onClose, countries: countriesProp }: 
                     <button
                       key={v}
                       onClick={() => setView(v)}
-                      className={`px-3 py-1.5 rounded-md text-[10px] font-bold tracking-widest uppercase transition-all cursor-pointer ${
+                      className={`min-h-8 px-3 py-1.5 rounded-md text-[10px] font-bold tracking-widest uppercase transition-all cursor-pointer ${
                         isActive
                           ? "bg-tactical-accent/20 border border-tactical-accent/40 text-tactical-accent"
                           : "bg-white/5 border border-white/10 text-white/50 hover:text-white/80 hover:border-white/20"
@@ -245,9 +245,10 @@ export function CoalitionBuilder({ isOpen, onClose, countries: countriesProp }: 
                 })}
                 <div className="w-px h-6 bg-white/10 mx-1" />
                 <button
+                  type="button"
                   onClick={onClose}
                   aria-label="Закрыть анализ коалиций"
-                  className="p-1.5 text-white/40 hover:text-tactical-primary transition-colors cursor-pointer"
+                  className="grid h-8 w-8 shrink-0 place-items-center rounded text-white/40 transition-colors hover:bg-white/5 hover:text-tactical-primary cursor-pointer"
                 >
                   <X size={16} />
                 </button>
@@ -272,11 +273,13 @@ export function CoalitionBuilder({ isOpen, onClose, countries: countriesProp }: 
                         <div key={coalition.name} className="relative">
                           <CoalitionCard coalition={coalition} />
                           <button
+                            type="button"
                             onClick={() => loadPredefined(coalition.name)}
-                            className="absolute top-2 right-2 z-10 p-1.5 bg-tactical-accent/10 hover:bg-tactical-accent/20 border border-tactical-accent/30 rounded-md transition-colors cursor-pointer"
+                            aria-label={`Загрузить ${coalition.name} в конструктор`}
+                            className="absolute top-2 right-2 z-10 grid h-8 w-8 place-items-center bg-tactical-accent/10 hover:bg-tactical-accent/20 border border-tactical-accent/30 rounded-md transition-colors cursor-pointer"
                             title="Загрузить в конструктор"
                           >
-                            <Plus size={12} className="text-tactical-accent" />
+                            <Plus size={14} className="text-tactical-accent" />
                           </button>
                         </div>
                       ))}

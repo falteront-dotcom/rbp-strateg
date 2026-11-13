@@ -42,15 +42,16 @@ test.describe('RBP-Strateg 2.0 — App Shell', () => {
 
     // Wait for the full seeded country set to render from /api/countries.
     await page.waitForFunction(
-      (expected: number) => document.querySelectorAll('nav button').length >= expected,
+      (expected: number) => document.querySelectorAll('[data-testid="country-list-item"]').length >= expected,
       EXPECTED_COUNTRY_COUNT,
       { timeout: 30000 }
     );
 
-    const countryButtons = page.locator('nav button');
+    const countryButtons = page.getByTestId('country-list-item');
     const count = await countryButtons.count();
-    // Deterministic floor: the fixture populates exactly 59 countries, so the
-    // nav must hold at least the full seeded set (extra controls only add).
+    // Детерминированный порог: сид даёт полный набор стран, поэтому список
+    // должен содержать не меньше этого числа. Считаем именно элементы стран,
+    // а не все кнопки панели — в выдвижной панели есть ещё кнопка закрытия.
     expect(count).toBeGreaterThanOrEqual(EXPECTED_COUNTRY_COUNT);
 
     // Required countries are present by their seeded Russian names.
@@ -64,7 +65,7 @@ test.describe('RBP-Strateg 2.0 — App Shell', () => {
 
     // Wait for the full seeded fixture to load.
     await page.waitForFunction(
-      (expected: number) => document.querySelectorAll('nav button').length >= expected,
+      (expected: number) => document.querySelectorAll('[data-testid="country-list-item"]').length >= expected,
       EXPECTED_COUNTRY_COUNT,
       { timeout: 30000 }
     );
@@ -78,11 +79,11 @@ test.describe('RBP-Strateg 2.0 — App Shell', () => {
     await page.waitForTimeout(300);
 
     // Verify Russia survives the filter and the list narrowed.
-    const russiaItem = page.locator('nav button').filter({
+    const russiaItem = page.getByTestId('country-list-item').filter({
       hasText: 'Россия',
     });
     await expect(russiaItem.first()).toBeVisible();
-    const filteredCount = await page.locator('nav button').count();
+    const filteredCount = await page.getByTestId('country-list-item').count();
     expect(filteredCount).toBeLessThanOrEqual(EXPECTED_COUNTRY_COUNT);
   });
 
@@ -108,13 +109,13 @@ test.describe('RBP-Strateg 2.0 — App Shell', () => {
 
     // Wait for the full seeded fixture to load.
     await page.waitForFunction(
-      (expected: number) => document.querySelectorAll('nav button').length >= expected,
+      (expected: number) => document.querySelectorAll('[data-testid="country-list-item"]').length >= expected,
       EXPECTED_COUNTRY_COUNT,
       { timeout: 30000 }
     );
 
     // Click first country
-    await page.locator('nav button').first().click();
+    await page.getByTestId('country-list-item').first().click();
     await page.waitForTimeout(1000);
 
     // Click BP detail tab (uses ".toFixed()" on score fields)

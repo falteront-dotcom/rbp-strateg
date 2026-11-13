@@ -9,6 +9,7 @@ const NAV: { href: string; label: string }[] = [
   { href: "/v3/systems", label: "Системы" },
   { href: "/v3/intel", label: "Предупреждения I&W" },
   { href: "/v3/warfare", label: "Устойчивость и бой" },
+  { href: "/v3/digest", label: "Дайджест" },
   { href: "/v3/methodology", label: "Методология" },
 ];
 

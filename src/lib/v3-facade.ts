@@ -464,6 +464,8 @@ export function getBP3Detail(iso: string): {
   series: unknown | null;
   briefText: string | null;
   profile: unknown | null;
+  /** Грейд провенанса входов каждого компонента (для досье) */
+  grades: Record<string, string>;
 } | null {
   const normalized: string = iso.trim().toUpperCase();
   const entry: BP3CacheEntry | undefined =
@@ -527,7 +529,17 @@ export function getBP3Detail(iso: string): {
     profile = null;
   }
 
-  return { row, tornado, sustainability, series, briefText, profile };
+  return {
+    row,
+    tornado,
+    sustainability,
+    series,
+    briefText,
+    profile,
+    grades: Object.fromEntries(
+      BP3_COMPONENTS.map((c) => [c, result.components[c].confidenceGrade]),
+    ),
+  };
 }
 
 // ─── Системы вооружений (data4) ───────────────────────────────────────────────

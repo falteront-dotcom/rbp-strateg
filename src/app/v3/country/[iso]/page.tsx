@@ -381,6 +381,14 @@ export default async function V3CountryPage({
               нет данных U/P — оценка по 8 компонентам
             </span>
           )}
+          <a
+            href={`/api/v3/dossier?iso=${row.iso}`}
+            download
+            className="inline-flex min-h-8 items-center rounded border border-tactical-line bg-tactical-raised px-3 text-xs font-medium text-slate-200 transition-colors hover:border-tactical-accent hover:text-tactical-accent"
+            title="Скачать досье страны в Markdown: интервалы, провенанс, чувствительность, ограничения"
+          >
+            Досье (md)
+          </a>
         </div>
       </div>
 

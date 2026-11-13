@@ -1,0 +1,96 @@
+# pipeline-refresh — еженедельный живой smoke-тест источников данных.
+#
+# Зачем: живой сетевой путь run-pipeline в CI отключён (opt-in RBP_PIPELINE_E2E,
+# чтобы e2e были детерминированными) — реальный refresh из источников не
+# тестировался вообще (находка пузыря 2026-11-13). Этот workflow гоняет тот же
+# код (refreshDatasetFromSources) против живых источников раз в неделю и
+# ловит протухание URL/форматов (World Bank API и т.п.) до аварии.
+#
+# Честно: это НЕ обновление прод-данных. На Render free БД эфемерная и
+# пересоздаётся из коммитных сидов при каждом старте; результат этого прогона
+# живёт только в БД раннера. Свежесть прод-данных = дисциплина коммитных сидов
+# (осознанный компромисс free-тира, src/db/bootstrap.ts).
+#
+# Алерт: issue с меткой pipeline-rot при падении, закрывается при восстановлении.
+# Расписание понедельника 04:17 UTC — вне пиков, когда GitHub дропает cron.
+
+name: pipeline-refresh
+
+on:
+  schedule:
+    - cron: "17 4 * * 1"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  issues: write
+
+concurrency:
+  group: pipeline-refresh
+  cancel-in-progress: false
+
+jobs:
+  refresh:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Use Node.js 22
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Seed database
+        run: npm run db:seed
+
+      - name: Live refresh from sources
+        run: npx tsx src/scripts/refresh-dataset.ts
+
+      - name: открыть issue-алерт
+        if: failure()
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const open = await github.rest.issues.listForRepo({
+              owner: context.repo.owner, repo: context.repo.repo,
+              state: 'open', labels: 'pipeline-rot',
+            });
+            if (open.data.length === 0) {
+              await github.rest.issues.create({
+                owner: context.repo.owner, repo: context.repo.repo,
+                title: 'pipeline-refresh: живой refresh из источников упал',
+                labels: ['pipeline-rot'],
+                body: [
+                  'Еженедельный живой smoke-тест источников данных не прошёл.',
+                  'Смотреть лог: вкладка Actions → pipeline-refresh.',
+                  'Вероятные причины: протух URL/формат источника, сетевой сбой раннера.',
+                  'Issue закроется само при первом успешном прогоне.',
+                ].join('\n'),
+              });
+            }
+
+      - name: закрыть issue-алерт
+        if: success()
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const open = await github.rest.issues.listForRepo({
+              owner: context.repo.owner, repo: context.repo.repo,
+              state: 'open', labels: 'pipeline-rot',
+            });
+            for (const issue of open.data) {
+              await github.rest.issues.createComment({
+                owner: context.repo.owner, repo: context.repo.repo,
+                issue_number: issue.number,
+                body: 'Восстановлено: живой refresh из источников снова проходит.',
+              });
+              await github.rest.issues.update({
+                owner: context.repo.owner, repo: context.repo.repo,
+                issue_number: issue.number, state: 'closed',
+              });
+            }

@@ -6,6 +6,11 @@
 
 import { NextRequest, NextResponse } from "next/server";
 import { getAllBenchmarks, getBenchmark, validateBPRank, crossValidateGFP } from "@/lib/bp/benchmarks";
+import { GFP_RANKINGS_2025 } from "@/scripts/data-pipeline/scrape-gfp";
+
+// Количественный референс GFP для всех стран снапшота (~132), не только 10
+// качественных бенчмарков. Источник: globalfirepower.com/countries-listing.php.
+const GFP_RANKS = new Map<string, number>(GFP_RANKINGS_2025.map((g) => [g.iso3, g.rank]));
 
 export async function GET(request: NextRequest) {
   try {
@@ -15,7 +20,7 @@ export async function GET(request: NextRequest) {
 
     if (iso && rank) {
       const validation = validateBPRank(iso, rank);
-      const gfp = crossValidateGFP(iso, rank);
+      const gfp = crossValidateGFP(iso, rank, GFP_RANKS);
       return NextResponse.json({
         iso,
         calculatedRank: rank,
@@ -39,6 +44,7 @@ export async function GET(request: NextRequest) {
     const all = getAllBenchmarks();
     return NextResponse.json({
       count: all.length,
+      gfpReferenceCount: GFP_RANKS.size,
       benchmarks: all.map((b) => ({
         isoCode: b.isoCode,
         name: b.name,

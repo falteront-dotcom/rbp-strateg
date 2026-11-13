@@ -19,7 +19,7 @@ export interface BPBenchmark {
   referenceSource: string;       // Source of validation data
 }
 
-// ─── Benchmark data for top 20 countries ──────────────────────────────────────
+// ─── Benchmark data: 10 качественных бенчмарков (не «top 20»); количественное покрытие рангов GFP шире — снапшот GFP_RANKINGS_2025 (~132 страны) подключается в crossValidateGFP через параметр gfpRanks. ──────────────────────────────────────
 export const BP_BENCHMARKS: BPBenchmark[] = [
   {
     isoCode: "USA",
@@ -275,19 +275,46 @@ export function validateBPRank(
 }
 
 // ─── Cross-validate with GFP ─────────────────────────────────────────────────
+export interface GFPCrossCheck {
+  gfpRank: number | null;
+  delta: number | null;
+  consistent: boolean | null;
+  /** Откуда референс: gfp-2025 (снапшот), benchmark (10 записей) или no-reference */
+  coverage: "gfp-2025" | "benchmark" | "no-reference";
+}
+
+/**
+ * Сверка ранга с GFP. С параметром gfpRanks (снапшот GFP_RANKINGS_2025,
+ * ~132 страны) покрытие количественное; без него — только 10 качественных
+ * бенчмарков. Страна без референса получает consistent: null, а не
+ * фиктивный «пройдено» (находка эксперта-1 пузыря 2026-11-13).
+ */
 export function crossValidateGFP(
   isoCode: string,
   calculatedRank: number,
-): { gfpRank: number; delta: number; consistent: boolean } {
+  gfpRanks?: ReadonlyMap<string, number>,
+): GFPCrossCheck {
+  const snapshotRank = gfpRanks?.get(isoCode);
+  if (snapshotRank !== undefined) {
+    const delta = calculatedRank - snapshotRank;
+    return {
+      gfpRank: snapshotRank,
+      delta,
+      consistent: Math.abs(delta) <= 5,
+      coverage: "gfp-2025",
+    };
+  }
   const benchmark = BP_BENCHMARKS.find((b) => b.isoCode === isoCode);
   if (!benchmark) {
-    return { gfpRank: calculatedRank, delta: 0, consistent: true };
+    return { gfpRank: null, delta: null, consistent: null, coverage: "no-reference" };
   }
-
   const delta = calculatedRank - benchmark.gfpRank2025;
-  const consistent = Math.abs(delta) <= 5;
-
-  return { gfpRank: benchmark.gfpRank2025, delta, consistent };
+  return {
+    gfpRank: benchmark.gfpRank2025,
+    delta,
+    consistent: Math.abs(delta) <= 5,
+    coverage: "benchmark",
+  };
 }
 
 // ─── Get all benchmarks ──────────────────────────────────────────────────────

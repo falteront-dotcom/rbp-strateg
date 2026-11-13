@@ -45,7 +45,7 @@ jobs:
 
       # sqlite.db is gitignored; a clean checkout has no database, so the
       # production webServer can never become ready without seeding first.
-      # This re-seeds the canonical 59-country fixture from the committed
+      # This re-seeds the canonical 195-country fixture from the committed
       # seed modules — no network, fully deterministic.
       - name: Seed the canonical fixture
         run: npm run db:seed

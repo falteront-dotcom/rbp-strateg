@@ -10,7 +10,9 @@ import {
   ChevronRight,
   Users,
   GitCompareArrows,
+  List,
 } from "lucide-react";
+import { useDialog } from "@/lib/use-dialog";
 import { exportCountryCSV, exportCountryJSON } from "@/lib/export";
 import { Flag } from "@/components/Flag";
 import { ActiveCompareWindow } from "@/components/ActiveCompareWindow";
@@ -307,6 +309,11 @@ export default function Home() {
   const [mapFocus, setMapFocus] = useState<{ lat: number; lng: number; seq: number } | null>(null);
   const [scenarioLabOpen, setScenarioLabOpen] = useState(false);
   const [datasetHealth, setDatasetHealth] = useState<DatasetHealth | null>(null);
+  // На узком вьюпорте боковая панель скрыта, поэтому список стран открывается
+  // выдвижной панелью: без неё вся аналитика по стране недостижима на телефоне.
+  const [mobileListOpen, setMobileListOpen] = useState(false);
+  const closeMobileList = useCallback(() => setMobileListOpen(false), []);
+  const mobileListRef = useDialog(mobileListOpen, closeMobileList);
 
   // ─── Clock tick — mount-only to avoid hydration mismatch ───────────────
   useEffect(() => {
@@ -457,6 +464,9 @@ export default function Home() {
   // ─── Handlers ──────────────────────────────────────────────────────────
   const handleCountryClick = useCallback((iso: string) => {
     setSelectedISO(iso);
+    // Выбор из выдвижного списка закрывает его, иначе панель страны
+    // оказывается под списком и пользователь не видит результат.
+    setMobileListOpen(false);
   }, []);
 
   const handleModeToggle = useCallback(() => {
@@ -516,6 +526,16 @@ export default function Home() {
             слоёв и статус выезжали за правый край на 5–9px (390px). */}
       <header className="glass-panel z-50 flex min-h-14 shrink-0 flex-wrap items-center justify-between gap-2 border-b border-white/5 px-3 py-2 md:px-6">
         <div className="flex w-full min-w-0 items-center gap-2 sm:w-auto sm:gap-4">
+          <button
+            type="button"
+            onClick={() => setMobileListOpen(true)}
+            aria-label="Открыть список стран"
+            aria-expanded={mobileListOpen}
+            aria-controls="country-list-nav"
+            className="grid h-8 w-8 shrink-0 place-items-center rounded border border-tactical-line text-tactical-primary transition-colors hover:bg-tactical-primary/10 md:hidden"
+          >
+            <List size={16} />
+          </button>
           <div className="flex items-center gap-2">
             <div className="p-1.5 bg-tactical-primary/10 rounded-sm">
               <Radio className="h-3.5 w-3.5 text-tactical-primary" />
@@ -573,7 +593,33 @@ export default function Home() {
       {/* ═══ MAIN CONTENT ═══ */}
       <div className="flex-1 flex min-h-0">
         {/* ─── LEFT SIDEBAR: Country List ─── */}
-        <nav className="hidden md:flex w-56 xl:w-64 glass-panel border-r border-white/5 flex flex-col shrink-0 z-30">
+        {mobileListOpen && (
+          <div
+            className="fixed inset-0 z-40 bg-black/60 md:hidden"
+            onClick={closeMobileList}
+            aria-hidden="true"
+          />
+        )}
+        <nav
+          id="country-list-nav"
+          ref={mobileListRef}
+          tabIndex={-1}
+          role={mobileListOpen ? "dialog" : undefined}
+          aria-modal={mobileListOpen ? true : undefined}
+          aria-label="Список стран"
+          className={`${mobileListOpen ? "fixed inset-y-0 left-0 z-50 flex w-[min(20rem,88vw)]" : "hidden"} md:static md:z-30 md:flex md:w-56 xl:w-64 glass-panel border-r border-white/5 flex-col shrink-0`}
+        >
+          <div className="flex items-center justify-between gap-2 border-b border-white/5 px-3 py-2 md:hidden">
+            <span className="text-[11px] font-bold uppercase tracking-widest text-tactical-primary">Страны</span>
+            <button
+              type="button"
+              onClick={closeMobileList}
+              aria-label="Закрыть список стран"
+              className="grid h-8 w-8 shrink-0 place-items-center rounded text-slate-400 transition-colors hover:bg-white/5 hover:text-white"
+            >
+              <X size={16} />
+            </button>
+          </div>
           {/* Search */}
           <div className="p-3 border-b border-white/5">
             <div className="relative">
@@ -793,8 +839,9 @@ export default function Home() {
                 Выберите Страну
               </h3>
               <p className="text-[10px] text-slate-600 mt-2 leading-relaxed">
-                Нажмите на страну на карте или выберите из списка слева для
-                отображения детальной аналитики боевого потенциала
+                <span className="md:hidden">Нажмите на страну на карте или откройте список кнопкой ☰ в шапке</span>
+                <span className="hidden md:inline">Нажмите на страну на карте или выберите из списка слева</span>
+                {" "}для отображения детальной аналитики боевого потенциала
               </p>
             </div>
           )}

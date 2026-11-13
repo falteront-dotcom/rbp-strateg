@@ -29,6 +29,7 @@ import {
   calculateCountryBP3,
   deltaVsV2Only,
   findTop30Input,
+  percentile,
 } from "./bp3";
 import type {
   BP3Component,
@@ -36,6 +37,7 @@ import type {
   CountryBP3Input,
   CountryBP3Result,
   MunitionsRawData,
+  RankStability,
   SourcedValue,
   UavRawData,
   V2Component,
@@ -72,6 +74,8 @@ export interface FacadeBP3Row {
   deltaV2: number;
   hasUP: boolean;
   components: { key: string; label: string; score: number; weight: number }[];
+  /** Устойчивость ранга по итерациям MC (весовая неопределённость) */
+  rankStability: RankStability;
 }
 
 // ─── Утилиты ──────────────────────────────────────────────────────────────────
@@ -198,6 +202,9 @@ function toFacadeRow(
       score: round1(result.components[key].score),
       weight: result.components[key].weight,
     })),
+    // Плейсхолдер: реальное значение ставится после расчёта когорты
+    // (computeRankStability в ensureBP3Cache), до выдачи наружу не доходит.
+    rankStability: { rankP10: 0, rankP90: 0, pAboveNext: null },
   };
 }
 
@@ -235,7 +242,7 @@ function ensureBP3Cache(): BP3Cache {
   for (const country of countries) {
     try {
       const { input, hasUP } = buildBP3Input(country);
-      const result = calculateCountryBP3(input);
+      const result = calculateCountryBP3(input, { keepSamples: true });
       const entry: BP3CacheEntry = {
         result,
         row: toFacadeRow(result, country, hasUP),
@@ -249,8 +256,73 @@ function ensureBP3Cache(): BP3Cache {
     }
   }
   results.sort((a, b) => b.result.total.median - a.result.total.median);
+  const stability = computeRankStability(results.map((r) => r.result));
+  results.forEach(({ result, entry }, idx) => {
+    entry.row.rankStability = stability.get(result.isoCode) ?? {
+      rankP10: idx + 1,
+      rankP90: idx + 1,
+      pAboveNext: null,
+    };
+    // Сырые итерации нужны были только для rank-stability — в кэше не держим.
+    delete result.samples;
+  });
   bp3Cache = { rows: results.map((r) => r.entry.row), byIso };
   return bp3Cache;
+}
+
+/**
+ * Rank-stability когорты по сырым итерациям MC.
+ *
+ * На каждой итерации страны сортируются по drawn-итогу → распределение ранга
+ * каждой страны (P10/P90). pAboveNext — доля итераций, где страна выше
+ * следующего соседа по медиане: «место в рейтинге — не точка».
+ * Сиды стран независимы (countrySeed), поэтому парные сравнения итерация-в-
+ * итерацию корректны. Стоимость: O(iters × N log N), один раз на процесс.
+ */
+function computeRankStability(
+  sorted: readonly CountryBP3Result[],
+): Map<string, RankStability> {
+  const out = new Map<string, RankStability>();
+  const n = sorted.length;
+  if (n === 0) return out;
+  const iters: number = sorted[0]?.samples?.length ?? 0;
+  if (iters === 0) return out;
+
+  const pAbove: (number | null)[] = sorted.map((r, idx) => {
+    const next = sorted[idx + 1];
+    const a = r.samples;
+    const b = next?.samples;
+    if (!a || !b) return null;
+    let wins = 0;
+    for (let i = 0; i < iters; i++) {
+      if ((a[i] ?? 0) > (b[i] ?? 0)) wins++;
+    }
+    return wins / iters;
+  });
+
+  const ranks: number[][] = sorted.map(() => []);
+  const order: number[] = sorted.map((_, idx) => idx);
+  for (let i = 0; i < iters; i++) {
+    order.sort(
+      (x, y) =>
+        (sorted[y]?.samples?.[i] ?? 0) - (sorted[x]?.samples?.[i] ?? 0),
+    );
+    for (let pos = 0; pos < n; pos++) {
+      ranks[order[pos] ?? 0]?.push(pos + 1);
+    }
+  }
+
+  sorted.forEach((r, idx) => {
+    const rs = ranks[idx] ?? [];
+    rs.sort((a, b) => a - b);
+    const p = pAbove[idx];
+    out.set(r.isoCode, {
+      rankP10: Math.round(percentile(rs, 10)),
+      rankP90: Math.round(percentile(rs, 90)),
+      pAboveNext: p === null ? null : Math.round(p * 1000) / 1000,
+    });
+  });
+  return out;
 }
 
 /** Рейтинг БП 3.0 всех стран БД, сортировка по медиане итога ↓. */

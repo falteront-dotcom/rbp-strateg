@@ -96,6 +96,57 @@ export function sampleTruncatedScore(
   return raw;
 }
 
+// ─── Весовая неопределённость (Dirichlet) ─────────────────────────────────
+//
+// Веса БП — экспертные, не калиброванные по исходам (docs/weights-elicitation.md).
+// Фиксировать их в Монте-Карло как константу — значит систематически занижать
+// P10/P90: главный эпистемический риск (почему оружие 0.16, а не 0.20?)
+// не попадает в интервал. Поэтому веса тянутся из Dirichlet(α_i = w_i × κ)
+// на каждой итерации: сумма всегда 1, среднее равно экспертным весам,
+// разброс задаётся концентрацией κ (дисперсия w_i(1−w_i)/(κ+1)).
+
+/**
+ * Гамма-выборка (Marsaglia–Tsang) поверх сидированного RNG.
+ * Для α < 1 — буст: gamma(α) = gamma(α+1) × U^(1/α).
+ */
+export function createGammaSampler(
+  rng: () => number,
+  nextNormal: () => number,
+): (alpha: number) => number {
+  return function nextGamma(alpha: number): number {
+    if (alpha <= 0) return 0;
+    if (alpha < 1) {
+      const u: number = Math.max(rng(), Number.EPSILON);
+      return nextGamma(alpha + 1) * Math.pow(u, 1 / alpha);
+    }
+    const d: number = alpha - 1 / 3;
+    const c: number = 1 / Math.sqrt(9 * d);
+    for (;;) {
+      const x: number = nextNormal();
+      const v: number = Math.pow(1 + c * x, 3);
+      if (v <= 0) continue;
+      const u: number = Math.max(rng(), Number.EPSILON);
+      if (Math.log(u) < 0.5 * x * x + d - d * v + d * Math.log(v)) {
+        return d * v;
+      }
+    }
+  };
+}
+
+/**
+ * Одна выборка весов из Dirichlet(α): нормированные гамма-величины.
+ * Нулевые α дают нулевой вес (компонент выключен из итога).
+ */
+export function sampleDirichletWeights(
+  nextGamma: (alpha: number) => number,
+  alphas: readonly number[],
+): number[] {
+  const draws: number[] = alphas.map((a) => nextGamma(a));
+  const sum: number = draws.reduce((acc, v) => acc + v, 0);
+  if (sum <= 0) return alphas.map(() => 0);
+  return draws.map((v) => v / sum);
+}
+
 // ─── Статистика распределения ────────────────────────────────────────────────
 
 /** Перцентиль по отсортированному массиву (линейная интерполяция) */
@@ -192,32 +243,55 @@ export interface MonteCarloResult {
   samples: number[];
 }
 
+/** Опции Монте-Карло */
+export interface MonteCarloOptions {
+  /**
+   * Концентрация Dirichlet для весов (κ). 0/undefined — веса-константы
+   * (старое поведение). κ > 0 — веса тянутся на каждой итерации;
+   * дисперсия веса w(1−w)/(κ+1). Рекомендация по умолчанию — 100.
+   */
+  weightConcentration?: number;
+}
+
 /**
  * Прогон Монте-Карло по компонентам страны.
  *
  * @param inputs     - компоненты с медианой, сигмой и весом
  * @param iterations - число итераций (рекомендуется 2000–10000)
  * @param seed       - сид RNG (см. countrySeed)
+ * @param options    - весовая неопределённость (Dirichlet), см. MonteCarloOptions
  */
 export function runMonteCarlo(
   inputs: readonly ComponentDistributionInput[],
   iterations: number,
   seed: number,
+  options: MonteCarloOptions = {},
 ): MonteCarloResult {
   const safeIterations: number = Math.max(1, Math.floor(iterations));
   const rng: () => number = mulberry32(seed);
   const nextNormal: () => number = createNormalSampler(rng);
   const samples: number[] = new Array<number>(safeIterations);
 
+  const concentration: number = options.weightConcentration ?? 0;
+  const drawWeights: boolean = concentration > 0;
+  const alphas: number[] = drawWeights
+    ? inputs.map((input) => input.weight * concentration)
+    : [];
+  const nextGamma: (alpha: number) => number = createGammaSampler(rng, nextNormal);
+
   for (let i = 0; i < safeIterations; i++) {
+    const weights: number[] | null = drawWeights
+      ? sampleDirichletWeights(nextGamma, alphas)
+      : null;
     let total: number = 0;
-    for (const input of inputs) {
+    for (let j = 0; j < inputs.length; j++) {
+      const input: ComponentDistributionInput = inputs[j]!;
       const drawn: number = sampleTruncatedScore(
         nextNormal,
         input.median,
         input.sigma,
       );
-      total += drawn * input.weight;
+      total += drawn * (weights ? weights[j]! : input.weight);
     }
     samples[i] = total;
   }

@@ -14,7 +14,12 @@ import { BP_COMPONENTS, type BPComponent } from "./types";
 /** Map of every component → its weight (must sum to 1.0) */
 export type WeightsConfig = Record<BPComponent, number>;
 
-/** Default weights – calibrated for conventional-force BP model */
+/**
+ * Default weights — экспертные (expert elicitation), НЕ калиброваны по исходам.
+ * Происхождение и процедура пересмотра: docs/weights-elicitation.md.
+ * Чувствительность: bp3/sensitivity.ts; весовая неопределённость учтена
+ * в Монте-Карло (Dirichlet, DEFAULT_WEIGHT_CONCENTRATION).
+ */
 export const DEFAULT_WEIGHTS: WeightsConfig = {
   weapon: 0.20,
   manpower: 0.15,

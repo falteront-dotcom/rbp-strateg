@@ -6,12 +6,19 @@
 #
 # Расписание '2-57/5' — каждые 5 минут, но не в :00/:05-пограничные пики:
 # по докам GitHub scheduled-джобы в начале часа сбрасываются чаще всего.
-# Проверяются ДВЕ цели: /api/live (лайвнесс) и /api/health (правда о данных —
-# пинг только /api/countries был слеп к 21 из 22 таблиц).
+# Проверяются ТРИ цели: /api/live (лайвнесс), /api/health (правда о данных —
+# пинг только /api/countries был слеп к 21 из 22 таблиц) и отпечаток релиза:
+# commit из /api/health (RENDER_GIT_COMMIT) сверяется с master. Стальной билд
+# ноября 2026 прошёл бы проверку «195 стран», но не SHA-сверку.
 #
 # Алерт: открытый issue с меткой keepalive (открывается при падении,
-# закрывается с комментарием при восстановлении). Тик-коммит против
-# 60-дневного автоотключения расписаний живёт в keepalive-tick.yml.
+# закрывается с комментарием при восстановлении) + сообщение в Telegram
+# (секреты TG_BOT_TOKEN/TG_CHAT_ID). Issue alone не работает: #13 висел
+# непрочитанным 15+ часов при красном проде — нужен канал до человека.
+# Без секретов TG шаг честно предупреждает, issue остаётся запасным каналом.
+# Дедупликация: и issue, и TG отправляются только пока нет открытого issue.
+# Тик-коммит против 60-дневного автоотключения расписаний живёт в
+# keepalive-tick.yml.
 #
 # Ограничения (честно): смерть расписания после 60 дней тишины репо видна
 # историей прогонов (разрыв >15 минут = что-то умерло), но не алертится
@@ -55,9 +62,35 @@ jobs:
             exit 1
           fi
 
+      - name: отпечаток релиза (SHA прода == master)
+        id: sha
+        run: |
+          expected="${{ github.sha }}"
+          echo "expected=$expected" >> "$GITHUB_OUTPUT"
+          prod=""
+          for attempt in 1 2; do
+            body=$(curl -s --max-time 30 https://rbp-strateg.onrender.com/api/health)
+            prod=$(printf '%s' "$body" | jq -r '.commit // empty')
+            [ "$prod" = "$expected" ] && break
+            # деплой мог идти прямо сейчас — одна повторная попытка через минуту
+            [ "$attempt" = "1" ] && sleep 60
+          done
+          echo "prod=$prod" >> "$GITHUB_OUTPUT"
+          if [ -z "$prod" ]; then
+            echo "::error::прод без отпечатка релиза — билд старее ноября 2026, деплой не доехал"
+            exit 1
+          fi
+          if [ "$prod" != "$expected" ]; then
+            echo "::error::прод $prod ≠ master $expected — Render держит старый билд (смотреть Deploys)"
+            exit 1
+          fi
+
       - name: открыть issue-алерт
         if: failure()
         uses: actions/github-script@v7
+        env:
+          TG_BOT_TOKEN: ${{ secrets.TG_BOT_TOKEN }}
+          TG_CHAT_ID: ${{ secrets.TG_CHAT_ID }}
         with:
           script: |
             const open = await github.rest.issues.listForRepo({
@@ -65,24 +98,50 @@ jobs:
               state: 'open', labels: 'keepalive',
             });
             if (open.data.length === 0) {
+              const lines = [
+                'Автоматический алерт внешнего watchdog-а.',
+                '',
+                '- /api/live: ${{ steps.live.outputs.code || 'шаг не дошёл' }}',
+                '- /api/health: ${{ steps.health.outputs.code || 'шаг не дошёл' }}',
+                '- SHA прода: ${{ steps.sha.outputs.prod || 'шаг не дошёл' }}',
+                '- SHA master: ${{ steps.sha.outputs.expected || 'неизвестен' }}',
+                '',
+                'Issue закроется само при первом успешном прогоне. Смотреть: https://rbp-strateg.onrender.com/api/health и https://dashboard.render.com/web/srv-db3c6ol9fdbs73d549vg/deploys',
+              ];
               await github.rest.issues.create({
                 owner: context.repo.owner, repo: context.repo.repo,
                 title: 'keepalive: прод не проходит проверку',
                 labels: ['keepalive'],
-                body: [
-                  'Автоматический алерт внешнего watchdog-а.',
-                  '',
-                  '- /api/live: ${{ steps.live.outputs.code || 'шаг не дошёл' }}',
-                  '- /api/health: ${{ steps.health.outputs.code || 'шаг не дошёл' }}',
-                  '',
-                  'Issue закроется само при первом успешном прогоне. Смотреть: https://rbp-strateg.onrender.com/api/health',
-                ].join('\n'),
+                body: lines.join('\n'),
               });
+              // Канал до человека: issue #13 висел непрочитанным 15+ часов.
+              const token = process.env.TG_BOT_TOKEN, chat = process.env.TG_CHAT_ID;
+              if (token && chat) {
+                try {
+                  const r = await fetch(`https://api.telegram.org/bot${token}/sendMessage`, {
+                    method: 'POST',
+                    headers: { 'content-type': 'application/json' },
+                    body: JSON.stringify({
+                      chat_id: chat,
+                      text: '🔴 РБП-Стратег: прод не проходит проверку\n' + lines.slice(2, 6).join('\n'),
+                      disable_web_page_preview: true,
+                    }),
+                  });
+                  if (!r.ok) console.log('::warning::TG-алерт не доставлен: HTTP ' + r.status);
+                } catch (e) {
+                  console.log('::warning::TG-алерт не доставлен: ' + e.message);
+                }
+              } else {
+                console.log('::warning::алерт человеку не настроен: задайте секреты TG_BOT_TOKEN и TG_CHAT_ID');
+              }
             }
 
       - name: закрыть issue-алерт
         if: success()
         uses: actions/github-script@v7
+        env:
+          TG_BOT_TOKEN: ${{ secrets.TG_BOT_TOKEN }}
+          TG_CHAT_ID: ${{ secrets.TG_CHAT_ID }}
         with:
           script: |
             const open = await github.rest.issues.listForRepo({
@@ -93,10 +152,29 @@ jobs:
               await github.rest.issues.createComment({
                 owner: context.repo.owner, repo: context.repo.repo,
                 issue_number: issue.number,
-                body: 'Восстановлено: /api/live и /api/health снова 200.',
+                body: 'Восстановлено: /api/live и /api/health снова 200, SHA прода совпадает с master.',
               });
               await github.rest.issues.update({
                 owner: context.repo.owner, repo: context.repo.repo,
                 issue_number: issue.number, state: 'closed',
               });
+            }
+            if (open.data.length > 0) {
+              const token = process.env.TG_BOT_TOKEN, chat = process.env.TG_CHAT_ID;
+              if (token && chat) {
+                try {
+                  const r = await fetch(`https://api.telegram.org/bot${token}/sendMessage`, {
+                    method: 'POST',
+                    headers: { 'content-type': 'application/json' },
+                    body: JSON.stringify({
+                      chat_id: chat,
+                      text: '🟢 РБП-Стратег: прод восстановлен, SHA прода совпадает с master.',
+                      disable_web_page_preview: true,
+                    }),
+                  });
+                  if (!r.ok) console.log('::warning::TG-восстановление не доставлено: HTTP ' + r.status);
+                } catch (e) {
+                  console.log('::warning::TG-восстановление не доставлено: ' + e.message);
+                }
+              }
             }

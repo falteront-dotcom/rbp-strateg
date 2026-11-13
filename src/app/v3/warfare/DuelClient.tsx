@@ -74,7 +74,7 @@ const DEFAULT_SCENARIO: LanchesterScenario =
   };
 
 const inputCls =
-  "w-full rounded border border-slate-700 bg-slate-900 px-2 py-1.5 text-sm text-slate-100 outline-none focus:border-sky-500";
+  "w-full rounded border border-tactical-line bg-tactical-panel px-2 py-1.5 text-sm text-slate-100 outline-none focus:border-tactical-accent";
 const labelCls = "flex flex-col gap-1 text-xs text-slate-400";
 
 function num(value: string, fallback: number): number {
@@ -94,7 +94,7 @@ function ForceForm({
   const set = (patch: Partial<LanchesterForce>) =>
     onChange({ ...force, ...patch });
   return (
-    <fieldset className="space-y-3 rounded-lg border border-slate-800 bg-slate-900/60 p-4">
+    <fieldset className="space-y-3 rounded-lg border border-tactical-line bg-tactical-panel/60 p-4">
       <legend className="px-1 text-sm font-semibold text-slate-100">
         {title}
       </legend>
@@ -311,7 +311,7 @@ export default function DuelClient() {
         />
       </div>
 
-      <div className="grid gap-3 rounded-lg border border-slate-800 bg-slate-900/60 p-4 sm:grid-cols-2 lg:grid-cols-4">
+      <div className="grid gap-3 rounded-lg border border-tactical-line bg-tactical-panel/60 p-4 sm:grid-cols-2 lg:grid-cols-4">
         <label className={labelCls}>
           Закон боя
           <select
@@ -388,7 +388,7 @@ export default function DuelClient() {
         type="button"
         onClick={run}
         disabled={running}
-        className="rounded bg-sky-600 px-4 py-2 text-sm font-semibold text-white transition-colors hover:bg-sky-500 disabled:cursor-not-allowed disabled:bg-slate-700 disabled:text-slate-400"
+        className="rounded bg-tactical-primary px-4 py-2 text-sm font-semibold text-tactical-bg transition-colors hover:bg-tactical-primary/85 disabled:cursor-not-allowed disabled:bg-tactical-raised disabled:text-slate-400"
       >
         {running ? "Симуляция…" : "Запустить симуляцию"}
       </button>
@@ -400,7 +400,7 @@ export default function DuelClient() {
       )}
 
       {result !== null && (
-        <div className="space-y-4 rounded-lg border border-sky-800 bg-slate-900 p-4">
+        <div className="space-y-4 rounded-lg border border-tactical-line bg-tactical-panel p-4">
           <div className="flex flex-wrap items-baseline justify-between gap-2">
             <h3 className="text-lg font-semibold text-slate-50">
               {winnerName !== null
@@ -429,12 +429,12 @@ export default function DuelClient() {
             ].map((row) => (
               <div
                 key={row.name}
-                className="rounded border border-slate-700 bg-slate-950/40 p-3 text-sm"
+                className="rounded border border-tactical-line bg-tactical-raised p-3 text-sm"
               >
                 <div className="font-semibold text-slate-100">{row.name}</div>
                 <div className="mt-1 text-slate-300">
                   Осталось:{" "}
-                  <span className="font-mono text-sky-300">
+                  <span className="font-mono text-tactical-primary">
                     {Math.round(row.final).toLocaleString("ru-RU")}
                   </span>{" "}
                   из {row.initial.toLocaleString("ru-RU")} · потери:{" "}
@@ -456,9 +456,9 @@ export default function DuelClient() {
               ` · потери победителя: ${result.winnerLossPct.toFixed(1)}% начальной численности`}
           </p>
           {logSample.length > 1 && (
-            <div className="max-h-64 overflow-y-auto rounded border border-slate-800">
+            <div className="max-h-64 overflow-y-auto rounded border border-tactical-line custom-scrollbar">
               <table className="w-full text-left font-mono text-xs">
-                <thead className="sticky top-0 bg-slate-900 text-slate-300">
+                <thead className="sticky top-0 bg-tactical-raised text-slate-200">
                   <tr>
                     <th className="px-2 py-1.5 font-medium">Сутки</th>
                     <th className="px-2 py-1.5 text-right font-medium">Остаток A</th>
@@ -469,7 +469,7 @@ export default function DuelClient() {
                 </thead>
                 <tbody>
                   {logSample.map((day) => (
-                    <tr key={day.day} className="border-t border-slate-800 text-slate-300">
+                    <tr key={day.day} className="border-t border-tactical-line text-slate-300">
                       <td className="px-2 py-1">{day.day}</td>
                       <td className="px-2 py-1 text-right">{Math.round(day.strengthA).toLocaleString("ru-RU")}</td>
                       <td className="px-2 py-1 text-right">{Math.round(day.strengthB).toLocaleString("ru-RU")}</td>

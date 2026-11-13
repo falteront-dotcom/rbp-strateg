@@ -12,12 +12,16 @@ import { test, expect } from '@playwright/test';
 // ─────────────────────────────────────────────────────────────────────────────
 
 test.describe('release fingerprint', () => {
-  test('health carries the build commit field', async ({ request }) => {
+  test('health carries the build commit field in every response', async ({ request }) => {
     const response = await request.get('/api/health');
-    expect(response.status()).toBe(200);
+    // 200 — данные сходятся с эталоном; 503 — расхождение (в CI так оставляет
+    // инъекция отказа pipeline в admin-api.spec.ts). Отпечаток обязан быть
+    // в обоих случаях: «старый билд» и «новый билд с broken данными» —
+    // разные аварии, монитор должен их различать.
+    expect([200, 503]).toContain(response.status());
     const body = await response.json();
-    expect(body.ok).toBe(true);
     expect(typeof body.commit).toBe('string');
+    if (response.status() === 200) expect(body.ok).toBe(true);
   });
 
   test('liveness stays up for the Render health check', async ({ request }) => {

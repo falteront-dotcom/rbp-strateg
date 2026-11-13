@@ -13,6 +13,11 @@ import { recordPublishedDataset } from "./dataset-repository";
 import { validateCountryDataset } from "@/lib/dataset/validation";
 import type { RawCountryRow } from "./country-mapper";
 import { seedKnowledge, seedKnowledgeExtra, type KnowledgeSeedResult } from "./seed/knowledge";
+import {
+  readDatasetSnapshot,
+  seedCountriesFromSnapshot,
+  snapshotSeedingEnabled,
+} from "./seed/snapshot-loader";
 
 /**
  * Инициализация производной БД из сидов и сгенерированных данных.
@@ -28,6 +33,11 @@ import { seedKnowledge, seedKnowledgeExtra, type KnowledgeSeedResult } from "./s
  * постоянные результаты нужны — храни их вне БД.
  *
  * Идемпотентен: повторный запуск полностью пересобирает таблицы.
+ *
+ * Источник стран — opt-in: по умолчанию канонические TS-сиды (195 стран,
+ * контракт e2e-фикстур), при RBP_SEED_SNAPSHOT=on — коммитный
+ * dataset-snapshot.json (мост от живого pipeline, см. snapshot-loader.ts).
+ * Флаг включён, а снапшот битый/отсутствует → явная ошибка без фолбэка.
  */
 
 /** Idempotent CREATE TABLE для стран — зеркало schema.ts. */
@@ -190,7 +200,12 @@ function writeSeedMeta(sqlite: import("better-sqlite3").Database) {
 }
 
 export function initializeDatabase(): BootstrapResult {
-  const allData: NewCountry[] = [
+  // Ветвь снапшота валидируется ДО открытия БД: битый файл не должен
+  // оставить после себя пересобранную/очищенную базу.
+  const useSnapshot = snapshotSeedingEnabled();
+  const snapshot = useSnapshot ? readDatasetSnapshot() : null;
+
+  const allData: NewCountry[] | null = snapshot ? null : [
     ...top20Countries,
     ...extendedCountries,
     ...additionalCountries,
@@ -198,8 +213,10 @@ export function initializeDatabase(): BootstrapResult {
   ];
 
   // BP считается до записи — транзакция остаётся одной атомарной единицей.
-  const rawData: CountryRawData[] = allData.map(seedRowToRawData);
-  const bpResults = calculateAllCountriesBP(rawData);
+  // Для снапшота БП не пересчитывается: строки пишутся как есть, включая
+  // bp_*, вычисленные раннером pipeline тем же движком.
+  const rawData: CountryRawData[] = allData ? allData.map(seedRowToRawData) : [];
+  const bpResults = allData ? calculateAllCountriesBP(rawData) : [];
 
   const sqlite = openDatabase();
   try {
@@ -207,24 +224,30 @@ export function initializeDatabase(): BootstrapResult {
     sqlite.exec(CREATE_COUNTRIES_SQL);
     const updateStmt = sqlite.prepare(UPDATE_BP_SQL);
 
-    sqlite.transaction(() => {
-      db.delete(countries).run();
-      db.insert(countries).values(allData).run();
-      for (const bp of bpResults) {
-        updateStmt.run(
-          bp.totalBP,
-          bp.components.weapon.normalizedValue,
-          bp.components.manpower.normalizedValue,
-          bp.components.logistics.normalizedValue,
-          bp.components.c2.normalizedValue,
-          bp.components.economy.normalizedValue,
-          bp.components.doctrine.normalizedValue,
-          bp.components.readiness.normalizedValue,
-          bp.components.terrain.normalizedValue,
-          bp.isoCode,
-        );
-      }
-    })();
+    let snapshotTop10: { rank: number; iso: string; name: string; totalBP: number }[] = [];
+    if (snapshot) {
+      const seeded = seedCountriesFromSnapshot(sqlite, snapshot);
+      snapshotTop10 = seeded.top10;
+    } else {
+      sqlite.transaction(() => {
+        db.delete(countries).run();
+        db.insert(countries).values(allData as NewCountry[]).run();
+        for (const bp of bpResults) {
+          updateStmt.run(
+            bp.totalBP,
+            bp.components.weapon.normalizedValue,
+            bp.components.manpower.normalizedValue,
+            bp.components.logistics.normalizedValue,
+            bp.components.c2.normalizedValue,
+            bp.components.economy.normalizedValue,
+            bp.components.doctrine.normalizedValue,
+            bp.components.readiness.normalizedValue,
+            bp.components.terrain.normalizedValue,
+            bp.isoCode,
+          );
+        }
+      })();
+    }
 
     // Пакеты знаний (техника, досье, сражения…) — идемпотентны.
     const knowledge = seedKnowledge();
@@ -233,8 +256,18 @@ export function initializeDatabase(): BootstrapResult {
 
     writeSeedMeta(sqlite);
 
+    if (snapshot) {
+      return {
+        countriesSeeded: snapshot.countries.length,
+        bpCalculated: snapshot.countries.length,
+        knowledge,
+        knowledgeExtra,
+        top10: snapshotTop10,
+      };
+    }
+
     return {
-      countriesSeeded: allData.length,
+      countriesSeeded: allData ? allData.length : 0,
       bpCalculated: bpResults.length,
       knowledge,
       knowledgeExtra,

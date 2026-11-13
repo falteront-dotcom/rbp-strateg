@@ -6,10 +6,17 @@
 # код (refreshDatasetFromSources) против живых источников раз в неделю и
 # ловит протухание URL/форматов (World Bank API и т.п.) до аварии.
 #
-# Честно: это НЕ обновление прод-данных. На Render free БД эфемерная и
-# пересоздаётся из коммитных сидов при каждом старте; результат этого прогона
-# живёт только в БД раннера. Свежесть прод-данных = дисциплина коммитных сидов
-# (осознанный компромисс free-тира, src/db/bootstrap.ts).
+# Честно про прод-данные: с 2026-11 этот workflow ОБНОВЛЯЕТ их — но только
+# через коммит. После живого refresh скрипт сам выгружает снапшот
+# (src/db/seed/generated/dataset-snapshot.json); изменившийся diff бот
+# коммитит и пушит в master, Render задеплоит и пересеет БД из снапшота
+# (ТОЛЬКО если в окружении Render включён RBP_SEED_SNAPSHOT=on; без флага
+# прод остаётся на канонических TS-сидах, см. docs/data-snapshots.md).
+# Прод получает живые данные с лагом в один деплой, не мгновенно.
+#
+# Конфликты с ручными правками сидов (TS-сиды изменили, снапшот нет) —
+# зона ответственности хозяина репо: бот не ребейзит и не форсит,
+# упавший push проявится как issue-алерт pipeline-rot.
 #
 # Алерт: issue с меткой pipeline-rot при падении, закрывается при восстановлении.
 # Расписание понедельника 04:17 UTC — вне пиков, когда GitHub дропает cron.
@@ -22,7 +29,7 @@ on:
   workflow_dispatch:
 
 permissions:
-  contents: read
+  contents: write   # бот-коммит снапшота в master (шаг «Commit snapshot diff»)
   issues: write
 
 concurrency:
@@ -50,6 +57,22 @@ jobs:
 
       - name: Live refresh from sources
         run: npx tsx src/scripts/refresh-dataset.ts
+
+      # Обновление прод-данных через коммит: снапшот уже перезаписан
+      # refresh-скриптом; здесь честный git-diff — коммитим и пушим, только
+      # если файл изменился (пустых коммитов не создаём). Пуш в ветку
+      # текущего ref (для schedule — master).
+      - name: Commit snapshot diff
+        run: |
+          git config user.name "rbp-pipeline-bot"
+          git config user.email "actions@users.noreply.github.com"
+          git add src/db/seed/generated/dataset-snapshot.json
+          if git diff --cached --quiet; then
+            echo "Снапшот не изменился — коммит не нужен"
+          else
+            git commit -m "data: weekly dataset snapshot"
+            git push origin HEAD:${{ github.ref_name }}
+          fi
 
       - name: открыть issue-алерт
         if: failure()
